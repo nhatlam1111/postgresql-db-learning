@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l \"/d/Learn/postgresql-db-learning/Week-1/\"*.md \"/d/Learn/postgresql-db-learning/Week-1/\"*.sql)",
+      "Bash(mkdir -p \"D:/Learn/postgresql-db-learning/temp/Week-2\")",
+      "Bash(mkdir -p \"D:/Learn/postgresql-db-learning/Week-2\")"
+    ]
+  }
+}
