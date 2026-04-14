@@ -18,6 +18,21 @@ Sau tuần này, bạn sẽ:
 
 ---
 
+## Mục Lục
+
+| # | Nội dung | Tương đương Excel |
+|---|---|---|
+| [3.1](#section-31-kiểu-dữ-liệu-data-types) | Kiểu Dữ Liệu (Data Types) | Data Validation — quy định loại giá trị được nhập |
+| [3.2](#section-32-tạo-bảng--create-table) | Tạo Bảng — CREATE TABLE | Tạo sheet mới, đặt tên header các cột |
+| [3.3](#section-33-nhập-dữ-liệu--insert-into) | Nhập Dữ Liệu — INSERT INTO | Gõ dữ liệu vào từng hàng của sheet |
+| [3.4](#section-34-giá-trị-null--ô-trống-đặc-biệt) | Giá Trị NULL — Ô Trống Đặc Biệt | Ô để trống trong Excel (nhưng khác biệt quan trọng) |
+| [3.5](#section-35-chỉnh-sửa-bảng--alter-table) | Chỉnh Sửa Bảng — ALTER TABLE | Thêm/xóa/đổi tên cột sau khi đã tạo sheet |
+| [3.6](#section-36-xóa-bảng--drop-table) | Xóa Bảng — DROP TABLE | Xóa toàn bộ sheet (không khôi phục được) |
+| [3.7](#section-37-xem-thông-tin-cấu-trúc-bảng) | Xem Thông Tin Cấu Trúc Bảng | Click phải vào sheet → xem thuộc tính |
+| [Tóm Tắt](#tóm-tắt-tuần-3) | Tóm Tắt Tuần 3 | Checklist, thuật ngữ, cầu nối Tuần 4 |
+
+---
+
 ## Mở Đầu
 
 Tuần 2, bạn đã "nếm thử" lệnh `CREATE TABLE nhan_vien (...)` và thấy nó hoạt động — nhưng bạn chưa thực sự hiểu tại sao phải viết `SERIAL`, `VARCHAR(100)`, hay `NOT NULL`.
@@ -753,4 +768,767 @@ CREATE TABLE nhan_vien (
 
 ---
 
-*Các section tiếp theo (3.2 CREATE TABLE với Constraints, 3.3 INSERT INTO, 3.4 NULL, 3.5 ALTER TABLE, 3.6 DROP TABLE, 3.7 Xem thông tin bảng) sẽ được bổ sung trong các buổi học tiếp theo.*
+## Section 3.2: Tạo Bảng — CREATE TABLE
+
+### Cú Pháp Cơ Bản
+
+Tạo bảng giống như thiết kế một form nhập liệu có cấu trúc trong Excel — bạn đặt tên từng cột và quy định mỗi cột chứa loại dữ liệu gì.
+
+```sql
+CREATE TABLE ten_bang (
+    ten_cot_1   kieu_du_lieu   [rang_buoc],
+    ten_cot_2   kieu_du_lieu   [rang_buoc],
+    ...
+);
+```
+
+**Quy tắc đặt tên bảng và cột:**
+- Dùng chữ thường, snake_case: `nhan_vien`, `ho_ten`, `ngay_sinh`
+- Không dùng dấu cách, ký tự đặc biệt, hoặc từ khóa SQL (SELECT, FROM...)
+- Tên có ý nghĩa, đọc là hiểu ngay
+
+---
+
+### Các Ràng Buộc (Constraints)
+
+Ràng buộc là **quy tắc bắt buộc** áp đặt lên cột — PostgreSQL tự động kiểm tra và từ chối dữ liệu vi phạm.
+
+**So sánh Excel:** Giống Data Validation trong Excel, nhưng mạnh hơn và không thể bỏ qua.
+
+#### PRIMARY KEY — Khóa Chính
+
+```sql
+id   SERIAL PRIMARY KEY
+```
+
+- Mỗi bảng chỉ có **một** PRIMARY KEY
+- Giá trị phải **duy nhất** — không có hai hàng nào có cùng id
+- Giá trị **không được NULL**
+- PostgreSQL tự tạo index trên cột này → tìm kiếm theo id rất nhanh
+
+**So sánh Excel:** Giống cột "Mã NV" mà bạn quy ước không ai được trùng — nhưng trong Excel không có gì tự động kiểm tra; trong PostgreSQL, database tự kiểm tra và từ chối nếu trùng.
+
+```sql
+-- Ví dụ PRIMARY KEY vi phạm → PostgreSQL báo lỗi:
+INSERT INTO nhan_vien (id, ho_ten) VALUES (1, 'Trần Mai');
+INSERT INTO nhan_vien (id, ho_ten) VALUES (1, 'Nguyễn An');
+-- ERROR: duplicate key value violates unique constraint "nhan_vien_pkey"
+```
+
+---
+
+#### NOT NULL — Bắt Buộc Có Giá Trị
+
+```sql
+ho_ten   VARCHAR(100) NOT NULL
+```
+
+- Cột này **bắt buộc phải có giá trị** khi INSERT
+- Nếu không truyền giá trị → PostgreSQL báo lỗi
+
+**So sánh Excel:** Giống ô bôi đỏ trong form — "trường bắt buộc".
+
+```sql
+-- Vi phạm NOT NULL:
+INSERT INTO nhan_vien (phong_ban) VALUES ('IT');
+-- ERROR: null value in column "ho_ten" violates not-null constraint
+```
+
+> **Mặc định:** Nếu không khai báo gì, cột **được phép NULL** (có thể để trống).
+
+---
+
+#### UNIQUE — Giá Trị Không Được Trùng
+
+```sql
+email   VARCHAR(150) UNIQUE
+```
+
+- Mỗi giá trị trong cột phải **xuất hiện tối đa một lần**
+- Khác PRIMARY KEY: UNIQUE **cho phép NULL** (nhiều hàng có thể cùng NULL)
+- Một bảng có thể có **nhiều** UNIQUE constraint
+
+**So sánh Excel:** Giống Data Validation → Custom Formula → `=COUNTIF($A:$A,A1)=1`.
+
+```sql
+-- Vi phạm UNIQUE:
+INSERT INTO nhan_vien (ho_ten, email) VALUES ('Trần Mai', 'mai@cty.com');
+INSERT INTO nhan_vien (ho_ten, email) VALUES ('Nguyễn An', 'mai@cty.com');
+-- ERROR: duplicate key value violates unique constraint "nhan_vien_email_key"
+```
+
+---
+
+#### DEFAULT — Giá Trị Mặc Định
+
+```sql
+so_luong_ton   INTEGER  DEFAULT 0,
+ngay_tao       TIMESTAMP DEFAULT NOW(),
+dang_lam       BOOLEAN   DEFAULT TRUE
+```
+
+- Khi INSERT không truyền giá trị cho cột này → PostgreSQL tự dùng DEFAULT
+- DEFAULT có thể là: hằng số, hàm (`NOW()`, `CURRENT_DATE`), hoặc biểu thức
+
+**So sánh Excel:** Giống ô đã có sẵn giá trị — bạn có thể ghi đè hoặc để nguyên.
+
+```sql
+-- Không truyền ngay_tao và dang_lam → tự dùng DEFAULT
+INSERT INTO nhan_vien (ho_ten, phong_ban) VALUES ('Trần Mai', 'Kế toán');
+-- ngay_tao = NOW() (thời điểm insert)
+-- dang_lam = TRUE
+```
+
+---
+
+#### CHECK — Ràng Buộc Điều Kiện Tùy Chỉnh
+
+```sql
+luong        NUMERIC(12,2) CHECK (luong >= 0),
+diem_kpi     INTEGER       CHECK (diem_kpi BETWEEN 1 AND 5),
+gioi_tinh    CHAR(1)       CHECK (gioi_tinh IN ('M', 'F', 'O'))
+```
+
+- Định nghĩa điều kiện **tùy ý** mà giá trị phải thỏa mãn
+- Nếu điều kiện sai → PostgreSQL từ chối INSERT/UPDATE
+
+**So sánh Excel:** Giống Data Validation → Custom Formula, nhưng CHECK trong PostgreSQL không thể bị bỏ qua.
+
+```sql
+-- Vi phạm CHECK:
+INSERT INTO nhan_vien (ho_ten, luong) VALUES ('Trần Mai', -5000000);
+-- ERROR: new row for relation "nhan_vien" violates check constraint "nhan_vien_luong_check"
+```
+
+> **Đặt tên cho constraint:** Bạn có thể đặt tên rõ ràng để thông báo lỗi dễ hiểu hơn:
+> ```sql
+> luong NUMERIC(12,2) CONSTRAINT luong_phai_duong CHECK (luong >= 0)
+> ```
+
+---
+
+#### FOREIGN KEY — Khóa Ngoại (Giới Thiệu)
+
+```sql
+phong_ban_id   INTEGER REFERENCES phong_ban(id)
+```
+
+- Đảm bảo giá trị trong cột **tồn tại** trong bảng khác
+- Là nền tảng của "database quan hệ" — các bảng liên kết với nhau
+- Sẽ học chi tiết ở **Tuần 7 (JOIN)**
+
+**So sánh Excel:** Giống VLOOKUP kiểm tra giá trị có tồn tại trong danh sách tham chiếu không.
+
+---
+
+### IF NOT EXISTS — Tránh Lỗi Khi Chạy Lại
+
+```sql
+CREATE TABLE IF NOT EXISTS nhan_vien (
+    ...
+);
+```
+
+Nếu bảng đã tồn tại → **bỏ qua**, không báo lỗi. Hữu ích khi chạy script thiết lập database nhiều lần.
+
+```sql
+-- Không có IF NOT EXISTS → lỗi nếu bảng đã có:
+CREATE TABLE nhan_vien (...);
+-- ERROR: relation "nhan_vien" already exists
+
+-- Có IF NOT EXISTS → an toàn:
+CREATE TABLE IF NOT EXISTS nhan_vien (...);
+-- NOTICE: relation "nhan_vien" already exists, skipping
+```
+
+---
+
+### Ví Dụ CREATE TABLE Hoàn Chỉnh
+
+#### Bảng `nhan_vien` — Đầy Đủ Constraints
+
+```sql
+CREATE TABLE nhan_vien (
+    id           SERIAL          PRIMARY KEY,
+    ho_ten       VARCHAR(100)    NOT NULL,
+    phong_ban    VARCHAR(50),
+    luong        NUMERIC(12, 2)  CHECK (luong >= 0),
+    ngay_sinh    DATE,
+    email        VARCHAR(150)    UNIQUE,
+    ngay_vao     DATE            DEFAULT CURRENT_DATE,
+    dang_lam     BOOLEAN         DEFAULT TRUE
+);
+```
+
+#### Bảng `san_pham` — Danh Mục Sản Phẩm
+
+```sql
+CREATE TABLE san_pham (
+    id            SERIAL          PRIMARY KEY,
+    ten_sp        VARCHAR(200)    NOT NULL,
+    danh_muc      VARCHAR(100),
+    gia           NUMERIC(12, 2)  NOT NULL CHECK (gia > 0),
+    so_luong_ton  INTEGER         NOT NULL DEFAULT 0 CHECK (so_luong_ton >= 0),
+    mo_ta         TEXT,
+    ngay_nhap     DATE            DEFAULT CURRENT_DATE,
+    con_ban       BOOLEAN         DEFAULT TRUE
+);
+```
+
+#### Bảng `khach_hang` — Khách Hàng
+
+```sql
+CREATE TABLE khach_hang (
+    id           SERIAL          PRIMARY KEY,
+    ho_ten       VARCHAR(100)    NOT NULL,
+    so_dien_thoai VARCHAR(20)    UNIQUE,
+    email        VARCHAR(150)    UNIQUE,
+    dia_chi      TEXT,
+    ngay_dang_ky DATE            DEFAULT CURRENT_DATE,
+    la_vip       BOOLEAN         DEFAULT FALSE
+);
+```
+
+---
+
+## Section 3.3: Nhập Dữ Liệu — INSERT INTO
+
+Sau khi tạo bảng (cấu trúc), bước tiếp theo là **nhập dữ liệu** vào bảng.
+
+**So sánh Excel:** Giống gõ dữ liệu vào từng hàng trong sheet — nhưng PostgreSQL kiểm tra kiểu dữ liệu và ràng buộc trước khi chấp nhận.
+
+---
+
+### Cú Pháp Cơ Bản — INSERT Một Hàng
+
+```sql
+INSERT INTO ten_bang (cot_1, cot_2, cot_3)
+VALUES (gia_tri_1, gia_tri_2, gia_tri_3);
+```
+
+**Ví dụ thực tế:**
+
+```sql
+-- Thêm một nhân viên
+INSERT INTO nhan_vien (ho_ten, phong_ban, luong, ngay_sinh, email)
+VALUES ('Trần Thị Mai', 'Kế toán', 15000000, '1995-03-20', 'mai.tran@cty.com');
+```
+
+**Lưu ý quan trọng:**
+- Thứ tự cột trong dấu `()` phải **khớp** với thứ tự giá trị trong `VALUES`
+- Chuỗi và ngày tháng đặt trong **dấu nháy đơn** `'...'`
+- Số **không** cần dấu nháy
+- Cột có `DEFAULT` hoặc không `NOT NULL` → có thể bỏ qua (không cần khai báo)
+
+---
+
+### INSERT Nhiều Hàng Cùng Lúc
+
+```sql
+INSERT INTO ten_bang (cot_1, cot_2)
+VALUES
+    (gia_tri_1a, gia_tri_1b),
+    (gia_tri_2a, gia_tri_2b),
+    (gia_tri_3a, gia_tri_3b);
+```
+
+**Ví dụ — nhập 6 nhân viên cùng lúc:**
+
+```sql
+INSERT INTO nhan_vien (ho_ten, phong_ban, luong, ngay_sinh, email)
+VALUES
+    ('Trần Thị Mai',   'Kế toán',    15000000, '1995-03-20', 'mai.tran@cty.com'),
+    ('Nguyễn Văn An',  'Kinh doanh', 20000000, '1990-07-15', 'an.nguyen@cty.com'),
+    ('Lê Thị Bình',    'Nhân sự',    18000000, '1992-11-03', 'binh.le@cty.com'),
+    ('Phạm Minh Châu', 'IT',         25000000, '1988-01-25', 'chau.pham@cty.com'),
+    ('Hoàng Thị Dung', 'Kế toán',    13000000, '1996-09-10', NULL),
+    ('Võ Văn Em',      'Kinh doanh', 22000000, '1993-05-30', 'em.vo@cty.com');
+```
+
+> **Ưu điểm của multi-row INSERT:** Nhanh hơn nhiều so với INSERT từng hàng — đặc biệt khi nhập hàng nghìn dòng.
+
+---
+
+### INSERT Không Chỉ Định Cột (Không Khuyến Khích)
+
+```sql
+-- Phải điền ĐỦ và ĐÚNG THỨ TỰ tất cả cột (kể cả id)
+INSERT INTO nhan_vien
+VALUES (DEFAULT, 'Trần Thị Mai', 'Kế toán', 15000000, '1995-03-20', 'mai.tran@cty.com', DEFAULT, DEFAULT);
+```
+
+> ⚠️ **Không khuyến khích dùng cách này vì:**
+> - Phải nhớ chính xác thứ tự tất cả cột
+> - Nếu sau này thêm cột mới vào bảng → câu INSERT này bị lỗi
+> - Khó đọc, dễ nhầm
+
+**Luôn khai báo rõ tên cột** — dài hơn nhưng an toàn và dễ bảo trì hơn.
+
+---
+
+### INSERT với RETURNING — Xem Kết Quả Vừa Insert
+
+```sql
+INSERT INTO nhan_vien (ho_ten, phong_ban, luong)
+VALUES ('Nguyễn Mới', 'IT', 18000000)
+RETURNING id, ho_ten;
+```
+
+**Kết quả trả về:**
+```
+ id |   ho_ten
+----+-------------
+  7 | Nguyễn Mới
+```
+
+**Hữu ích khi:** Bạn cần biết `id` (SERIAL) vừa được tạo ra để dùng trong bước tiếp theo.
+
+---
+
+### Các Lỗi INSERT Thường Gặp
+
+| Lỗi | Nguyên nhân | Ví dụ |
+|---|---|---|
+| `null value in column "..." violates not-null constraint` | Bỏ qua cột có NOT NULL | Không nhập `ho_ten` |
+| `invalid input syntax for type date` | Sai format ngày | `'20/03/1995'` thay vì `'1995-03-20'` |
+| `duplicate key value violates unique constraint` | Trùng giá trị UNIQUE/PRIMARY KEY | Nhập email đã có |
+| `new row violates check constraint` | Vi phạm CHECK | Nhập `luong = -1` |
+| `value too long for type character varying(n)` | Chuỗi quá dài | `ho_ten` vượt `VARCHAR(100)` |
+
+---
+
+## Section 3.4: Giá Trị NULL — Ô Trống Đặc Biệt
+
+### NULL Là Gì?
+
+**NULL** có nghĩa là **"không có giá trị" — không biết, chưa xác định**.
+
+> ⚠️ **NULL không phải số 0. NULL không phải chuỗi rỗng `''`. NULL là trạng thái thiếu dữ liệu.**
+
+**So sánh Excel:**
+
+| Trạng thái | Excel | PostgreSQL |
+|---|---|---|
+| Ô có số 0 | `0` | `0` |
+| Ô trống hoàn toàn | *(ô trống)* | `NULL` |
+| Ô chứa khoảng trắng | `' '` | `' '` (TEXT) |
+
+```
+Ví dụ thực tế:
+- Nhân viên Hoàng Thị Dung không có email  → email = NULL  (chưa có, không biết)
+- Nhân viên vừa vào chưa có lương thực tế  → luong = NULL  (chưa xác định)
+- Sản phẩm giá 0 đồng (tặng free)          → gia = 0       (biết rõ là 0)
+```
+
+---
+
+### NULL Trong Phép Tính
+
+**Bất kỳ phép tính nào với NULL đều cho kết quả NULL:**
+
+```sql
+SELECT 5 + NULL;       -- Kết quả: NULL  (không phải 5!)
+SELECT NULL * 100;     -- Kết quả: NULL
+SELECT 'Xin chào' || NULL;  -- Kết quả: NULL  (không phải 'Xin chào')
+```
+
+**So sánh Excel:** Giống ô trống trong công thức — `=A1+B1` nếu B1 trống thì được xem là 0 (Excel tự xử lý). Trong PostgreSQL không tự chuyển — NULL vẫn là NULL.
+
+**Hệ quả quan trọng:**
+
+```sql
+-- Tính lương trung bình — AVG() tự BỎ QUA NULL
+SELECT AVG(luong) FROM nhan_vien;
+-- Chỉ tính trên những hàng có luong, bỏ qua hàng luong = NULL ✅
+
+-- Đếm tất cả hàng — COUNT(*) đếm cả NULL
+SELECT COUNT(*) FROM nhan_vien;  -- 6 (kể cả hàng có email NULL)
+
+-- Đếm email — COUNT(cot) bỏ qua NULL
+SELECT COUNT(email) FROM nhan_vien;  -- 5 (bỏ qua hàng email = NULL)
+```
+
+---
+
+### Kiểm Tra NULL — IS NULL và IS NOT NULL
+
+> ⚠️ **Không dùng `= NULL` để kiểm tra NULL — luôn cho kết quả FALSE!**
+
+```sql
+-- SAI — không bao giờ trả về kết quả nào:
+SELECT * FROM nhan_vien WHERE email = NULL;     -- ❌ luôn rỗng
+
+-- ĐÚNG:
+SELECT * FROM nhan_vien WHERE email IS NULL;    -- ✅ hàng không có email
+SELECT * FROM nhan_vien WHERE email IS NOT NULL; -- ✅ hàng có email
+```
+
+**Giải thích:** `NULL = NULL` trong SQL luôn là `UNKNOWN` (không phải TRUE) — vì NULL nghĩa là "không biết", mà "không biết" có bằng "không biết" không? Không thể biết!
+
+---
+
+### COALESCE() — Giá Trị Thay Thế Khi Gặp NULL
+
+```sql
+COALESCE(gia_tri, gia_tri_thay_the_neu_null)
+```
+
+**So sánh Excel:** Hàm `IFERROR()` hoặc `IF(ISBLANK(A1), "Không có", A1)`.
+
+```sql
+-- Thay NULL bằng giá trị mặc định khi hiển thị
+SELECT
+    ho_ten,
+    COALESCE(email, 'Chưa có email') AS email_hien_thi
+FROM nhan_vien;
+
+-- Kết quả:
+-- Trần Thị Mai    | mai.tran@cty.com
+-- ...
+-- Hoàng Thị Dung  | Chưa có email   ← NULL được thay thành chuỗi
+```
+
+```sql
+-- Dùng COALESCE trong tính toán để tránh kết quả NULL
+SELECT
+    ho_ten,
+    COALESCE(luong, 0) * 12 AS thu_nhap_nam
+FROM nhan_vien;
+-- Nhân viên chưa có lương → tính 0 * 12 = 0, không ra NULL
+```
+
+**COALESCE với nhiều tham số — lấy giá trị đầu tiên không NULL:**
+
+```sql
+COALESCE(NULL, NULL, 'Giá trị thứ 3', 'Giá trị thứ 4')
+-- Kết quả: 'Giá trị thứ 3'
+```
+
+---
+
+### NULLIF() — Chuyển Giá Trị Thành NULL Theo Điều Kiện
+
+```sql
+NULLIF(gia_tri, gia_tri_can_chuyen_thanh_null)
+```
+
+Nếu `gia_tri` bằng tham số thứ 2 → trả về NULL. Ngược lại → trả về `gia_tri`.
+
+```sql
+-- Tránh lỗi chia cho 0
+SELECT 100 / NULLIF(so_luong, 0);
+-- Nếu so_luong = 0 → NULLIF trả NULL → 100/NULL = NULL (không báo lỗi)
+-- Nếu so_luong = 5 → NULLIF trả 5   → 100/5 = 20 ✅
+
+-- Chuẩn hóa dữ liệu: chuỗi rỗng '' coi như NULL
+SELECT NULLIF(ghi_chu, '') AS ghi_chu_sach;
+-- '' → NULL,  'Ghi chú thật' → 'Ghi chú thật'
+```
+
+---
+
+## Section 3.5: Chỉnh Sửa Bảng — ALTER TABLE
+
+Sau khi tạo bảng và đưa vào sử dụng, đôi khi cần chỉnh sửa cấu trúc.
+
+**So sánh Excel:** Giống thêm/xóa/đổi tên cột trong sheet — nhưng trong database, thay đổi cột cần thận trọng hơn vì có thể ảnh hưởng dữ liệu hiện có.
+
+---
+
+### Thêm Cột Mới — ADD COLUMN
+
+```sql
+ALTER TABLE ten_bang ADD COLUMN ten_cot kieu_du_lieu [rang_buoc];
+```
+
+```sql
+-- Thêm cột số điện thoại vào bảng nhan_vien
+ALTER TABLE nhan_vien ADD COLUMN so_dien_thoai VARCHAR(20);
+
+-- Thêm cột với DEFAULT
+ALTER TABLE nhan_vien ADD COLUMN cap_bac VARCHAR(20) DEFAULT 'Nhân viên';
+
+-- Thêm cột với NOT NULL phải có DEFAULT (vì hàng đã có sẵn)
+ALTER TABLE nhan_vien ADD COLUMN ma_nv VARCHAR(10) NOT NULL DEFAULT 'NV000';
+```
+
+> **Lưu ý:** Thêm cột `NOT NULL` vào bảng đã có dữ liệu **bắt buộc phải có DEFAULT** — nếu không, PostgreSQL không biết điền gì vào các hàng cũ.
+
+---
+
+### Xóa Cột — DROP COLUMN
+
+```sql
+ALTER TABLE ten_bang DROP COLUMN ten_cot;
+```
+
+```sql
+-- Xóa cột so_dien_thoai
+ALTER TABLE nhan_vien DROP COLUMN so_dien_thoai;
+
+-- Xóa cột, không báo lỗi nếu cột không tồn tại
+ALTER TABLE nhan_vien DROP COLUMN IF EXISTS so_dien_thoai;
+```
+
+> ⚠️ **DROP COLUMN xóa vĩnh viễn cột và toàn bộ dữ liệu trong cột đó!**
+
+---
+
+### Đổi Tên Cột — RENAME COLUMN
+
+```sql
+ALTER TABLE ten_bang RENAME COLUMN ten_cu TO ten_moi;
+```
+
+```sql
+-- Đổi tên cột ho_ten thành ten_day_du
+ALTER TABLE nhan_vien RENAME COLUMN ho_ten TO ten_day_du;
+
+-- Đổi lại tên bảng luôn (nếu cần)
+ALTER TABLE nhan_vien RENAME TO nhan_su;
+```
+
+---
+
+### Đổi Kiểu Dữ Liệu — ALTER COLUMN TYPE
+
+```sql
+ALTER TABLE ten_bang ALTER COLUMN ten_cot TYPE kieu_moi;
+```
+
+```sql
+-- Đổi VARCHAR(50) thành VARCHAR(100)
+ALTER TABLE nhan_vien ALTER COLUMN phong_ban TYPE VARCHAR(100);
+
+-- Đổi TEXT thành VARCHAR với USING để chuyển đổi dữ liệu
+ALTER TABLE nhan_vien
+    ALTER COLUMN so_dien_thoai TYPE INTEGER
+    USING so_dien_thoai::INTEGER;
+```
+
+> ⚠️ **Đổi kiểu dữ liệu có thể thất bại nếu dữ liệu hiện có không tương thích.** Ví dụ: đổi TEXT sang INTEGER sẽ lỗi nếu có hàng chứa chữ.
+
+---
+
+### Thêm / Xóa Constraint Sau Khi Tạo
+
+```sql
+-- Thêm NOT NULL
+ALTER TABLE nhan_vien ALTER COLUMN phong_ban SET NOT NULL;
+
+-- Bỏ NOT NULL
+ALTER TABLE nhan_vien ALTER COLUMN phong_ban DROP NOT NULL;
+
+-- Thêm DEFAULT
+ALTER TABLE nhan_vien ALTER COLUMN dang_lam SET DEFAULT TRUE;
+
+-- Bỏ DEFAULT
+ALTER TABLE nhan_vien ALTER COLUMN dang_lam DROP DEFAULT;
+
+-- Thêm UNIQUE
+ALTER TABLE nhan_vien ADD CONSTRAINT nhan_vien_email_unique UNIQUE (email);
+
+-- Thêm CHECK
+ALTER TABLE nhan_vien ADD CONSTRAINT luong_duong CHECK (luong >= 0);
+
+-- Xóa constraint (cần biết tên constraint)
+ALTER TABLE nhan_vien DROP CONSTRAINT luong_duong;
+```
+
+**Xem tên các constraint hiện có (trong DBeaver):** Click vào bảng → tab **"Constraints"**.
+
+---
+
+## Section 3.6: Xóa Bảng — DROP TABLE
+
+### Cú Pháp
+
+```sql
+-- Xóa bảng
+DROP TABLE ten_bang;
+
+-- Xóa bảng, không báo lỗi nếu bảng không tồn tại
+DROP TABLE IF EXISTS ten_bang;
+```
+
+> ⚠️ **CẢNH BÁO — DROP TABLE cực kỳ nguy hiểm:**
+>
+> - Xóa **vĩnh viễn** toàn bộ cấu trúc bảng **và tất cả dữ liệu** bên trong
+> - **Không có thùng rác** — không thể khôi phục (trừ khi có backup)
+> - Trước khi DROP, luôn chạy `SELECT COUNT(*) FROM ten_bang` để biết mình đang xóa bao nhiêu dòng
+
+**Quy trình an toàn trước khi DROP:**
+
+```sql
+-- Bước 1: Xem còn bao nhiêu dữ liệu
+SELECT COUNT(*) FROM ten_bang;
+
+-- Bước 2: Xem vài hàng mẫu để chắc chắn đây là bảng muốn xóa
+SELECT * FROM ten_bang LIMIT 5;
+
+-- Bước 3: Nếu chắc chắn → DROP
+DROP TABLE ten_bang;
+```
+
+---
+
+### DROP TABLE CASCADE
+
+```sql
+DROP TABLE ten_bang CASCADE;
+```
+
+Xóa bảng **và tất cả các đối tượng phụ thuộc** vào nó (FOREIGN KEY từ bảng khác, VIEW...).
+
+> ⚠️ **Cực kỳ nguy hiểm!** Chỉ dùng khi biết rõ mình đang xóa gì.
+
+---
+
+### TRUNCATE — Xóa Dữ Liệu Nhưng Giữ Cấu Trúc
+
+```sql
+TRUNCATE TABLE ten_bang;
+```
+
+- **Xóa toàn bộ dữ liệu** trong bảng
+- **Giữ nguyên cấu trúc** (cột, kiểu dữ liệu, constraint)
+- Nhanh hơn `DELETE FROM ten_bang` vì không ghi log từng hàng
+- SERIAL counter **reset về 1**
+
+```
+DROP TABLE   = Xóa cả file Excel (bao gồm template)
+TRUNCATE     = Xóa toàn bộ nội dung nhưng giữ lại template (header)
+DELETE       = Xóa từng hàng có điều kiện (Tuần 9 sẽ học)
+```
+
+---
+
+## Section 3.7: Xem Thông Tin Cấu Trúc Bảng
+
+Sau khi tạo bảng, bạn có thể xem lại cấu trúc bằng nhiều cách.
+
+### Trong DBeaver (Click Chuột)
+
+1. Trong **Database Navigator**, mở rộng: `hoc_sql → Schemas → public → Tables`
+2. **Double-click** vào tên bảng (ví dụ: `nhan_vien`)
+3. Một tab mới mở ra bên phải với các tab con:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  nhan_vien                                                   │
+├────────────┬─────────────┬──────────────┬────────┬──────────┤
+│  Columns   │ Constraints │  References  │  DDL   │  Data    │
+└────────────┴─────────────┴──────────────┴────────┴──────────┘
+```
+
+| Tab | Xem gì |
+|---|---|
+| **Columns** | Danh sách cột, kiểu dữ liệu, nullable, default |
+| **Constraints** | PRIMARY KEY, UNIQUE, CHECK, FOREIGN KEY |
+| **References** | Bảng nào đang tham chiếu đến bảng này |
+| **DDL** | Câu lệnh `CREATE TABLE` đã được tạo (rất hữu ích!) |
+| **Data** | Xem trực tiếp dữ liệu trong bảng |
+
+---
+
+### Bằng SQL — Truy Vấn information_schema
+
+PostgreSQL có schema đặc biệt tên `information_schema` chứa thông tin về tất cả bảng, cột trong database.
+
+```sql
+-- Xem danh sách tất cả bảng trong database hoc_sql
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+
+-- Xem chi tiết cột của bảng nhan_vien
+SELECT
+    column_name       AS ten_cot,
+    data_type         AS kieu_du_lieu,
+    character_maximum_length AS do_dai_toi_da,
+    is_nullable       AS cho_phep_null,
+    column_default    AS gia_tri_mac_dinh
+FROM information_schema.columns
+WHERE table_name = 'nhan_vien'
+  AND table_schema = 'public'
+ORDER BY ordinal_position;
+```
+
+**Kết quả mẫu:**
+
+```
+ten_cot    | kieu_du_lieu        | do_dai_toi_da | cho_phep_null | gia_tri_mac_dinh
+-----------+---------------------+---------------+---------------+------------------
+id         | integer             |               | NO            | nextval(...)
+ho_ten     | character varying   | 100           | NO            |
+phong_ban  | character varying   | 50            | YES           |
+luong      | numeric             |               | YES           |
+ngay_sinh  | date                |               | YES           |
+email      | character varying   | 150           | YES           |
+ngay_vao   | date                |               | YES           | CURRENT_DATE
+dang_lam   | boolean             |               | YES           | true
+```
+
+---
+
+## Tóm Tắt Tuần 3
+
+### Những Gì Bạn Đã Học
+
+```
+✅ Chọn đúng kiểu dữ liệu cho từng cột (Section 3.1)
+✅ Tạo bảng với đầy đủ constraints: CREATE TABLE (Section 3.2)
+✅ Nhập dữ liệu vào bảng: INSERT INTO (Section 3.3)
+✅ Hiểu và xử lý giá trị NULL (Section 3.4)
+✅ Chỉnh sửa cấu trúc bảng: ALTER TABLE (Section 3.5)
+✅ Xóa bảng an toàn: DROP TABLE vs TRUNCATE (Section 3.6)
+✅ Xem cấu trúc bảng trong DBeaver và information_schema (Section 3.7)
+```
+
+### Bảng Thuật Ngữ Mới
+
+| Thuật ngữ | Ý nghĩa |
+|---|---|
+| **Data Type** | Kiểu dữ liệu — quy định loại giá trị mỗi cột chứa |
+| **Constraint** | Ràng buộc — quy tắc dữ liệu phải tuân theo |
+| **PRIMARY KEY** | Khóa chính — định danh duy nhất mỗi hàng |
+| **NOT NULL** | Bắt buộc có giá trị — không được để trống |
+| **UNIQUE** | Giá trị không được trùng trong cùng cột |
+| **DEFAULT** | Giá trị tự điền nếu không nhập |
+| **CHECK** | Ràng buộc điều kiện tùy chỉnh |
+| **NULL** | Không có giá trị — không biết, chưa xác định |
+| **COALESCE** | Trả về giá trị đầu tiên không NULL |
+| **ALTER TABLE** | Chỉnh sửa cấu trúc bảng sau khi tạo |
+| **DROP TABLE** | Xóa vĩnh viễn bảng và dữ liệu |
+| **TRUNCATE** | Xóa toàn bộ dữ liệu, giữ cấu trúc bảng |
+
+### So Sánh Excel ↔ PostgreSQL Tuần 3
+
+| Thao tác Excel | Tương đương PostgreSQL |
+|---|---|
+| Tạo sheet mới, đặt tên cột | `CREATE TABLE` |
+| Data Validation (bắt buộc) | `NOT NULL` |
+| Data Validation (không trùng) | `UNIQUE` |
+| Ô có sẵn giá trị mặc định | `DEFAULT` |
+| Data Validation (công thức) | `CHECK` |
+| Gõ dữ liệu vào hàng | `INSERT INTO ... VALUES` |
+| Ô trống hoàn toàn | `NULL` |
+| `IFERROR(A1, "N/A")` | `COALESCE(cot, 'N/A')` |
+| Thêm/xóa/đổi tên cột | `ALTER TABLE` |
+| Xóa toàn bộ sheet | `DROP TABLE` |
+| Xóa nội dung, giữ tiêu đề | `TRUNCATE TABLE` |
+
+### Cầu Nối Sang Tuần 4
+
+Bạn đã biết cách **tạo bảng** và **nhập dữ liệu**. Nhưng để data có ích, bạn cần **truy vấn** — tức là lấy ra đúng dữ liệu mình cần.
+
+**Tuần 4** sẽ học sâu về `SELECT`:
+- Chọn cột cụ thể thay vì `SELECT *`
+- Đặt tên hiển thị cho cột với `AS` (alias)
+- Loại bỏ giá trị trùng với `DISTINCT`
+- Tính toán trực tiếp trong câu SELECT
+- Kết hợp chuỗi, định dạng số và ngày trong kết quả
+
+Sau Tuần 4, bạn sẽ viết được các câu truy vấn để tạo ra báo cáo từ dữ liệu thật trong database của mình.

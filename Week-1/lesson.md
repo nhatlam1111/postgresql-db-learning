@@ -17,6 +17,22 @@ Sau khi hoàn thành tuần 1, bạn sẽ có thể:
 
 ---
 
+## Mục Lục
+
+| # | Nội dung | Mô tả |
+|---|---|---|
+| [Phần 1](#phần-1-câu-chuyện-bắt-đầu) | Câu Chuyện Bắt Đầu | Tại sao Linh cần rời bỏ Excel |
+| [Phần 2](#phần-2-hai-thế-giới-một-logic--excel-và-database) | Hai Thế Giới, Một Logic | Excel ↔ Database — các khái niệm song song |
+| [2.1](#21-bức-tranh-tổng-thể) | Bức Tranh Tổng Thể | Workbook = Database, Sheet = Table |
+| [2.2](#22-khám-phá-từng-khái-niệm-chi-tiết) | Khám Phá Từng Khái Niệm | Database, Table, Column, Row, Field, Data Type, SQL |
+| [2.3](#23-bảng-tổng-hợp-excel--database) | Bảng Tổng Hợp | Bảng so sánh nhanh Excel ↔ Database |
+| [Phần 3](#phần-3-khi-nào-nên-chuyển-sang-database) | Khi Nào Nên Chuyển Sang Database? | 5 dấu hiệu Excel đã đến giới hạn |
+| [Phần 4](#phần-4-postgresql--công-cụ-chúng-ta-sẽ-học) | PostgreSQL — Công Cụ Chúng Ta Học | PostgreSQL là gì, tại sao chọn nó, DBeaver |
+| [Phần 5](#phần-5-sql--ngôn-ngữ-giao-tiếp-với-database) | SQL — Ngôn Ngữ Giao Tiếp Với Database | Cú pháp SQL, đọc SQL như đọc tiếng Anh |
+| [Tóm Tắt](#tóm-tắt-tuần-1) | Tóm Tắt Tuần 1 | Từ vựng, checklist, chuẩn bị Tuần 2 |
+
+---
+
 ## Phần 1: Câu Chuyện Bắt Đầu
 
 Hãy để mình kể cho bạn nghe câu chuyện của Linh.

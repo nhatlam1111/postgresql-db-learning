@@ -17,6 +17,20 @@ Sau tuần này, bạn sẽ:
 
 ---
 
+## Mục Lục
+
+| # | Nội dung | Mô tả |
+|---|---|---|
+| [Phần 1](#phần-1-cài-đặt-postgresql) | Cài Đặt PostgreSQL | Tải, cài, kiểm tra PostgreSQL trên Windows |
+| [Phần 2](#phần-2-cài-đặt-dbeaver-community) | Cài Đặt DBeaver Community | Tải, cài DBeaver — công cụ giao diện đồ họa |
+| [Phần 3](#phần-3-kết-nối-dbeaver-với-postgresql) | Kết Nối DBeaver Với PostgreSQL | Tạo kết nối, xử lý lỗi thường gặp |
+| [Phần 4](#phần-4-làm-quen-giao-diện-dbeaver) | Làm Quen Giao Diện DBeaver | 4 khu vực chính, điều hướng cơ bản |
+| [Phần 5](#phần-5-tạo-database-đầu-tiên--hoc_sql) | Tạo Database Đầu Tiên | Tạo database `hoc_sql` bằng UI và SQL |
+| [Phần 6](#phần-6-sql-editor--viết-và-chạy-sql-đầu-tiên) | SQL Editor — Câu SQL Đầu Tiên | Viết, chạy SQL, xem kết quả ngay |
+| [Tóm Tắt](#tóm-tắt-tuần-2) | Tóm Tắt Tuần 2 | Thuật ngữ mới, checklist, cầu nối Tuần 3 |
+
+---
+
 ## Mở Đầu: Từ Lý Thuyết Sang Thực Tế
 
 Tuần trước bạn đã hiểu tại sao cần database, database khác Excel ở chỗ nào, và thậm chí đọc được một vài câu SQL đơn giản.

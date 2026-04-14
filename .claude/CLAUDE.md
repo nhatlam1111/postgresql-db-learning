@@ -48,8 +48,10 @@ Every new SQL concept must be introduced by comparison to its Excel equivalent:
 
 ```
 postgresql-db-learning/
+├── README.md            # Project overview & learning guide (start here)
 ├── plan.md              # Main 10-week curriculum (the core deliverable)
 ├── requirement.md       # Original project requirement
+├── .gitignore           # Git ignore rules
 ├── Week-1/
 │   ├── lesson.md        # Detailed lesson content for Week 1
 │   ├── exercises.md     # Exercises for Week 1
@@ -58,27 +60,49 @@ postgresql-db-learning/
 │   ├── lesson.md        # Detailed lesson content for Week 2
 │   ├── exercises.md     # Exercises for Week 2
 │   └── examples.sql     # SQL examples used in Week 2
+├── Week-3/
+│   ├── lesson.md        # Detailed lesson content for Week 3
+│   ├── exercises.md     # Exercises for Week 3
+│   ├── examples.sql     # SQL examples used in Week 3
+│   └── type_casting.md  # Supplementary reference: Type Casting deep-dive
+├── Week-4/
+│   ├── lesson.md        # Detailed lesson content for Week 4
+│   ├── exercises.md     # Exercises for Week 4
+│   └── examples.sql     # SQL examples used in Week 4
+├── temp/
+│   ├── handover.md      # Session handover notes
+│   └── Week-*/plan.md   # Draft/planning notes per week
 └── .claude/
-    └── CLAUDE.md        # This file
+    └── CLAUDE.md        # This file — AI assistant instructions
 
 ```
+
+### Supplementary Reference Files
+
+Some weeks include extra deep-dive reference files alongside the main lesson:
+
+| File | Week | Purpose |
+|---|---|---|
+| `Week-3/type_casting.md` | 3 | Full reference for CAST, ::, TO_CHAR, TO_DATE, TO_NUMBER |
+
+When adding new supplementary files, link them from the main `lesson.md` of that week and add a row to this table.
 
 ### plan.md — The Core File
 
 The 10-week curriculum at `plan.md` is structured as:
 
-| Week | Topic |
-|---|---|
-| 1 | Why databases? Excel vs Database concepts |
-| 2 | Installing PostgreSQL & DBeaver |
-| 3 | CREATE TABLE, data types, INSERT |
-| 4 | SELECT basics — viewing data |
-| 5 | WHERE, ORDER BY, LIMIT — filtering & sorting |
-| 6 | Aggregate functions & GROUP BY (Pivot Table equivalent) |
-| 7 | JOIN — connecting tables (VLOOKUP equivalent) |
-| 8 | Subqueries, CASE WHEN, date/string functions |
-| 9 | UPDATE, DELETE, transactions, VIEWs, CSV import |
-| 10 | Capstone project — Coffee shop management system |
+| Week | Topic | Status |
+|---|---|---|
+| 1 | Why databases? Excel vs Database concepts | ✅ Done |
+| 2 | Installing PostgreSQL & DBeaver | ✅ Done |
+| 3 | CREATE TABLE, data types, INSERT | ✅ Done |
+| 4 | SELECT basics — viewing data | ✅ Done |
+| 5 | WHERE, ORDER BY, LIMIT — filtering & sorting | 📝 In progress |
+| 6 | Aggregate functions & GROUP BY (Pivot Table equivalent) | 📝 In progress |
+| 7 | JOIN — connecting tables (VLOOKUP equivalent) | 📝 In progress |
+| 8 | Subqueries, CASE WHEN, date/string functions | 📝 In progress |
+| 9 | UPDATE, DELETE, transactions, VIEWs, CSV import | 📝 In progress |
+| 10 | Capstone project — Coffee shop management system | 📝 In progress |
 
 ## Content Conventions
 

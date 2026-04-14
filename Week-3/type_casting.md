@@ -21,6 +21,26 @@ Excel:                              PostgreSQL:
 └──────────────────────────────┘    └──────────────────────────────┘
 ```
 
+**Biểu Diễn Trực Quan — Luồng Type Casting**
+
+```
+                      CAST(x AS type)   hoặc   x::type
+                      ──────────────────────────────────
+  ┌──────────────────┐                   ┌──────────────────┐
+  │   Giá trị gốc    │ ─────────────────▶│  Giá trị đích    │
+  │   (Kiểu A)       │                   │  (Kiểu B)        │
+  └──────────────────┘                   └──────────────────┘
+
+  Ví dụ các chiều chuyển đổi hay gặp:
+
+  42           (INTEGER)   ──[::TEXT]──────▶  '42'          (TEXT)    ✅ Luôn OK
+  '123'        (TEXT)      ──[::INTEGER]───▶  123           (INTEGER) ⚠️ Lỗi nếu không phải số
+  '2024-01-15' (TEXT)      ──[::DATE]──────▶  2024-01-15    (DATE)    ⚠️ Lỗi nếu sai format
+  3.99         (NUMERIC)   ──[::INTEGER]───▶  3    ← CẮT!   (INTEGER) ⚠️ Mất phần thập phân
+  TRUE         (BOOLEAN)   ──[::INTEGER]───▶  1             (INTEGER) ✅ Luôn OK
+  now()        (TIMESTAMP) ──[::DATE]──────▶  2026-04-14    (DATE)    ✅ Luôn OK
+```
+
 ---
 
 ## Hai Cú Pháp Cast
@@ -60,6 +80,101 @@ CAST('2024-01-15' AS DATE)     -- Kết quả: 2024-01-15
 ---
 
 ## Bảng Chuyển Đổi Thường Gặp
+
+> 📋 **Bảng tra cứu nhanh** — Tất cả chuyển đổi thường gặp trong một chỗ.
+> Cột **Thất bại khi** giúp bạn biết trước trường hợp nào sẽ báo lỗi.
+
+### Nhóm 1: Bất Kỳ Kiểu → TEXT
+
+Hầu hết mọi kiểu đều chuyển sang TEXT được — đây là chiều **luôn an toàn**.
+
+| Từ kiểu | Sang | Cú pháp PostgreSQL | Ví dụ đầu vào | Kết quả | Thất bại khi | Excel tương đương |
+|---|---|---|---|---|---|---|
+| `INTEGER` | `TEXT` | `42::TEXT` | `42` | `'42'` | Không bao giờ | `=TEXT(A1,"0")` |
+| `NUMERIC` | `TEXT` | `3.14::TEXT` | `3.14` | `'3.14'` | Không bao giờ | `=TEXT(A1,"0.00")` |
+| `DATE` | `TEXT` | `current_date::TEXT` | `2026-04-13` | `'2026-04-13'` | Không bao giờ | `=TEXT(A1,"YYYY-MM-DD")` |
+| `TIMESTAMP` | `TEXT` | `now()::TEXT` | *(thời gian hiện tại)* | `'2026-04-13 14:30:25+07'` | Không bao giờ | `=TEXT(A1,"YYYY-MM-DD HH:MM:SS")` |
+| `BOOLEAN` | `TEXT` | `TRUE::TEXT` | `TRUE` | `'true'` | Không bao giờ | `=IF(A1,"true","false")` |
+| `INTERVAL` | `TEXT` | `INTERVAL '1 year 2 months'::TEXT` | *(interval)* | `'1 year 2 mons'` | Không bao giờ | Không có |
+
+---
+
+### Nhóm 2: TEXT → Các Kiểu Khác
+
+Chiều này **có thể thất bại** nếu chuỗi không hợp lệ — cần kiểm tra dữ liệu trước.
+
+| Từ kiểu | Sang | Cú pháp PostgreSQL | Ví dụ đầu vào | Kết quả | Thất bại khi | Excel tương đương |
+|---|---|---|---|---|---|---|
+| `TEXT` | `INTEGER` | `'123'::INTEGER` | `'123'` | `123` | Chứa chữ hoặc dấu phẩy (`'12.5'`, `'abc'`) | `=VALUE("123")` |
+| `TEXT` | `NUMERIC` | `'99.5'::NUMERIC` | `'99.5'` | `99.5` | Chứa dấu phẩy ngăn nhóm (`'1,000'`) | `=VALUE("99.5")` |
+| `TEXT` | `DATE` | `'2024-01-15'::DATE` | `'2024-01-15'` | `2024-01-15` | Không đúng format `YYYY-MM-DD` | `=DATEVALUE("2024-01-15")` |
+| `TEXT` | `TIMESTAMP` | `'2024-01-15 14:30:00'::TIMESTAMP` | `'2024-01-15 14:30:00'` | `2024-01-15 14:30:00` | Sai format ngày/giờ | Không có hàm trực tiếp |
+| `TEXT` | `BOOLEAN` | `'true'::BOOLEAN` | `'true'` / `'yes'` / `'1'` | `TRUE` | Giá trị không nằm trong danh sách hợp lệ (VD: `'maybe'`) | Không có hàm trực tiếp |
+| `TEXT` | `INTERVAL` | `'3 months'::INTERVAL` | `'3 months'` | `3 mons` | Sai cú pháp interval | Không có |
+
+> 💡 **Giải pháp khi TEXT có dấu phẩy:** Dùng `TO_NUMBER('1,000,000', '9,999,999')` thay vì `::NUMERIC`.
+
+---
+
+### Nhóm 3: Số ↔ Số
+
+| Từ kiểu | Sang | Cú pháp PostgreSQL | Ví dụ đầu vào | Kết quả | Thất bại khi | Excel tương đương |
+|---|---|---|---|---|---|---|
+| `INTEGER` | `NUMERIC` | `42::NUMERIC(10,2)` | `42` | `42.00` | Không bao giờ | Format ô → Number (2 decimal) |
+| `INTEGER` | `BIGINT` | `42::BIGINT` | `42` | `42` | Không bao giờ | Không cần (Excel tự xử lý) |
+| `INTEGER` | `REAL` | `42::REAL` | `42` | `42.0` | Không bao giờ | Không cần |
+| `NUMERIC` | `INTEGER` | `9.9::INTEGER` | `9.9` | `9` ⚠️ **CẮT**, không làm tròn! | Không bao giờ (nhưng mất dữ liệu) | `=INT(9.9)` → `9` |
+| `NUMERIC` | `INTEGER` | `ROUND(9.9)::INTEGER` | `9.9` | `10` ✅ Làm tròn đúng | Không bao giờ | `=ROUND(9.9,0)` → `10` |
+| `BIGINT` | `INTEGER` | `9999999999::INTEGER` | `9,999,999,999` | **LỖI!** | Vượt quá ±2.1 tỷ | Không cần |
+| `REAL` | `NUMERIC` | `3.14::REAL::NUMERIC(10,4)` | `3.14` | `3.1400` (có thể sai ở chữ số cuối) | Không bao giờ (nhưng có sai số) | Format ô Number |
+
+> ⚠️ **Nhớ:** `NUMERIC → INTEGER` dùng phép **cắt** (truncate), không phải làm tròn. `9.9` → `9`, không phải `10`.
+> Muốn làm tròn: `ROUND(9.9, 0)::INTEGER` → `10`.
+
+---
+
+### Nhóm 4: Ngày / Giờ ↔ Ngày / Giờ
+
+| Từ kiểu | Sang | Cú pháp PostgreSQL | Ví dụ đầu vào | Kết quả | Thất bại khi | Excel tương đương |
+|---|---|---|---|---|---|---|
+| `DATE` | `TIMESTAMP` | `'2024-01-15'::DATE::TIMESTAMP` | `2024-01-15` | `2024-01-15 00:00:00` | Không bao giờ | Format ô Date → Custom Date+Time |
+| `DATE` | `TIMESTAMPTZ` | `'2024-01-15'::DATE::TIMESTAMPTZ` | `2024-01-15` | `2024-01-15 00:00:00+07` | Không bao giờ | Không có (Excel không có múi giờ) |
+| `TIMESTAMP` | `DATE` | `now()::DATE` | *(thời gian hiện tại)* | `2026-04-13` (bỏ giờ) | Không bao giờ | `=INT(A1)` (phần nguyên của datetime) |
+| `TIMESTAMP` | `TIME` | `now()::TIME` | *(thời gian hiện tại)* | `14:30:25` (bỏ ngày) | Không bao giờ | `=MOD(A1,1)` (phần thập phân của datetime) |
+| `TIMESTAMP` | `TIMESTAMPTZ` | `now()::TIMESTAMPTZ` | *(timestamp)* | *(thêm múi giờ)* | Không bao giờ | Không có |
+| `DATE` | `TEXT` | `ngay_sinh::TEXT` | `1995-03-20` | `'1995-03-20'` | Không bao giờ | `=TEXT(A1,"YYYY-MM-DD")` |
+| `DATE` | `TEXT` (định dạng VN) | `TO_CHAR(ngay_sinh, 'DD/MM/YYYY')` | `1995-03-20` | `'20/03/1995'` | Không bao giờ | `=TEXT(A1,"DD/MM/YYYY")` |
+| `TEXT` | `DATE` (format VN) | `TO_DATE('20/03/1995', 'DD/MM/YYYY')` | `'20/03/1995'` | `1995-03-20` | Sai format | `=DATEVALUE(TEXT(A1,"YYYY-MM-DD"))` |
+
+---
+
+### Nhóm 5: BOOLEAN ↔ Các Kiểu Khác
+
+| Từ kiểu | Sang | Cú pháp PostgreSQL | Ví dụ đầu vào | Kết quả | Thất bại khi | Excel tương đương |
+|---|---|---|---|---|---|---|
+| `BOOLEAN` | `TEXT` | `TRUE::TEXT` | `TRUE` | `'true'` | Không bao giờ | `=IF(A1,"true","false")` |
+| `BOOLEAN` | `INTEGER` | `TRUE::INTEGER` | `TRUE` / `FALSE` | `1` / `0` | Không bao giờ | `=IF(A1,1,0)` hoặc `=1*(A1=TRUE)` |
+| `INTEGER` | `BOOLEAN` | `1::BOOLEAN` | `1` / `0` | `TRUE` / `FALSE` | Số khác 0 và 1 | `=A1<>0` |
+| `TEXT` | `BOOLEAN` | `'yes'::BOOLEAN` | `'true'`/`'yes'`/`'1'`/`'on'` | `TRUE` | Giá trị không hợp lệ | Không có hàm trực tiếp |
+| `TEXT` | `BOOLEAN` | `'no'::BOOLEAN` | `'false'`/`'no'`/`'0'`/`'off'` | `FALSE` | Giá trị không hợp lệ | Không có hàm trực tiếp |
+
+---
+
+### Tóm Tắt: Chiều Nào An Toàn, Chiều Nào Nguy Hiểm?
+
+| Chiều chuyển đổi | Mức độ an toàn | Ghi chú |
+|---|---|---|
+| Bất kỳ kiểu → `TEXT` | ✅ **Luôn an toàn** | Không bao giờ lỗi |
+| Số nhỏ → Số lớn (`INTEGER → BIGINT`) | ✅ **Luôn an toàn** | Phạm vi lớn hơn chứa được |
+| `DATE` → `TIMESTAMP` | ✅ **Luôn an toàn** | Tự thêm `00:00:00` |
+| `NUMERIC` → `INTEGER` | ⚠️ **Mất dữ liệu** | Cắt phần thập phân, không làm tròn |
+| `TIMESTAMP` → `DATE` | ⚠️ **Mất dữ liệu** | Mất thông tin giờ phút giây |
+| Số lớn → Số nhỏ (`BIGINT → INTEGER`) | ❌ **Có thể lỗi** | Lỗi nếu vượt phạm vi |
+| `TEXT` → Số/Ngày/Boolean | ❌ **Có thể lỗi** | Lỗi nếu chuỗi không hợp lệ |
+
+---
+
+## Chi Tiết Từng Nhóm Chuyển Đổi — Ví Dụ SQL
 
 ### Chuyển Sang TEXT (Chuỗi)
 

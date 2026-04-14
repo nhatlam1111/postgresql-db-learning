@@ -1,0 +1,1049 @@
+# Tuần 4: Truy Vấn Dữ Liệu — SELECT Cơ Bản
+
+> **Mục tiêu tuần này:** Sau tuần 4, bạn có thể đọc dữ liệu từ bảng, chọn cột cụ thể, tính toán trong query, lọc trùng với DISTINCT, và dùng các hàm chuỗi/số/ngày cơ bản.
+
+---
+
+## Mục Lục
+
+| # | Nội dung | Tương đương Excel |
+|---|---|---|
+| [4.1](#41-select--câu-lệnh-quan-trọng-nhất) | SELECT — Câu lệnh quan trọng nhất | Mở sheet, xem dữ liệu |
+| [4.2](#42-as--đặt-tên-hiển-thị-alias) | AS — Đặt tên hiển thị (Alias) | Đổi tên header cột |
+| [4.3](#43-biểu-thức-tính-toán-trong-select) | Biểu thức tính toán trong SELECT | Công thức trong ô |
+| [4.4](#44-distinct--loại-bỏ-giá-trị-trùng) | DISTINCT — Loại bỏ giá trị trùng | Remove Duplicates |
+| [4.5](#45-hàm-xử-lý-chuỗi) | Hàm xử lý chuỗi | LEFT, MID, UPPER, LEN… |
+| [4.6](#46-hàm-số-học) | Hàm số học | ROUND, ABS, SQRT… |
+| [4.7](#47-limit-và-offset--xem-một-phần-dữ-liệu) | LIMIT và OFFSET — Xem một phần dữ liệu | Xem N hàng đầu |
+| [4.8](#48-thứ-tự-thực-thi-và-viết-sql-đẹp) | Thứ tự thực thi và viết SQL đẹp | *(quy ước code)* |
+| [4.9](#49-hàm-ngàygiờ-cơ-bản) | Hàm ngày/giờ cơ bản | TODAY(), YEAR(), TEXT()… |
+| [Tổng Kết](#tổng-kết-tuần-4) | Tổng Kết & Checklist | — |
+
+---
+
+## 4.1 SELECT — Câu Lệnh Quan Trọng Nhất
+
+### Câu Chuyện Mở Đầu
+
+Sếp giao cho bạn một file dữ liệu 200.000 dòng thông tin nhân viên từ nhiều năm. Bạn cần biết: "Hiện tại có bao nhiêu nhân viên đang làm việc ở phòng Kinh doanh?"
+
+**Với Excel:** Mở file → chờ load (2-3 phút?) → Filter cột "Phòng ban" → Filter cột "Đang làm" → nhìn số ở thanh status bar.
+
+**Với PostgreSQL:**
+```sql
+SELECT COUNT(*) FROM nhan_vien
+WHERE phong_ban = 'Kinh doanh' AND dang_lam = TRUE;
+```
+Kết quả xuất hiện trong vòng dưới 1 giây, dù bảng có 200 triệu hàng.
+
+**SELECT** là câu lệnh để **đọc dữ liệu** — không thay đổi, không xóa, chỉ xem. Đây là lệnh bạn sẽ dùng nhiều nhất trong cuộc đời làm việc với database.
+
+---
+
+### Cú Pháp Cơ Bản
+
+**Biểu Diễn Trực Quan — Cấu Trúc Câu SELECT**
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                         CÚ PHÁP SELECT ĐẦY ĐỦ                           │
+├──────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  SELECT  [DISTINCT]  cot1, cot2, cot3, ...                               │
+│  FROM    ten_bang                                                        │
+│  [WHERE     dieu_kien]            ← Lọc hàng       (như Filter Excel)   │
+│  [GROUP BY  cot_nhom]             ← Nhóm dữ liệu   (như Pivot Table)    │
+│  [HAVING    dieu_kien_nhom]       ← Lọc nhóm                            │
+│  [ORDER BY  cot [ASC|DESC]]       ← Sắp xếp        (như Sort Excel)     │
+│  [LIMIT  n  OFFSET  m]            ← Giới hạn hàng / Phân trang          │
+│                                                                          │
+│  💡 Dấu [...] = Tùy chọn — chỉ cần SELECT + FROM là câu SQL hợp lệ     │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+Phần tối thiểu bắt buộc:
+```sql
+SELECT *          -- Bắt buộc: chọn cột nào
+FROM nhan_vien;   -- Bắt buộc: từ bảng nào
+```
+
+**Ví dụ 1 — Xem toàn bộ dữ liệu (SELECT \*):**
+
+```sql
+-- Xem tất cả cột, tất cả hàng trong bảng nhan_vien
+-- Giống như mở sheet và nhìn toàn bộ dữ liệu
+SELECT * FROM nhan_vien;
+```
+
+Dấu `*` (asterisk) có nghĩa là "lấy tất cả cột". Tiện khi khám phá dữ liệu, nhưng **tránh dùng `*` trong môi trường thực tế** vì:
+- Lấy thừa dữ liệu → chậm hơn
+- Code dễ bị lỗi khi cấu trúc bảng thay đổi
+
+**Ví dụ 2 — Chỉ lấy cột cụ thể:**
+
+```sql
+-- Chỉ xem họ tên, lương, phòng ban
+-- Giống ẩn các cột không cần trong Excel
+SELECT ho_ten, luong, phong_ban
+FROM nhan_vien;
+```
+
+**Kết quả:**
+```
+ ho_ten           | luong    | phong_ban
+------------------+----------+-----------
+ Trần Thị Mai     | 15000000 | Kế toán
+ Nguyễn Văn An    | 20000000 | Kinh doanh
+ Lê Thị Bình      | 18000000 | Nhân sự
+ Phạm Minh Châu   | 25000000 | IT
+ Hoàng Thị Dung   | 13000000 | Kế toán
+ Võ Văn Em        | 22000000 | Kinh doanh
+```
+
+---
+
+### So Sánh Excel ↔ SQL
+
+| Hành động trong Excel | Tương đương SQL |
+|---|---|
+| Mở sheet, nhìn toàn bộ dữ liệu | `SELECT * FROM bang;` |
+| Ẩn bớt cột, chỉ để lại cột A, C, F | `SELECT cot_a, cot_c, cot_f FROM bang;` |
+| Kéo cột sang trái/phải để đổi thứ tự hiển thị | Thay đổi thứ tự cột trong SELECT |
+| Copy sang sheet khác để làm việc | *(không cần — SQL chỉ đọc, không ảnh hưởng bảng gốc)* |
+
+> 💡 **Lưu ý quan trọng:** Thứ tự cột trong `SELECT` **không cần khớp** với thứ tự cột trong bảng. Bạn có thể viết `SELECT phong_ban, ho_ten` dù trong bảng `ho_ten` nằm trước `phong_ban`.
+
+---
+
+### Thứ Tự Từ Khóa SQL
+
+SQL có thứ tự cố định — bạn **phải** viết đúng thứ tự này:
+
+```
+  Thứ tự VIẾT         Ý nghĩa                        Tuần học
+  ─────────────────────────────────────────────────────────────
+  SELECT [DISTINCT]    Chọn cột nào hiển thị          Tuần 4 ✅
+  FROM                 Lấy dữ liệu từ bảng nào        Tuần 4 ✅
+  WHERE                Lọc hàng theo điều kiện        Tuần 5
+  GROUP BY             Nhóm dữ liệu                   Tuần 6
+  HAVING               Lọc nhóm sau GROUP BY          Tuần 6
+  ORDER BY             Sắp xếp kết quả                Tuần 5
+  LIMIT / OFFSET       Giới hạn số hàng / Phân trang  Tuần 4 ✅
+```
+
+Tuy nhiên, PostgreSQL **thực thi** theo thứ tự **hoàn toàn khác** — đây là điểm quan trọng nhất của tuần này:
+
+```
+     Thứ Tự THỰC THI (Logical Execution Order)
+
+  ┌──────────┐     ┌──────────┐     ┌────────────┐
+  │  1. FROM │────▶│ 2. WHERE │────▶│ 3. GROUP BY│
+  └──────────┘     └──────────┘     └────────────┘
+                                          │
+       ┌───────────────────────────────────┘
+       ▼
+  ┌──────────┐     ┌──────────────┐     ┌────────────┐
+  │4. HAVING │────▶│  5. SELECT   │────▶│ 6. ORDER BY│
+  └──────────┘     └──────────────┘     └────────────┘
+                                               │
+                                               ▼
+                                        ┌──────────────┐
+                                        │   7. LIMIT   │  ← Kết quả cuối
+                                        └──────────────┘
+
+  ⚠️  WHERE chạy ở bước 2, SELECT chạy ở bước 5
+      → Alias đặt trong SELECT chưa tồn tại khi WHERE chạy!
+```
+
+Hệ quả thực tế: Trong mệnh đề `WHERE`, bạn **không dùng được** alias đã đặt trong `SELECT`. Điều này sẽ rõ hơn khi học Tuần 5.
+
+---
+
+## 4.2 AS — Đặt Tên Hiển Thị (Alias)
+
+### Alias Là Gì?
+
+Trong Excel, khi làm báo cáo bạn thường gõ vào hàng đầu:
+- Ô A1: `"Họ và Tên"` (thay vì `ho_ten`)
+- Ô B1: `"Mức Lương (VNĐ)"` (thay vì `luong`)
+- Ô C1: `"Phòng Ban"` (thay vì `phong_ban`)
+
+Trong SQL, `AS` làm điều tương tự — đặt tên hiển thị cho cột trong kết quả truy vấn. Tên thật của cột trong bảng **không thay đổi**.
+
+---
+
+### Cú Pháp AS
+
+```sql
+SELECT ten_cot AS "Tên hiển thị"
+FROM ten_bang;
+```
+
+**Ví dụ — Tên cột tiếng Việt có dấu:**
+
+```sql
+SELECT
+    ho_ten      AS "Họ và tên",
+    luong       AS "Mức lương (VNĐ)",
+    phong_ban   AS "Phòng ban"
+FROM nhan_vien;
+```
+
+**Kết quả:**
+```
+ Họ và tên        | Mức lương (VNĐ) | Phòng ban
+------------------+-----------------+-----------
+ Trần Thị Mai     |        15000000 | Kế toán
+ Nguyễn Văn An    |        20000000 | Kinh doanh
+ ...
+```
+
+---
+
+### Quy Tắc Đặt Alias
+
+| Tình huống | Cú pháp | Ví dụ |
+|---|---|---|
+| Tên có khoảng trắng hoặc dấu | Dùng dấu nháy kép `"..."` | `AS "Họ và tên"` |
+| Tên chỉ gồm chữ thường, số, gạch dưới | Có thể bỏ nháy kép | `AS tong_luong` |
+| Tên viết hoa muốn giữ nguyên | Dùng dấu nháy kép `"..."` | `AS "TongLuong"` |
+
+> ⚠️ **Chú ý dấu nháy:** Alias dùng dấu nháy **kép** `"..."`. Giá trị chuỗi trong SQL dùng dấu nháy **đơn** `'...'`. Đây là nguồn lỗi phổ biến!
+>
+> - ✅ `SELECT ho_ten AS "Họ tên"` — đúng (alias dùng nháy kép)
+> - ✅ `WHERE phong_ban = 'Kế toán'` — đúng (giá trị dùng nháy đơn)
+> - ❌ `SELECT ho_ten AS 'Họ tên'` — sai (alias không dùng nháy đơn)
+
+---
+
+### AS Với Biểu Thức Tính Toán
+
+Alias đặc biệt hữu ích khi kết hợp với tính toán:
+
+```sql
+-- Tính lương sau thuế và đặt tên cột dễ đọc
+SELECT
+    ho_ten,
+    luong                           AS "Lương trước thuế",
+    ROUND(luong * 0.10, 0)          AS "Thuế TNCN (10%)",
+    ROUND(luong * 0.90, 0)          AS "Lương sau thuế"
+FROM nhan_vien;
+```
+
+**Kết quả:**
+```
+ ho_ten           | Lương trước thuế | Thuế TNCN (10%) | Lương sau thuế
+------------------+------------------+-----------------+----------------
+ Trần Thị Mai     |         15000000 |         1500000 |       13500000
+ Nguyễn Văn An    |         20000000 |         2000000 |       18000000
+ ...
+```
+
+---
+
+### Alias Bảng (Table Alias)
+
+Ngoài alias cho cột, bạn cũng có thể đặt alias cho bảng. Điều này sẽ rất quan trọng khi học JOIN ở Tuần 7:
+
+```sql
+-- "nv" là alias cho bảng nhan_vien
+SELECT nv.ho_ten, nv.luong
+FROM nhan_vien AS nv;
+
+-- Cách viết tắt (bỏ từ khóa AS cũng được)
+SELECT nv.ho_ten, nv.luong
+FROM nhan_vien nv;
+```
+
+Hiện tại với một bảng, alias bảng chưa thực sự cần thiết. Nhưng khi JOIN nhiều bảng, alias bảng giúp phân biệt cột nào từ bảng nào.
+
+---
+
+## 4.3 Biểu Thức Tính Toán Trong SELECT
+
+### Toán Tử Số Học
+
+Giống như công thức trong ô Excel, bạn có thể tính toán trực tiếp trong SELECT:
+
+| Toán tử | Ý nghĩa | Ví dụ SQL | Excel tương đương |
+|---|---|---|---|
+| `+` | Cộng | `luong + 5000000` | `=B2+5000000` |
+| `-` | Trừ | `luong - 2000000` | `=B2-2000000` |
+| `*` | Nhân | `gia * so_luong` | `=C2*D2` |
+| `/` | Chia | `luong / 12` | `=B2/12` |
+| `%` | Phần dư (modulo) | `so_luong % 10` | `=MOD(A1,10)` |
+
+**Ví dụ thực tế:**
+
+```sql
+-- Tính lương tháng → lương tuần → lương ngày
+SELECT
+    ho_ten,
+    luong                           AS "Lương tháng",
+    ROUND(luong / 4.33, 0)          AS "Lương tuần",
+    ROUND(luong / 26, 0)            AS "Lương ngày (26 ngày công)"
+FROM nhan_vien;
+```
+
+---
+
+### Cái Bẫy: Chia Số Nguyên
+
+> ⚠️ **CẢNH BÁO: Chia số nguyên cho số nguyên → kết quả là số nguyên (phần thập phân bị cắt!)**
+
+```sql
+-- Bẫy: cả hai là INTEGER → kết quả là INTEGER
+SELECT 7 / 2;       -- Kết quả: 3 (không phải 3.5!)
+SELECT 10 / 3;      -- Kết quả: 3 (không phải 3.333...)
+
+-- Cách fix 1: Dùng số thập phân
+SELECT 7.0 / 2;     -- Kết quả: 3.5 ✅
+
+-- Cách fix 2: Ép kiểu (type cast)
+SELECT 7::NUMERIC / 2;       -- Kết quả: 3.5 ✅
+SELECT CAST(7 AS NUMERIC) / 2;  -- Kết quả: 3.5 ✅
+
+-- Ví dụ thực tế nguy hiểm:
+SELECT luong / 12 FROM nhan_vien;
+-- Nếu luong là INTEGER và 12 là INTEGER → kết quả bị cắt!
+-- Cách an toàn:
+SELECT luong / 12.0 FROM nhan_vien;  -- hoặc
+SELECT luong::NUMERIC / 12 FROM nhan_vien;
+```
+
+**So sánh:** Excel không có vấn đề này — mọi phép chia đều cho kết quả thập phân tự động. SQL nghiêm ngặt hơn về kiểu dữ liệu.
+
+---
+
+### Ví Dụ Tổng Hợp: Báo Cáo Lương
+
+```sql
+-- Báo cáo lương đầy đủ với các khoản trừ
+SELECT
+    ho_ten                                      AS "Họ và tên",
+    phong_ban                                   AS "Phòng ban",
+    luong                                       AS "Lương gross",
+    ROUND(luong * 0.08, 0)                      AS "BHXH (8%)",
+    ROUND(luong * 0.015, 0)                     AS "BHYT (1.5%)",
+    ROUND(luong * 0.01, 0)                      AS "BHTN (1%)",
+    ROUND(luong * 0.105, 0)                     AS "Tổng bảo hiểm (10.5%)",
+    ROUND(luong - luong * 0.105, 0)             AS "Thu nhập chịu thuế",
+    ROUND((luong - luong * 0.105) * 0.10, 0)   AS "Thuế TNCN ước tính (10%)",
+    ROUND(luong - luong * 0.105 - (luong - luong * 0.105) * 0.10, 0) AS "Lương thực nhận"
+FROM nhan_vien;
+```
+
+> 💡 Đây chính xác là điều bạn làm trong Excel với nhiều cột công thức — SQL làm được y chang, nhưng nhanh hơn nhiều với triệu hàng.
+
+---
+
+### Các Hàm Làm Tròn
+
+| Hàm | Ý nghĩa | Ví dụ | Kết quả | Excel |
+|---|---|---|---|---|
+| `ROUND(n, d)` | Làm tròn d chữ số thập phân | `ROUND(15.567, 2)` | `15.57` | `=ROUND(A1,2)` |
+| `ROUND(n, 0)` | Làm tròn đến số nguyên | `ROUND(15.5, 0)` | `16` | `=ROUND(A1,0)` |
+| `ROUND(n, -1)` | Làm tròn đến hàng chục | `ROUND(1567, -1)` | `1570` | `=ROUND(A1,-1)` |
+| `CEIL(n)` | Làm tròn lên (trần) | `CEIL(9.1)` | `10` | `=CEILING.MATH(A1)` |
+| `FLOOR(n)` | Làm tròn xuống (sàn) | `FLOOR(9.9)` | `9` | `=FLOOR.MATH(A1)` |
+| `TRUNC(n, d)` | Cắt thẳng (không làm tròn) | `TRUNC(9.99, 1)` | `9.9` | `=TRUNC(A1,1)` |
+
+```sql
+-- Ví dụ các hàm làm tròn
+SELECT
+    ROUND(15567890.5, 0)    AS "Làm tròn (0 thập phân)",   -- 15567891
+    ROUND(15567890.5, -3)   AS "Làm tròn nghìn",            -- 15568000
+    CEIL(15.001)            AS "Làm tròn lên",               -- 16
+    FLOOR(15.999)           AS "Làm tròn xuống",             -- 15
+    TRUNC(15.999, 0)        AS "Cắt thẳng";                  -- 15
+```
+
+---
+
+## 4.4 DISTINCT — Loại Bỏ Giá Trị Trùng
+
+### Vấn Đề: Dữ Liệu Bị Trùng
+
+Bảng `nhan_vien` có 6 nhân viên thuộc 4 phòng ban. Nếu bạn hỏi: "Có những phòng ban nào?", câu query sau sẽ cho kết quả **sai**:
+
+```sql
+SELECT phong_ban FROM nhan_vien;
+-- Kết quả: Kế toán, Kinh doanh, Nhân sự, IT, Kế toán, Kinh doanh
+-- (6 hàng — bị trùng!)
+```
+
+**Trong Excel**, bạn sẽ dùng **Remove Duplicates** (Data tab → Remove Duplicates).
+
+**Trong SQL**, bạn dùng `DISTINCT`:
+
+```sql
+SELECT DISTINCT phong_ban FROM nhan_vien;
+-- Kết quả: Kế toán, Kinh doanh, Nhân sự, IT
+-- (4 hàng — không trùng!)
+```
+
+---
+
+### Cú Pháp DISTINCT
+
+```sql
+SELECT DISTINCT cot1 FROM bang;
+SELECT DISTINCT cot1, cot2 FROM bang;      -- Tổ hợp duy nhất của (cot1, cot2)
+```
+
+**Ví dụ với bảng nhan_vien:**
+
+```sql
+-- Danh sách phòng ban (không trùng)
+SELECT DISTINCT phong_ban
+FROM nhan_vien;
+
+-- Kết quả:
+--  phong_ban
+-- -----------
+--  Kế toán
+--  Kinh doanh
+--  Nhân sự
+--  IT
+```
+
+---
+
+### DISTINCT Với Nhiều Cột
+
+Khi DISTINCT trên nhiều cột, nó loại bỏ các **tổ hợp** trùng nhau:
+
+```sql
+-- Giả sử bảng nhan_vien có thêm cột chuc_vu
+SELECT DISTINCT phong_ban, chuc_vu
+FROM nhan_vien;
+
+-- Không phải "phòng ban duy nhất" hay "chức vụ duy nhất"
+-- Mà là "cặp (phòng ban, chức vụ) duy nhất"
+-- VD: (Kế toán, Nhân viên) và (Kế toán, Trưởng phòng) là 2 hàng khác nhau
+```
+
+**So sánh Excel:** Giống như Remove Duplicates nhưng tích dấu kiểm vào CẢ HAI cột A và B cùng lúc.
+
+---
+
+### COUNT(DISTINCT ...) — Đếm Giá Trị Khác Nhau
+
+```sql
+-- Có bao nhiêu phòng ban?
+SELECT COUNT(DISTINCT phong_ban) AS "Số phòng ban"
+FROM nhan_vien;
+-- Kết quả: 4
+
+-- Có bao nhiêu danh mục sản phẩm?
+SELECT COUNT(DISTINCT danh_muc) AS "Số danh mục"
+FROM san_pham;
+```
+
+**So sánh Excel:** `=SUMPRODUCT(1/COUNTIF(A2:A100,A2:A100))` — hàm phức tạp để đếm unique trong Excel. SQL làm điều này đơn giản hơn nhiều!
+
+---
+
+### DISTINCT vs GROUP BY
+
+Bạn sẽ học `GROUP BY` ở Tuần 6. Sơ lược:
+
+| | DISTINCT | GROUP BY |
+|---|---|---|
+| Mục đích | Chỉ loại trùng | Nhóm để tính tổng hợp (COUNT, SUM, AVG…) |
+| Khi dùng | Muốn biết có những giá trị gì | Muốn tính toán theo nhóm |
+| Ví dụ | Danh sách phòng ban | Số nhân viên mỗi phòng ban |
+
+```sql
+-- DISTINCT: Có phòng ban gì?
+SELECT DISTINCT phong_ban FROM nhan_vien;
+
+-- GROUP BY: Mỗi phòng ban có bao nhiêu người?
+SELECT phong_ban, COUNT(*) AS so_nguoi
+FROM nhan_vien
+GROUP BY phong_ban;
+```
+
+---
+
+## 4.5 Hàm Xử Lý Chuỗi
+
+### Nối Chuỗi — Toán Tử ||
+
+Giống hàm `CONCATENATE` hoặc toán tử `&` trong Excel:
+
+```sql
+-- Nối họ tên với phòng ban
+SELECT ho_ten || ' - ' || phong_ban AS "Thông tin nhân viên"
+FROM nhan_vien;
+
+-- Kết quả:
+--  Thông tin nhân viên
+-- -----------------------
+--  Trần Thị Mai - Kế toán
+--  Nguyễn Văn An - Kinh doanh
+--  ...
+```
+
+**So sánh Excel:** `=A2 & " - " & F2`
+
+---
+
+### Cẩn Thận: || Với NULL
+
+> ⚠️ **Bẫy quan trọng:** `||` kết hợp với `NULL` sẽ trả về `NULL`!
+
+```sql
+-- Nếu cột "email" của ai đó là NULL:
+SELECT 'Email: ' || email FROM nhan_vien;
+-- Người không có email → kết quả là NULL (mất cả phần "Email: ")
+
+-- Cách an toàn: Dùng CONCAT() hoặc COALESCE()
+SELECT 'Email: ' || COALESCE(email, 'Chưa có') FROM nhan_vien;
+-- Người không có email → "Email: Chưa có"
+```
+
+---
+
+### CONCAT() — Thay Thế An Toàn Hơn
+
+```sql
+-- CONCAT() bỏ qua giá trị NULL thay vì trả về NULL
+CONCAT(ho_ten, ' - ', phong_ban)   -- An toàn với NULL hơn ||
+
+-- Ví dụ:
+SELECT CONCAT('Nhân viên: ', ho_ten, ' | Phòng: ', phong_ban) AS "Thông tin"
+FROM nhan_vien;
+```
+
+| Tình huống | `||` kết quả | `CONCAT()` kết quả |
+|---|---|---|
+| Mọi cột đều có giá trị | `'A - B'` | `'A - B'` |
+| Một cột là NULL | `NULL` | `'A - '` (bỏ qua NULL) |
+
+---
+
+### Bảng Hàm Chuỗi Thường Dùng
+
+| Hàm SQL | Ý nghĩa | Ví dụ | Kết quả | Excel tương đương |
+|---|---|---|---|---|
+| `UPPER(s)` | Chuyển tất cả thành CHỮ HOA | `UPPER('hello')` | `'HELLO'` | `=UPPER(A1)` |
+| `LOWER(s)` | Chuyển tất cả thành chữ thường | `LOWER('HELLO')` | `'hello'` | `=LOWER(A1)` |
+| `LENGTH(s)` | Đếm số ký tự | `LENGTH('hello')` | `5` | `=LEN(A1)` |
+| `TRIM(s)` | Xóa khoảng trắng 2 đầu | `TRIM('  hi  ')` | `'hi'` | `=TRIM(A1)` |
+| `LTRIM(s)` | Xóa khoảng trắng bên trái | `LTRIM('  hi  ')` | `'hi  '` | *(không có)* |
+| `RTRIM(s)` | Xóa khoảng trắng bên phải | `RTRIM('  hi  ')` | `'  hi'` | *(không có)* |
+| `LEFT(s, n)` | Lấy n ký tự bên trái | `LEFT('hello', 3)` | `'hel'` | `=LEFT(A1,3)` |
+| `RIGHT(s, n)` | Lấy n ký tự bên phải | `RIGHT('hello', 3)` | `'llo'` | `=RIGHT(A1,3)` |
+| `SUBSTRING(s, from, count)` | Cắt chuỗi tại vị trí | `SUBSTRING('hello', 2, 3)` | `'ell'` | `=MID(A1,2,3)` |
+| `REPLACE(s, old, new)` | Thay thế chuỗi | `REPLACE('hello', 'l', 'r')` | `'herro'` | `=SUBSTITUTE(A1,old,new)` |
+| `POSITION(sub IN s)` | Tìm vị trí chuỗi con | `POSITION('ll' IN 'hello')` | `3` | `=FIND(sub,A1)` |
+| `SPLIT_PART(s, sep, n)` | Tách theo dấu phân cách | `SPLIT_PART('a,b,c', ',', 2)` | `'b'` | *(không có)* |
+| `INITCAP(s)` | Viết hoa chữ cái đầu mỗi từ | `INITCAP('hello world')` | `'Hello World'` | `=PROPER(A1)` |
+| `REPEAT(s, n)` | Lặp lại chuỗi n lần | `REPEAT('abc', 3)` | `'abcabcabc'` | `=REPT(A1,3)` |
+| `REVERSE(s)` | Đảo ngược chuỗi | `REVERSE('hello')` | `'olleh'` | *(không có)* |
+| `LPAD(s, n, c)` | Thêm ký tự c vào trái đủ n ký tự | `LPAD('5', 3, '0')` | `'005'` | `=TEXT(A1,"000")` |
+| `RPAD(s, n, c)` | Thêm ký tự c vào phải đủ n ký tự | `RPAD('hi', 5, '.')` | `'hi...'` | *(không có)* |
+
+---
+
+### Ví Dụ Thực Tế
+
+```sql
+-- Chuẩn hóa email: chuyển về chữ thường, xóa khoảng trắng 2 đầu
+SELECT
+    ho_ten,
+    LOWER(TRIM(email))      AS "Email chuẩn hóa",
+    LENGTH(email)           AS "Độ dài email"
+FROM nhan_vien;
+
+-- Tạo username từ email (lấy phần trước @)
+SELECT
+    ho_ten,
+    email,
+    SPLIT_PART(email, '@', 1)  AS "Username"
+FROM nhan_vien;
+
+-- Kiểm tra email có đúng định dạng không (có chứa @)
+SELECT
+    ho_ten,
+    email,
+    POSITION('@' IN email) > 0  AS "Có @ không?"
+FROM nhan_vien;
+
+-- Hiển thị mã nhân viên dạng NV-001, NV-002...
+SELECT
+    'NV-' || LPAD(id::TEXT, 3, '0')  AS "Mã NV",
+    ho_ten
+FROM nhan_vien;
+-- Kết quả: NV-001, NV-002, NV-003...
+```
+
+---
+
+## 4.6 Hàm Số Học
+
+### Bảng Hàm Số Học Thường Dùng
+
+| Hàm SQL | Ý nghĩa | Ví dụ | Kết quả | Excel tương đương |
+|---|---|---|---|---|
+| `ROUND(n, d)` | Làm tròn d chữ số thập phân | `ROUND(3.14159, 2)` | `3.14` | `=ROUND(A1,2)` |
+| `CEIL(n)` | Làm tròn lên (ceiling) | `CEIL(9.1)` | `10` | `=CEILING.MATH(A1)` |
+| `FLOOR(n)` | Làm tròn xuống (floor) | `FLOOR(9.9)` | `9` | `=FLOOR.MATH(A1)` |
+| `TRUNC(n, d)` | Cắt bỏ (không làm tròn) | `TRUNC(9.99, 1)` | `9.9` | `=TRUNC(A1,1)` |
+| `ABS(n)` | Giá trị tuyệt đối | `ABS(-15)` | `15` | `=ABS(A1)` |
+| `POWER(b, e)` | Luỹ thừa b^e | `POWER(2, 10)` | `1024` | `=POWER(A1,10)` |
+| `SQRT(n)` | Căn bậc hai | `SQRT(16)` | `4` | `=SQRT(A1)` |
+| `MOD(n, m)` | Phần dư phép chia | `MOD(10, 3)` | `1` | `=MOD(A1,3)` |
+| `SIGN(n)` | Dấu của số (-1, 0, 1) | `SIGN(-5)` | `-1` | `=SIGN(A1)` |
+| `PI()` | Hằng số Pi | `PI()` | `3.14159...` | `=PI()` |
+| `EXP(n)` | e^n (e ≈ 2.718) | `EXP(1)` | `2.71828...` | `=EXP(A1)` |
+| `LN(n)` | Logarithm tự nhiên | `LN(EXP(1))` | `1` | `=LN(A1)` |
+| `LOG(base, n)` | Logarithm cơ số bất kỳ | `LOG(10, 100)` | `2` | `=LOG(A1,10)` |
+
+---
+
+### Ví Dụ Thực Tế
+
+```sql
+-- Tính các chỉ số thống kê lương
+SELECT
+    ROUND(MIN(luong), 0)    AS "Lương thấp nhất",
+    ROUND(MAX(luong), 0)    AS "Lương cao nhất",
+    ROUND(AVG(luong), 0)    AS "Lương trung bình",
+    MAX(luong) - MIN(luong) AS "Chênh lệch cao - thấp"
+FROM nhan_vien;
+
+-- Tính lương quy về hàng triệu (làm tròn đến 0.1 triệu)
+SELECT
+    ho_ten,
+    luong,
+    ROUND(luong / 1000000.0, 1) AS "Lương (triệu đồng)"
+FROM nhan_vien;
+
+-- Kiểm tra lương chia đều 12 tháng còn dư bao nhiêu
+SELECT
+    ho_ten,
+    luong,
+    MOD(luong, 12)          AS "Phần dư khi chia 12"
+FROM nhan_vien;
+```
+
+---
+
+## 4.7 LIMIT và OFFSET — Xem Một Phần Dữ Liệu
+
+### Tại Sao Cần LIMIT?
+
+Khi bảng có hàng triệu hàng, câu `SELECT * FROM bang` sẽ trả về rất nhiều dữ liệu — vừa chậm, vừa khó đọc. `LIMIT` cho phép bạn chỉ lấy N hàng đầu tiên.
+
+**Analogy Excel:** Giống như bạn dùng Filter để chỉ hiển thị 10 hàng đầu, hoặc chỉ kéo xuống đến hàng 10 để xem sơ qua dữ liệu.
+
+---
+
+### LIMIT — Giới Hạn Số Hàng
+
+```sql
+-- Chỉ lấy 5 hàng đầu
+SELECT * FROM nhan_vien LIMIT 5;
+
+-- Preview 10 sản phẩm đầu
+SELECT ten_sp, gia FROM san_pham LIMIT 10;
+
+-- Top 3 sản phẩm (cần ORDER BY để có ý nghĩa — học Tuần 5)
+SELECT ten_sp, gia FROM san_pham ORDER BY gia DESC LIMIT 3;
+```
+
+---
+
+### OFFSET — Bỏ Qua N Hàng Đầu
+
+`OFFSET` kết hợp với `LIMIT` cho phép phân trang dữ liệu:
+
+```sql
+-- Trang 1: Hàng 1-10
+SELECT * FROM san_pham LIMIT 10 OFFSET 0;
+
+-- Trang 2: Hàng 11-20
+SELECT * FROM san_pham LIMIT 10 OFFSET 10;
+
+-- Trang 3: Hàng 21-30
+SELECT * FROM san_pham LIMIT 10 OFFSET 20;
+```
+
+**Công thức trang:** `OFFSET = (số_trang - 1) × số_hàng_mỗi_trang`
+
+**Ứng dụng thực tế:** Các trang web hiển thị danh sách sản phẩm theo trang (trang 1, 2, 3...) thường dùng LIMIT + OFFSET ở phía sau.
+
+---
+
+### Lưu Ý Quan Trọng Về LIMIT
+
+> ⚠️ **Không có ORDER BY → thứ tự không đảm bảo!**
+>
+> Nếu bạn viết `SELECT * FROM nhan_vien LIMIT 3` mà không có `ORDER BY`, PostgreSQL có thể trả về bất kỳ 3 hàng nào — không nhất thiết là 3 hàng đầu tiên bạn INSERT vào. Thứ tự phụ thuộc vào cách PostgreSQL lưu trữ vật lý.
+>
+> **Cách đúng:** Luôn kết hợp LIMIT với ORDER BY khi muốn kết quả nhất quán.
+
+```sql
+-- Không tốt: thứ tự không đảm bảo
+SELECT * FROM san_pham LIMIT 5;
+
+-- Tốt hơn: rõ ràng lấy 5 sản phẩm có id nhỏ nhất
+SELECT * FROM san_pham ORDER BY id LIMIT 5;
+
+-- Tốt hơn: 5 sản phẩm đắt nhất
+SELECT * FROM san_pham ORDER BY gia DESC LIMIT 5;
+```
+
+---
+
+## 4.8 Thứ Tự Thực Thi và Viết SQL Đẹp
+
+### Thứ Tự Thực Thi Câu SQL
+
+Khi bạn gõ một câu SQL, PostgreSQL **không đọc từ trên xuống** như bạn đọc văn bản. Nó xử lý theo thứ tự riêng (đã giới thiệu ở Section 4.1 — nhắc lại để khắc sâu):
+
+```
+  ┌──────────┐     ┌──────────┐     ┌────────────┐
+  │  1. FROM │────▶│ 2. WHERE │────▶│ 3. GROUP BY│
+  └──────────┘     └──────────┘     └────────────┘
+                                          │
+       ┌───────────────────────────────────┘
+       ▼
+  ┌──────────┐     ┌──────────────┐     ┌────────────┐
+  │4. HAVING │────▶│  5. SELECT   │────▶│ 6. ORDER BY│
+  └──────────┘     └──────────────┘     └────────────┘
+                                               │
+                                               ▼
+                                        ┌──────────────┐
+                                        │   7. LIMIT   │
+                                        └──────────────┘
+```
+
+Đây là lý do **WHERE không dùng được alias** — nó chạy ở bước 2, còn SELECT chỉ chạy ở bước 5.
+
+**So Sánh: Câu SQL Đơn Giản vs Phức Tạp**
+
+```
+  ┌──────────────────────────────┐    ┌────────────────────────────────────┐
+  │          ĐƠN GIẢN            │    │             PHỨC TẠP               │
+  │   (chỉ SELECT + FROM)        │    │   (kết hợp đủ các mệnh đề)         │
+  ├──────────────────────────────┤    ├────────────────────────────────────┤
+  │                              │    │                                    │
+  │  SELECT *                    │    │  SELECT DISTINCT                   │
+  │  FROM nhan_vien;             │    │      phong_ban,                    │
+  │                              │    │      ROUND(AVG(luong),0) AS tb     │
+  │                              │    │  FROM nhan_vien                    │
+  │                              │    │  WHERE ngay_vao > '2022-01-01'     │
+  │                              │    │  GROUP BY phong_ban                │
+  │                              │    │  HAVING AVG(luong) > 15000000      │
+  │                              │    │  ORDER BY tb DESC                  │
+  │                              │    │  LIMIT 3;                          │
+  └──────────────────────────────┘    └────────────────────────────────────┘
+```
+
+**Hệ quả thực tế quan trọng:**
+
+```sql
+-- SAI: WHERE không biết alias đặt trong SELECT
+SELECT luong * 0.90 AS luong_sau_thue
+FROM nhan_vien
+WHERE luong_sau_thue > 15000000;  -- ❌ Lỗi! WHERE chạy trước SELECT
+
+-- ĐÚNG: Phải dùng biểu thức gốc trong WHERE
+SELECT luong * 0.90 AS luong_sau_thue
+FROM nhan_vien
+WHERE luong * 0.90 > 15000000;   -- ✅ Dùng lại biểu thức
+```
+
+---
+
+### Quy Ước Viết SQL Dễ Đọc
+
+Không có quy tắc cứng nhắc, nhưng SQL dễ đọc thường tuân theo:
+
+**Nguyên tắc 1: Keywords viết HOA, tên bảng/cột viết thường**
+```sql
+-- Tốt
+SELECT ho_ten, luong FROM nhan_vien WHERE phong_ban = 'IT';
+
+-- Không tốt (khó phân biệt từ khóa và tên cột)
+select ho_ten, luong from nhan_vien where phong_ban = 'IT';
+```
+
+**Nguyên tắc 2: Nhiều cột → mỗi cột một dòng, thụt đầu dòng 4 spaces**
+```sql
+-- Tốt: Dễ đọc, dễ comment/bỏ một cột
+SELECT
+    ho_ten      AS "Họ và tên",
+    phong_ban   AS "Phòng ban",
+    luong       AS "Lương"
+FROM nhan_vien;
+
+-- Không tốt: Khó đọc khi có nhiều cột
+SELECT ho_ten AS "Họ và tên", phong_ban AS "Phòng ban", luong AS "Lương" FROM nhan_vien;
+```
+
+**Nguyên tắc 3: Comment giải thích mục đích**
+```sql
+-- Báo cáo lương tháng 4/2026
+-- Chỉ nhân viên đang làm việc (dang_lam = TRUE)
+SELECT
+    ho_ten                          AS "Họ và tên",
+    luong                           AS "Lương gross",
+    ROUND(luong * 0.90, 0)          AS "Lương thực nhận (sau 10% thuế)"
+FROM nhan_vien;
+-- Lưu ý: Tính thuế đơn giản hóa, không theo biểu thuế lũy tiến thực tế
+```
+
+**Nguyên tắc 4: Căn thẳng alias để dễ so sánh**
+```sql
+-- Tốt: Alias căn thẳng
+SELECT
+    ho_ten      AS "Họ và tên",
+    phong_ban   AS "Phòng ban",
+    luong       AS "Lương"
+
+-- Cũng được nhưng ít thống nhất
+SELECT
+    ho_ten AS "Họ và tên",
+    phong_ban AS "Phòng ban",
+    luong AS "Lương"
+```
+
+---
+
+### Query Tổng Hợp: Viết Đẹp
+
+```sql
+-- =====================================================
+-- Báo cáo nhân sự — Tổng quan nhân viên
+-- Mục đích: Xem danh sách nhân viên với thông tin lương đã format
+-- =====================================================
+SELECT
+    -- Thông tin cơ bản
+    'NV-' || LPAD(id::TEXT, 3, '0')        AS "Mã NV",
+    INITCAP(ho_ten)                         AS "Họ và tên",
+    phong_ban                               AS "Phòng ban",
+
+    -- Thông tin lương (định dạng tiền tệ)
+    luong                                   AS "Lương gross (VNĐ)",
+    ROUND(luong / 1000000.0, 1)             AS "Lương (triệu đ)",
+
+    -- Tính toán
+    ROUND(luong * 0.105, 0)                 AS "Tổng BH (10.5%)",
+    ROUND(luong * 0.895, 0)                 AS "Lương sau BH",
+
+    -- Thông tin khác
+    LOWER(email)                            AS "Email"
+
+FROM nhan_vien
+ORDER BY phong_ban, ho_ten
+LIMIT 20;
+```
+
+---
+
+## 4.9 Hàm Ngày/Giờ Cơ Bản
+
+### Hàm Ngày/Giờ Trong PostgreSQL
+
+Làm việc với ngày tháng là một trong những điểm mạnh của PostgreSQL. Các hàm ngày/giờ cơ bản:
+
+| Hàm | Ý nghĩa | Kết quả ví dụ | Excel tương đương |
+|---|---|---|---|
+| `CURRENT_DATE` | Ngày hôm nay | `2026-04-14` | `=TODAY()` |
+| `CURRENT_TIMESTAMP` | Thời điểm hiện tại | `2026-04-14 10:30:25+07` | `=NOW()` |
+| `now()` | Tương đương CURRENT_TIMESTAMP | *(như trên)* | `=NOW()` |
+| `AGE(date)` | Tuổi từ ngày đó đến hôm nay | `30 years 6 mons 5 days` | *(không có)* |
+| `AGE(date1, date2)` | Khoảng cách giữa 2 ngày | `2 years 3 mons` | `=DATEDIF(A1,B1,"Y")` |
+| `EXTRACT(field FROM date)` | Lấy thành phần ngày/giờ | `2026` (lấy năm) | `=YEAR(A1)` |
+| `DATE_PART('field', date)` | Tương đương EXTRACT | *(như trên)* | `=YEAR(A1)` |
+| `TO_CHAR(date, 'format')` | Chuyển ngày thành chuỗi | `'14/04/2026'` | `=TEXT(A1,"DD/MM/YYYY")` |
+| `TO_DATE(string, 'format')` | Chuyển chuỗi thành ngày | `2026-04-14` | `=DATEVALUE(...)` |
+| `date + n` | Cộng thêm n ngày | `CURRENT_DATE + 7` | `=A1+7` |
+| `date - n` | Trừ n ngày | `CURRENT_DATE - 30` | `=A1-30` |
+
+---
+
+### EXTRACT — Lấy Thành Phần Ngày/Giờ
+
+```sql
+-- Các field có thể dùng với EXTRACT
+EXTRACT(YEAR    FROM ngay_sinh)   -- Năm: 1995
+EXTRACT(MONTH   FROM ngay_sinh)   -- Tháng: 3
+EXTRACT(DAY     FROM ngay_sinh)   -- Ngày: 20
+EXTRACT(HOUR    FROM thoi_gian)   -- Giờ: 14
+EXTRACT(MINUTE  FROM thoi_gian)   -- Phút: 30
+EXTRACT(SECOND  FROM thoi_gian)   -- Giây: 25
+EXTRACT(DOW     FROM ngay_sinh)   -- Thứ (0=CN, 1=Thứ 2, ... 6=Thứ 7)
+EXTRACT(WEEK    FROM ngay_sinh)   -- Tuần trong năm (1-53)
+EXTRACT(QUARTER FROM ngay_sinh)   -- Quý (1-4)
+```
+
+---
+
+### AGE — Tính Tuổi và Khoảng Cách Thời Gian
+
+```sql
+-- Tính tuổi nhân viên
+SELECT
+    ho_ten,
+    ngay_sinh,
+    AGE(ngay_sinh)                              AS "Tuổi đầy đủ",
+    EXTRACT(YEAR FROM AGE(ngay_sinh))           AS "Số tuổi",
+    EXTRACT(YEAR FROM AGE(CURRENT_DATE, ngay_sinh)) AS "Tuổi (cách khác)"
+FROM nhan_vien;
+
+-- Kết quả cột "Tuổi đầy đủ":
+--  30 years 1 mon 25 days  ← PostgreSQL hiển thị dạng text
+-- Cột "Số tuổi": 30 ← số nguyên dễ dùng hơn
+```
+
+---
+
+### TO_CHAR — Format Ngày Theo Ý Muốn
+
+```sql
+-- Các format hay dùng
+TO_CHAR(ngay_sinh, 'DD/MM/YYYY')      -- 20/03/1995
+TO_CHAR(ngay_sinh, 'DD-MM-YYYY')      -- 20-03-1995
+TO_CHAR(ngay_sinh, 'YYYY-MM-DD')      -- 1995-03-20  (format ISO chuẩn)
+TO_CHAR(ngay_sinh, 'Month DD, YYYY')  -- March 20, 1995
+TO_CHAR(ngay_sinh, 'DD "tháng" MM "năm" YYYY')  -- 20 tháng 03 năm 1995
+TO_CHAR(now(), 'HH24:MI:SS')          -- 14:30:25  (giờ 24h)
+TO_CHAR(now(), 'HH12:MI AM')          -- 02:30 PM  (giờ 12h)
+```
+
+**Các ký hiệu format:**
+
+| Ký hiệu | Ý nghĩa | Ví dụ |
+|---|---|---|
+| `YYYY` | Năm 4 chữ số | `2026` |
+| `YY` | Năm 2 chữ số | `26` |
+| `MM` | Tháng 2 chữ số | `04` |
+| `Month` | Tên tháng đầy đủ | `April` |
+| `Mon` | Tên tháng rút gọn | `Apr` |
+| `DD` | Ngày 2 chữ số | `14` |
+| `Day` | Tên thứ đầy đủ | `Tuesday` |
+| `Dy` | Tên thứ rút gọn | `Tue` |
+| `HH24` | Giờ hệ 24h | `14` |
+| `HH12` | Giờ hệ 12h | `02` |
+| `MI` | Phút | `30` |
+| `SS` | Giây | `25` |
+| `AM/PM` | Buổi sáng/chiều | `PM` |
+
+---
+
+### Ví Dụ Tổng Hợp Hàm Ngày/Giờ
+
+```sql
+-- Thông tin nhân viên với các tính toán ngày/giờ
+SELECT
+    ho_ten                                          AS "Họ và tên",
+    TO_CHAR(ngay_sinh, 'DD/MM/YYYY')               AS "Ngày sinh",
+    EXTRACT(YEAR FROM AGE(ngay_sinh))               AS "Tuổi",
+    EXTRACT(YEAR FROM AGE(ngay_vao))                AS "Số năm làm việc",
+    TO_CHAR(ngay_vao, 'DD/MM/YYYY')                AS "Ngày vào làm",
+    CURRENT_DATE - ngay_vao                         AS "Số ngày đã làm"
+FROM nhan_vien;
+```
+
+**Ứng dụng thực tế:**
+
+```sql
+-- Tìm nhân viên sắp đến sinh nhật trong 30 ngày tới
+SELECT ho_ten, ngay_sinh
+FROM nhan_vien
+WHERE
+    EXTRACT(MONTH FROM ngay_sinh) = EXTRACT(MONTH FROM CURRENT_DATE + 30)
+    OR EXTRACT(MONTH FROM ngay_sinh) = EXTRACT(MONTH FROM CURRENT_DATE);
+
+-- Tính số năm làm việc (dùng trong tính thâm niên)
+SELECT
+    ho_ten,
+    ngay_vao,
+    EXTRACT(YEAR FROM AGE(ngay_vao)) AS "Thâm niên (năm)",
+    -- Phân loại thâm niên
+    CASE
+        WHEN EXTRACT(YEAR FROM AGE(ngay_vao)) >= 5  THEN 'Lâu năm (≥5 năm)'
+        WHEN EXTRACT(YEAR FROM AGE(ngay_vao)) >= 2  THEN 'Trung bình (2-5 năm)'
+        ELSE 'Mới vào (<2 năm)'
+    END AS "Phân loại thâm niên"
+FROM nhan_vien;
+```
+
+> 💡 **CASE WHEN** bạn thấy ở trên giống hàm `IF()` trong Excel. Sẽ học chi tiết ở Tuần 8.
+
+---
+
+## Tổng Kết Tuần 4
+
+### Checklist Kỹ Năng
+
+Sau tuần này, bạn có thể:
+
+- [ ] Viết `SELECT *` và `SELECT cot1, cot2` để xem dữ liệu
+- [ ] Dùng `AS` để đặt tên cột tiếng Việt dễ đọc
+- [ ] Tính toán trong SELECT (`+`, `-`, `*`, `/`, `%`)
+- [ ] Tránh bẫy chia số nguyên (`7/2 = 3`, không phải `3.5`)
+- [ ] Dùng `DISTINCT` để xem danh sách giá trị không trùng
+- [ ] Dùng `COUNT(DISTINCT col)` để đếm giá trị khác nhau
+- [ ] Nối chuỗi với `||` và biết sự khác biệt với `CONCAT()`
+- [ ] Dùng ít nhất 5 hàm chuỗi: UPPER, LOWER, LENGTH, TRIM, LEFT, RIGHT, SUBSTRING
+- [ ] Dùng ROUND, CEIL, FLOOR, ABS
+- [ ] Dùng `LIMIT` để xem N hàng đầu, `OFFSET` để phân trang
+- [ ] Giải thích thứ tự thực thi SQL (FROM → WHERE → SELECT → ORDER BY → LIMIT)
+- [ ] Dùng `CURRENT_DATE`, `AGE()`, `EXTRACT()`, `TO_CHAR()` với ngày/giờ
+
+---
+
+### Bảng Thuật Ngữ Tuần 4
+
+| Thuật ngữ | Tiếng Việt | Ý nghĩa |
+|---|---|---|
+| `SELECT` | Chọn | Chỉ định cột nào muốn xem |
+| `FROM` | Từ bảng | Chỉ định bảng nguồn dữ liệu |
+| `AS` / Alias | Bí danh / Tên hiển thị | Đặt tên thay thế cho cột |
+| `DISTINCT` | Phân biệt / Duy nhất | Loại bỏ hàng trùng nhau |
+| `LIMIT` | Giới hạn | Chỉ lấy N hàng đầu |
+| `OFFSET` | Bỏ qua / Dịch chuyển | Bỏ qua N hàng đầu |
+| Concatenation | Nối chuỗi | Ghép nhiều chuỗi thành một |
+| `EXTRACT` | Trích xuất | Lấy thành phần từ ngày/giờ |
+| `AGE()` | Tuổi / Khoảng thời gian | Tính khoảng cách thời gian |
+| `TO_CHAR()` | Chuyển thành chuỗi | Format ngày/số thành chuỗi |
+
+---
+
+### So Sánh Excel ↔ PostgreSQL (Tuần 4)
+
+| Thao tác Excel | SQL tương đương |
+|---|---|
+| Mở sheet, nhìn toàn bộ | `SELECT * FROM bang;` |
+| Chỉ để lại 3 cột cần | `SELECT cot1, cot2, cot3 FROM bang;` |
+| Đổi tên header cột | `SELECT cot AS "Tên mới"` |
+| Công thức `=B2*0.9` | `luong * 0.9` trong SELECT |
+| `=ROUND(A1,2)` | `ROUND(cot, 2)` |
+| `=UPPER(A1)` | `UPPER(cot)` |
+| `=LEFT(A1,3)` | `LEFT(cot, 3)` |
+| `=LEN(A1)` | `LENGTH(cot)` |
+| `=A2 & " " & B2` | `cot1 \|\| ' ' \|\| cot2` |
+| `=TODAY()` | `CURRENT_DATE` |
+| `=YEAR(A1)` | `EXTRACT(YEAR FROM cot)` |
+| `=TEXT(A1,"DD/MM/YYYY")` | `TO_CHAR(cot, 'DD/MM/YYYY')` |
+| Remove Duplicates | `SELECT DISTINCT cot` |
+| Xem 10 hàng đầu | `SELECT ... LIMIT 10` |
+
+---
+
+### Tiếp Theo — Tuần 5: Lọc & Sắp Xếp
+
+Tuần 5 sẽ học:
+- **WHERE**: Lọc dữ liệu theo điều kiện (như Filter trong Excel)
+- **AND, OR, NOT**: Kết hợp nhiều điều kiện
+- **BETWEEN, IN, LIKE**: Lọc nâng cao
+- **ORDER BY**: Sắp xếp tăng/giảm dần (như Sort trong Excel)
+- **NULL trong WHERE**: Cách lọc hàng có NULL
+
+Với kiến thức SELECT từ tuần này, bạn đã có nền tảng để viết câu truy vấn hoàn chỉnh hơn từ tuần sau!

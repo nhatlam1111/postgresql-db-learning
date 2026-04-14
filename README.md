@@ -28,6 +28,7 @@ postgresql-db-learning/
 ├── README.md                 ← Bạn đang xem file này
 ├── plan.md                  ← Kế hoạch chi tiết 10 tuần
 ├── requirement.md           ← Yêu cầu cài đặt, công cụ
+├── .gitignore
 │
 ├── Week-1/                  ← Tuần 1: Tại sao cần CSDL?
 │   ├── lesson.md           ← Bài học lý thuyết
@@ -42,12 +43,20 @@ postgresql-db-learning/
 ├── Week-3/                  ← Tuần 3: Tạo bảng & Nhập dữ liệu
 │   ├── lesson.md
 │   ├── examples.sql
-│   ├── type_casting.md     ← Hướng dẫn chuyển đổi kiểu dữ liệu
+│   ├── exercises.md
+│   └── type_casting.md     ← 📎 Tham khảo thêm: Type Casting chi tiết
+│
+├── Week-4/                  ← Tuần 4: SELECT cơ bản
+│   ├── lesson.md
+│   ├── examples.sql
 │   └── exercises.md
 │
-└── temp/                    ← Folder tạm để lưu notes, handover...
-    ├── handover.md
-    └── Week-*/plan.md
+├── temp/                    ← Folder tạm để lưu notes, handover...
+│   ├── handover.md
+│   └── Week-*/plan.md
+│
+└── .claude/
+    └── CLAUDE.md           ← Hướng dẫn cho AI assistant
 ```
 
 ---
@@ -66,14 +75,16 @@ postgresql-db-learning/
 
 ### **Tuần 3: Tạo Bảng & Nhập Dữ Liệu**
 - Thiết kế bảng từ đầu
-- Kiểu dữ liệu phổ biến
+- Kiểu dữ liệu phổ biến (INTEGER, TEXT, DATE, BOOLEAN, NUMERIC...)
 - **Chuyển đổi kiểu dữ liệu** (Type Casting) → [Xem chi tiết](Week-3/type_casting.md)
 - INSERT dữ liệu vào bảng
 
 ### **Tuần 4: Truy Vấn Dữ Liệu — SELECT Cơ Bản**
 - Câu lệnh SELECT đầu tiên
-- Chọn cột cụ thể
+- Chọn cột cụ thể, tính toán trong query
 - Alias (đặt tên lại cột)
+- DISTINCT (loại bỏ trùng lặp)
+- Hàm chuỗi, số, ngày cơ bản
 
 ### **Tuần 5: Lọc & Sắp Xếp Dữ Liệu**
 - WHERE clause (lọc điều kiện)
@@ -125,6 +136,14 @@ Xem file [`requirement.md`](requirement.md) để biết cần cài đặt gì:
 
 ### 3. **Tham Khảo Nhanh**
 Cần tra cứu cách chuyển đổi kiểu dữ liệu? → [Xem Type Casting Guide](Week-3/type_casting.md)
+
+---
+
+## 📎 Tài Liệu Tham Khảo Bổ Sung
+
+| File | Mô tả |
+|---|---|
+| [Week-3/type_casting.md](Week-3/type_casting.md) | CAST, ::, TO_CHAR, TO_DATE, TO_NUMBER — đầy đủ ví dụ |
 
 ---
 
@@ -271,7 +290,7 @@ Tài liệu này được viết để phục vụ mục đích giáo dục. T�
 | 1 | Tại sao cần CSDL? | ✅ |
 | 2 | Cài đặt & Công cụ | ✅ |
 | 3 | Tạo bảng & Nhập dữ liệu | ✅ |
-| 4 | SELECT cơ bản | 📝 |
+| 4 | SELECT cơ bản | ✅ |
 | 5 | WHERE & ORDER BY | 📝 |
 | 6 | GROUP BY & Aggregate | 📝 |
 | 7 | JOIN | 📝 |
@@ -279,7 +298,7 @@ Tài liệu này được viết để phục vụ mục đích giáo dục. T�
 | 9 | UPDATE & DELETE | 📝 |
 | 10 | Dự án tổng hợp | 📝 |
 
-**Huyền thoại:** ✅ Hoàn thành | 📝 Đang soạn | 🔳 Chưa bắt đầu
+**Chú thích:** ✅ Hoàn thành | 📝 Đang soạn | 🔳 Chưa bắt đầu
 
 ---
 
