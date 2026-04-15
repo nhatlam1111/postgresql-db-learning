@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Học PostgreSQL Từ Đầu — Từ Excel Đến SQL</title>
+    <meta name="description" content="Chương trình học PostgreSQL 10 tuần dành cho người chưa biết lập trình, có kỹ năng Excel tốt. Từ cơ bản đến dự án thực tế.">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap">
+    <style>
+        :root {
+            --primary:       #336791;
+            --primary-light: #4a8db7;
+            --primary-dark:  #264d6e;
+            --accent:        #f9a825;
+            --accent-light:  #fdd835;
+            --bg:            #0f172a;
+            --bg-card:       #1e293b;
+            --bg-card-hover: #243248;
+            --bg-code:       #0d1117;
+            --text:          #e2e8f0;
+            --text-dim:      #94a3b8;
+            --text-bright:   #f8fafc;
+            --border:        #334155;
+            --success:       #22c55e;
+            --danger:        #ef4444;
+            --warning:       #f59e0b;
+            --info:          #3b82f6;
+            --excel-green:   #217346;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        a { color: var(--primary-light); text-decoration: none; }
+        a:hover { color: var(--accent); }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: var(--bg-code);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.88em;
+            color: #7dd3fc;
+            border: 1px solid #30363d;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-bright);
+        }
+        .nav-logo .pg-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            color: #fff;
+            font-weight: 800;
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            background: transparent;
+            cursor: pointer;
+        }
+        .btn-nav:hover {
+            background: var(--bg-card);
+            color: var(--text);
+            border-color: var(--primary-light);
+        }
+        .btn-nav.primary {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .btn-nav.primary:hover {
+            background: var(--primary-light);
+            border-color: var(--primary-light);
+        }
+
+        /* ── HERO ── */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1a2744 40%, #0f1f2e 100%);
+            padding: 100px 32px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(51,103,145,0.15) 0%, transparent 70%);
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+        .hero-eyebrow {
+            display: inline-block;
+            padding: 6px 20px;
+            border: 1px solid var(--accent);
+            border-radius: 100px;
+            color: var(--accent);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+        }
+        .hero h1 {
+            font-size: clamp(2.2rem, 5vw, 3.6rem);
+            font-weight: 800;
+            line-height: 1.15;
+            color: var(--text-bright);
+            max-width: 820px;
+            margin: 0 auto 20px;
+        }
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--accent), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 640px;
+            margin: 0 auto 36px;
+        }
+        .hero-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .btn-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 28px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.25s;
+            cursor: pointer;
+        }
+        .btn-hero.filled {
+            background: var(--primary);
+            color: #fff;
+            border: 2px solid var(--primary);
+        }
+        .btn-hero.filled:hover {
+            background: var(--primary-light);
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(51,103,145,0.4);
+        }
+        .btn-hero.outline {
+            background: transparent;
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+        .btn-hero.outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        /* ── STATS BAR ── */
+        .stats-bar {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .stats-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 32px;
+            display: flex;
+            justify-content: center;
+            gap: 0;
+        }
+        .stat-item {
+            padding: 24px 40px;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+        .stat-item:last-child { border-right: none; }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        /* ── SECTIONS ── */
+        .section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 32px;
+        }
+        .section-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--primary-light);
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-weight: 700;
+            color: var(--text-bright);
+            margin-bottom: 12px;
+        }
+        .section-sub {
+            font-size: 1.05rem;
+            color: var(--text-dim);
+            max-width: 640px;
+            margin-bottom: 48px;
+        }
+
+        /* ── FOR WHOM ── */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+        .profile-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 24px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .profile-card:hover {
+            border-color: var(--primary-light);
+            transform: translateY(-4px);
+        }
+        .profile-icon {
+            font-size: 2.2rem;
+            margin-bottom: 14px;
+        }
+        .profile-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-bright);
+            margin-bottom: 8px;
+        }
+        .profile-card p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+        .profile-card.highlight {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, var(--bg-card), rgba(249,168,37,0.05));
+        }
+
+        /* ── HOW TO USE ── */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+        .step {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .step-num {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #fff;
+        }
+        .step-content h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-bright);
+            margin-bottom: 6px;
+        }
+        .step-content p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        /* ── CURRICULUM ── */
+        #curriculum { background: rgba(30, 41, 59, 0.3); padding: 80px 0; }
+        #curriculum .section { padding-top: 0; padding-bottom: 0; }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 20px;
+        }
+
+        .week-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+            position: relative;
+        }
+        .week-card.available:hover {
+            border-color: var(--primary-light);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(51,103,145,0.2);
+        }
+        .week-card.coming-soon {
+            opacity: 0.55;
+        }
+
+        .week-card-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .week-badge-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .week-badge-card.done {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .week-badge-card.progress {
+            background: rgba(249, 168, 37, 0.12);
+            color: var(--accent);
+            border: 1px solid rgba(249, 168, 37, 0.3);
+        }
+        .week-num {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .week-card-body {
+            padding: 18px 24px;
+        }
+        .week-card-body h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-bright);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .week-card-body .topic-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+        .week-card-body .topic-list li {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            padding: 3px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .week-card-body .topic-list li::before {
+            content: '›';
+            color: var(--primary-light);
+            font-weight: 700;
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .week-card-actions {
+            padding: 0 24px 20px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 1px solid;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-action.lesson {
+            color: var(--primary-light);
+            border-color: rgba(74, 141, 183, 0.4);
+            background: rgba(74, 141, 183, 0.08);
+        }
+        .btn-action.lesson:hover {
+            background: rgba(74, 141, 183, 0.2);
+            border-color: var(--primary-light);
+        }
+        .btn-action.exercise {
+            color: var(--success);
+            border-color: rgba(34, 197, 94, 0.35);
+            background: rgba(34, 197, 94, 0.07);
+        }
+        .btn-action.exercise:hover {
+            background: rgba(34, 197, 94, 0.18);
+            border-color: var(--success);
+        }
+        .btn-action.slide {
+            color: var(--accent);
+            border-color: rgba(249, 168, 37, 0.4);
+            background: rgba(249, 168, 37, 0.08);
+        }
+        .btn-action.slide:hover {
+            background: rgba(249, 168, 37, 0.2);
+            border-color: var(--accent);
+        }
+
+        /* Left accent stripe per week */
+        .week-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--border);
+            border-radius: 16px 0 0 16px;
+        }
+        .week-card.available::before { background: var(--primary); }
+        .week-card.has-slide::before { background: var(--accent); }
+
+        .coming-soon-tag {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            font-style: italic;
+            padding: 0 24px 20px;
+        }
+
+        /* ── EXCEL BRIDGE ── */
+        .bridge-table-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        table.bridge-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table.bridge-table th {
+            background: var(--primary-dark);
+            color: var(--accent-light);
+            padding: 14px 20px;
+            text-align: left;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        table.bridge-table td {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.92rem;
+        }
+        table.bridge-table tr:last-child td { border-bottom: none; }
+        table.bridge-table tr:hover td { background: rgba(51,103,145,0.1); }
+        table.bridge-table td:first-child { color: var(--excel-green); font-weight: 600; }
+        table.bridge-table td:nth-child(2) { color: var(--primary-light); font-family: 'Fira Code', monospace; font-size: 0.88rem; }
+        table.bridge-table td:nth-child(3) { color: var(--text-dim); }
+
+        /* ── FOOTER ── */
+        footer {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 40px 32px;
+            text-align: center;
+        }
+        footer p { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 8px; }
+        footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+        footer .footer-links a {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        footer .footer-links a:hover { color: var(--accent); }
+
+        /* ── DIVIDER ── */
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 0;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .nav-inner { padding: 0 20px; }
+            .hero { padding: 72px 20px 60px; }
+            .stats-inner { flex-wrap: wrap; }
+            .stat-item { border-right: none; border-bottom: 1px solid var(--border); width: 50%; }
+            .stat-item:nth-child(even) { border-right: none; }
+            .section { padding: 60px 20px; }
+            .week-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            .hero-actions { flex-direction: column; align-items: center; }
+            .stat-item { width: 100%; }
+            .nav-links .btn-nav:not(.primary) { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     NAV
+══════════════════════════════════════════ -->
+<nav>
+    <div class="nav-inner">
+        <div class="nav-logo">
+            <div class="pg-icon">PG</div>
+            <span>Học PostgreSQL</span>
+        </div>
+        <div class="nav-links">
+            <a class="btn-nav" href="#curriculum">Chương trình</a>
+            <a class="btn-nav" href="#bridge">Excel → SQL</a>
+            <a class="btn-nav primary" href="https://github.com/nhatlam1111/postgresql-db-learning" target="_blank" rel="noopener">
+                ⭐ GitHub
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     HERO
+══════════════════════════════════════════ -->
+<section class="hero">
+    <div class="hero-eyebrow">Chương Trình Học 10 Tuần</div>
+    <h1>Từ Excel Đến <span>PostgreSQL</span><br>Không Cần Biết Lập Trình</h1>
+    <p>
+        Nếu bạn dùng được Excel thì bạn đã có nền tảng để học SQL.
+        Mỗi khái niệm database sẽ được giải thích qua Excel — ngôn ngữ bạn đã biết.
+    </p>
+    <div class="hero-actions">
+        <a class="btn-hero filled" href="#curriculum">📚 Bắt Đầu Học</a>
+        <a class="btn-hero outline" href="https://github.com/nhatlam1111/postgresql-db-learning" target="_blank" rel="noopener">🔗 Xem trên GitHub</a>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     STATS BAR
+══════════════════════════════════════════ -->
+<div class="stats-bar">
+    <div class="stats-inner">
+        <div class="stat-item">
+            <div class="stat-number">10</div>
+            <div class="stat-label">Tuần học</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">40+</div>
+            <div class="stat-label">Giờ nội dung</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">0</div>
+            <div class="stat-label">Yêu cầu lập trình</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">🇻🇳</div>
+            <div class="stat-label">100% Tiếng Việt</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">Free</div>
+            <div class="stat-label">Mã nguồn mở</div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FOR WHOM
+══════════════════════════════════════════ -->
+<section class="section">
+    <div class="section-label">Dành Cho Ai?</div>
+    <div class="section-title">Bạn Đã Biết Excel — Bạn Đã Sẵn Sàng</div>
+    <p class="section-sub">Chương trình này được thiết kế riêng cho người có kỹ năng Excel tốt nhưng chưa từng học lập trình.</p>
+
+    <div class="profile-grid">
+        <div class="profile-card highlight">
+            <div class="profile-icon">📊</div>
+            <h3>Kỹ năng Excel tốt</h3>
+            <p>Biết dùng VLOOKUP, Pivot Table, công thức lồng nhau — bạn đã hiểu logic phân tích dữ liệu.</p>
+        </div>
+        <div class="profile-card">
+            <div class="profile-icon">🚫</div>
+            <h3>Không cần biết code</h3>
+            <p>SQL không phải ngôn ngữ lập trình. Nó gần với tiếng Anh tự nhiên và dễ đọc hơn công thức Excel phức tạp.</p>
+        </div>
+        <div class="profile-card">
+            <div class="profile-icon">🔍</div>
+            <h3>Thích chi tiết & chính xác</h3>
+            <p>Database yêu cầu độ chính xác cao — chính là thế mạnh của những ai quen với báo cáo và phân tích số liệu.</p>
+        </div>
+        <div class="profile-card">
+            <div class="profile-icon">⏱️</div>
+            <h3>Học theo tốc độ của bạn</h3>
+            <p>Mỗi tuần 3–5 giờ tự học. Mỗi bài có lý thuyết, ví dụ chạy được, và bài tập thực hành.</p>
+        </div>
+    </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ══════════════════════════════════════════
+     HOW TO USE
+══════════════════════════════════════════ -->
+<section class="section">
+    <div class="section-label">Cách Học</div>
+    <div class="section-title">Mỗi Tuần Gồm 3 Bước</div>
+    <p class="section-sub">Tài liệu được tổ chức thành 3 loại file rõ ràng — bạn biết cần làm gì tiếp theo.</p>
+
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+                <h3>📖 Đọc bài học</h3>
+                <p>File <code>*_lesson.md</code> — Lý thuyết, so sánh Excel, giải thích từng khái niệm bằng tiếng Việt. Hoặc xem slide HTML nếu có.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+                <h3>💻 Chạy ví dụ</h3>
+                <p>File <code>*_examples.sql</code> — Copy từng đoạn SQL vào DBeaver, nhấn Ctrl+Enter, xem kết quả thực tế.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+                <h3>✏️ Làm bài tập</h3>
+                <p>File <code>*_exercises.md</code> — Tự viết SQL từ đầu. Ba cấp độ: Cơ bản → Trung bình → Nâng cao.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ══════════════════════════════════════════
+     CURRICULUM
+══════════════════════════════════════════ -->
+<section id="curriculum">
+    <div class="section" style="padding-bottom: 40px;">
+        <div class="section-label">Chương Trình Học</div>
+        <div class="section-title">10 Tuần — Từ Cơ Bản Đến Dự Án Thực Tế</div>
+        <p class="section-sub">
+            Tuần 1–5 đã có đầy đủ tài liệu. Các tuần còn lại đang được hoàn thiện.
+            <span style="color: var(--accent);">✦ Slide</span> là bài giảng dạng trình chiếu, mở thẳng trên trình duyệt.
+        </p>
+    </div>
+
+    <div class="section" style="padding-top: 0;">
+        <div class="week-grid">
+
+            <!-- ── TUẦN 1 ── -->
+            <div class="week-card available">
+                <div class="week-card-header">
+                    <span class="week-num">TUẦN 1</span>
+                    <span class="week-badge-card done">✅ Hoàn thành</span>
+                </div>
+                <div class="week-card-body">
+                    <h3>Tại Sao Cần Cơ Sở Dữ Liệu?</h3>
+                    <ul class="topic-list">
+                        <li>Excel vs Database — khi nào dùng gì?</li>
+                        <li>Database, Table, Row, Column là gì?</li>
+                        <li>PostgreSQL & SQL là gì?</li>
+                    </ul>
+                </div>
+                <div class="week-card-actions">
+                    <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/01.Why_Database_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/01.Why_Database_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
+                </div>
+            </div>
+
+            <!-- ── TUẦN 2 ── -->
+            <div class="week-card available">
+                <div class="week-card-header">
+                    <span class="week-num">TUẦN 2</span>
+                    <span class="week-badge-card done">✅ Hoàn thành</span>
+                </div>
+                <div class="week-card-body">
+                    <h3>Cài Đặt PostgreSQL & Làm Quen Công Cụ</h3>
+                    <ul class="topic-list">
+                        <li>Cài PostgreSQL & DBeaver</li>
+                        <li>Kết nối & giao diện DBeaver</li>
+                        <li>Tạo database đầu tiên</li>
+                    </ul>
+                </div>
+                <div class="week-card-actions">
+                    <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/02.Setup_PostgreSQL_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/02.Setup_PostgreSQL_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
+                </div>
+            </div>
+
+            <!-- ── TUẦN 3 ── has slide -->
+            <div class="week-card available has-slide">
+                <div class="week-card-header">
+                    <span class="week-num">TUẦN 3</span>
+                    <span class="week-badge-card done">✅ Hoàn thành</span>
+                </div>
+                <div class="week-card-body">
+                    <h3>Kiểu Dữ Liệu & Tạo Bảng</h3>
+                    <ul class="topic-list">
+                        <li>INTEGER, VARCHAR, DATE, BOOLEAN...</li>
+                        <li>CREATE TABLE + constraints</li>
+                        <li>INSERT INTO, giá trị NULL</li>
+                        <li>ALTER TABLE, DROP TABLE</li>
+                    </ul>
+                </div>
+                <div class="week-card-actions">
+                    <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/03.Datatype_and_Table_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/03.Datatype_and_Table_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
+                    <a class="btn-action slide" href="Slides/03.Datatype_and_Table_slides.html" target="_blank">✦ Slides</a>
+                </div>
+            </div>
+
+            <!-- ── TUẦN 4 ── -->
+            <div class="week-card available">
+                <div class="week-card-header">
+                    <span class="week-num">TUẦN 4</span>
+                    <span class="week-badge-card done">✅ Hoàn thành</span>
+                </div>
+                <div class="week-card-body">
+                    <h3>Truy Vấn Dữ Liệu — SELECT Cơ Bản</h3>
+                    <ul class="topic-list">
+                        <li>SELECT, FROM, chọn cột cụ thể</li>
+                        <li>Alias với AS, DISTINCT</li>
+                        <li>Tính toán & nối chuỗi trong SELECT</li>
+                        <li>Định dạng ngày tháng, số</li>
+                    </ul>
+                </div>
+                <div class="week-card-actions">
+                    <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/04.SELECT_Basics_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/04.SELECT_Basics_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
+                </div>
+            </div>
+
+            <!-- ── TUẦN 5 ── -->
+            <div class="week-card available">
+                <div class="week-card-header">
+                    <span class="week-num">TUẦN 5</span>
+                    <span class="week-badge-card done">✅ Hoàn thành</span>
+                </div>
+                <div class="week-card-body">
+                    <h3>Lọc & Sắp Xếp Dữ Liệu</h3>
+                    <ul class="topic-list">
+                        <li>WHERE, AND, OR, NOT</li>
+                        <li>BETWEEN, IN, LIKE, IS NULL</li>
+                        <li>ORDER BY, LIMIT, OFFSET</li>
+                    </ul>
+                </div>
+                <div class="week-card-actions">
+                    <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/05.Filter_Data_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/05.Filter_Data_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
+                </div>
+            </div>
+
+            <!-- ── TUẦN 6 ── -->
+            <div class="week-card coming-soon">
+                <div class="week-card-header">
+                    <span class="week-num">TUẦN 6</span>
+                    <span class="week-badge-card progress">📝 Đang cập nhật</span>
+                </div>
+                <div class="week-card-body">
+                    <h3>Hàm Tổng Hợp & GROUP BY</h3>
+                    <ul class="topic-list">
+                        <li>COUNT, SUM, AVG, MIN, MAX</li>
+                        <li>GROUP BY — tương đương Pivot Table</li>
+                        <li>HAVING — lọc nhóm</li>
+                    </ul>
+                </div>
+                <div class="coming-soon-tag">Nội dung sẽ sớm được cập nhật...</div>
+            </div>
+
+            <!-- ── TUẦN 7 ── -->
+            <div class="week-card coming-soon">
+                <div class="week-card-header">
+                    <span class="week-num">TUẦN 7</span>
+                    <span class="week-badge-card progress">📝 Đang cập nhật</span>
+                </div>
+                <div class="week-card-body">
+                    <h3>Kết Nối Nhiều Bảng — JOIN</h3>
+                    <ul class="topic-list">
+                        <li>INNER JOIN — tương đương VLOOKUP</li>
+                        <li>LEFT JOIN, RIGHT JOIN</li>
+                        <li>FOREIGN KEY & quan hệ bảng</li>
+                    </ul>
+                </div>
+                <div class="coming-soon-tag">Nội dung sẽ sớm được cập nhật...</div>
+            </div>
+
+            <!-- ── TUẦN 8 ── -->
+            <div class="week-card coming-soon">
+                <div class="week-card-header">
+                    <span class="week-num">TUẦN 8</span>
+                    <span class="week-badge-card progress">📝 Đang cập nhật</span>
+                </div>
+                <div class="week-card-body">
+                    <h3>Truy Vấn Nâng Cao & Subquery</h3>
+                    <ul class="topic-list">
+                        <li>Subquery — truy vấn lồng nhau</li>
+                        <li>CASE WHEN — tương đương IF/IFS</li>
+                        <li>Hàm chuỗi & ngày tháng</li>
+                    </ul>
+                </div>
+                <div class="coming-soon-tag">Nội dung sẽ sớm được cập nhật...</div>
+            </div>
+
+            <!-- ── TUẦN 9 ── -->
+            <div class="week-card coming-soon">
+                <div class="week-card-header">
+                    <span class="week-num">TUẦN 9</span>
+                    <span class="week-badge-card progress">📝 Đang cập nhật</span>
+                </div>
+                <div class="week-card-body">
+                    <h3>Cập Nhật & Quản Lý Dữ Liệu</h3>
+                    <ul class="topic-list">
+                        <li>UPDATE, DELETE an toàn</li>
+                        <li>Transaction — COMMIT, ROLLBACK</li>
+                        <li>VIEW, import CSV</li>
+                    </ul>
+                </div>
+                <div class="coming-soon-tag">Nội dung sẽ sớm được cập nhật...</div>
+            </div>
+
+            <!-- ── TUẦN 10 ── -->
+            <div class="week-card coming-soon">
+                <div class="week-card-header">
+                    <span class="week-num">TUẦN 10</span>
+                    <span class="week-badge-card progress">📝 Đang cập nhật</span>
+                </div>
+                <div class="week-card-body">
+                    <h3>Dự Án Tổng Hợp — Quán Cà Phê</h3>
+                    <ul class="topic-list">
+                        <li>Thiết kế database hoàn chỉnh</li>
+                        <li>Báo cáo doanh thu theo ngày/tháng</li>
+                        <li>Top sản phẩm bán chạy</li>
+                    </ul>
+                </div>
+                <div class="coming-soon-tag">Capstone project — hoàn thành sau tuần 9...</div>
+            </div>
+
+        </div><!-- /week-grid -->
+    </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ══════════════════════════════════════════
+     EXCEL BRIDGE TABLE
+══════════════════════════════════════════ -->
+<section id="bridge" class="section">
+    <div class="section-label">Bảng Quy Chiếu</div>
+    <div class="section-title">Excel ↔ PostgreSQL — Học Nhanh Qua Công Cụ Bạn Đã Biết</div>
+    <p class="section-sub">Mỗi khái niệm SQL đều có một thao tác Excel tương đương. Đây là cầu nối giúp bạn học nhanh hơn.</p>
+
+    <div class="bridge-table-wrap">
+        <table class="bridge-table">
+            <thead>
+                <tr>
+                    <th>📊 Excel</th>
+                    <th>🐘 PostgreSQL</th>
+                    <th>Ý nghĩa</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Workbook (.xlsx)</td><td>DATABASE</td><td>Nơi chứa toàn bộ dữ liệu</td></tr>
+                <tr><td>Sheet (worksheet)</td><td>TABLE</td><td>Một tập dữ liệu có cấu trúc</td></tr>
+                <tr><td>Cột (A, B, C…)</td><td>COLUMN</td><td>Một loại thông tin</td></tr>
+                <tr><td>Hàng (1, 2, 3…)</td><td>ROW / RECORD</td><td>Một bản ghi dữ liệu</td></tr>
+                <tr><td>Data Validation</td><td>DATA TYPE + CONSTRAINT</td><td>Quy định loại giá trị được nhập</td></tr>
+                <tr><td>Filter</td><td>WHERE</td><td>Lọc dữ liệu theo điều kiện</td></tr>
+                <tr><td>Sort</td><td>ORDER BY</td><td>Sắp xếp kết quả</td></tr>
+                <tr><td>VLOOKUP / INDEX-MATCH</td><td>JOIN</td><td>Kết nối dữ liệu từ nhiều bảng</td></tr>
+                <tr><td>Pivot Table</td><td>GROUP BY</td><td>Tổng hợp dữ liệu theo nhóm</td></tr>
+                <tr><td>SUM(), AVERAGE()</td><td>SUM(), AVG()</td><td>Hàm tính tổng, trung bình</td></tr>
+                <tr><td>IF() / IFS()</td><td>CASE WHEN</td><td>Điều kiện phân nhánh</td></tr>
+                <tr><td>Remove Duplicates</td><td>DISTINCT</td><td>Loại bỏ giá trị trùng</td></tr>
+                <tr><td>IFERROR()</td><td>COALESCE()</td><td>Xử lý giá trị trống / lỗi</td></tr>
+                <tr><td>Named formula / pivot đã lưu</td><td>VIEW</td><td>Truy vấn được lưu lại, dùng lại</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════ -->
+<footer>
+    <p style="font-size:1.05rem; color: var(--text); font-weight:600;">Học PostgreSQL — Từ Excel Đến SQL 🐘</p>
+    <p>Tài liệu mã nguồn mở, viết bằng tiếng Việt, dành cho người mới bắt đầu.</p>
+    <div class="footer-links">
+        <a href="https://github.com/nhatlam1111/postgresql-db-learning" target="_blank" rel="noopener">⭐ GitHub Repository</a>
+        <a href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/plan.md" target="_blank" rel="noopener">📋 Kế Hoạch Học</a>
+        <a href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/README.md" target="_blank" rel="noopener">📄 README</a>
+        <a href="Slides/03.Datatype_and_Table_slides.html" target="_blank">▶ Slides Tuần 3</a>
+    </div>
+    <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-dim);">
+        Built with ❤️ · Open Source · MIT License
+    </p>
+</footer>
+
+</body>
+</html>
