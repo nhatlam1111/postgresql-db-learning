@@ -25,38 +25,38 @@ Chương trình học **PostgreSQL từ cơ bản đến nâng cao** dành cho n
 
 ```
 postgresql-db-learning/
-├── README.md                 ← Bạn đang xem file này
-├── plan.md                  ← Kế hoạch chi tiết 10 tuần
-├── requirement.md           ← Yêu cầu cài đặt, công cụ
+├── README.md                                      ← Bạn đang xem file này
+├── plan.md                                       ← Kế hoạch chi tiết 10 tuần
+├── requirement.md                                ← Yêu cầu cài đặt, công cụ
 ├── .gitignore
 │
-├── Week-1/                  ← Tuần 1: Tại sao cần CSDL?
-│   ├── lesson.md           ← Bài học lý thuyết
-│   ├── examples.sql        ← Ví dụ minh họa
-│   └── exercises.md        ← Bài tập thực hành
+├── Lessons & Examples/                           ← 📖 Bài học + ví dụ SQL
+│   ├── Lesson/                                  ← Bài học lý thuyết
+│   │   ├── 01.Why_Database_lesson.md
+│   │   ├── 02.Setup_PostgreSQL_lesson.md
+│   │   ├── 03.Datatype_and_Table_lesson.md
+│   │   └── 04.SELECT_Basics_lesson.md
+│   ├── Example/                                 ← Ví dụ minh họa (chạy thật)
+│   │   ├── 01.Why_Database_examples.sql
+│   │   ├── 02.Setup_PostgreSQL_examples.sql
+│   │   ├── 03.Datatype_and_Table_examples.sql
+│   │   └── 04.SELECT_Basics_examples.sql
+│   └── Advanced/                                 ← Dành cho nội dung nâng cao (sắp có)
 │
-├── Week-2/                  ← Tuần 2: Cài đặt & Làm quen công cụ
-│   ├── lesson.md
-│   ├── examples.sql
-│   └── exercises.md
+├── Exercises/                                    ← 💪 Bài tập thực hành
+│   ├── 01.Why_Database_exercises.md
+│   ├── 02.Setup_PostgreSQL_exercises.md
+│   ├── 03.Datatype_and_Table_exercises.md
+│   └── 04.SELECT_Basics_exercises.md
 │
-├── Week-3/                  ← Tuần 3: Tạo bảng & Nhập dữ liệu
-│   ├── lesson.md
-│   ├── examples.sql
-│   ├── exercises.md
-│   └── type_casting.md     ← 📎 Tham khảo thêm: Type Casting chi tiết
+├── Reference/                                    ← 📎 Tài liệu tra cứu nhanh
+│   ├── type_casting.md                          ← CAST, ::, TO_CHAR, TO_DATE, TO_NUMBER
+│   └── datatypes_reference.md                   ← Toàn bộ kiểu dữ liệu PostgreSQL
 │
-├── Week-4/                  ← Tuần 4: SELECT cơ bản
-│   ├── lesson.md
-│   ├── examples.sql
-│   └── exercises.md
-│
-├── temp/                    ← Folder tạm để lưu notes, handover...
-│   ├── handover.md
-│   └── Week-*/plan.md
+├── temp/                                         ← Folder tạm (notes, handover...)
 │
 └── .claude/
-    └── CLAUDE.md           ← Hướng dẫn cho AI assistant
+    └── CLAUDE.md                                ← Hướng dẫn cho AI assistant
 ```
 
 ---
@@ -122,10 +122,10 @@ postgresql-db-learning/
 
 ### 1. **Bắt đầu học từ Tuần 1**
 ```
-1. Đọc file lesson.md để hiểu lý thuyết
-2. Chạy các ví dụ trong examples.sql
-3. Làm bài tập trong exercises.md
-4. Kiểm tra lại bài học tuần sau
+1. Đọc Lessons & Examples/Lesson/01.Why_Database_lesson.md để hiểu lý thuyết
+2. Chạy các ví dụ trong Lessons & Examples/Example/01.Why_Database_examples.sql
+3. Làm bài tập trong Exercises/01.Why_Database_exercises.md
+4. Sang tuần tiếp theo
 ```
 
 ### 2. **Chuẩn Bị Công Cụ**
@@ -134,16 +134,13 @@ Xem file [`requirement.md`](requirement.md) để biết cần cài đặt gì:
 - pgAdmin hoặc công cụ SQL client khác
 - (Optional) DBeaver cho giao diện hiện đại hơn
 
-### 3. **Tham Khảo Nhanh**
-Cần tra cứu cách chuyển đổi kiểu dữ liệu? → [Xem Type Casting Guide](Week-3/type_casting.md)
+### 3. **Tài Liệu Tra Cứu Nhanh**
+Khi cần tra cứu, vào thư mục `Reference/`:
 
----
-
-## 📎 Tài Liệu Tham Khảo Bổ Sung
-
-| File | Mô tả |
+| File | Nội dung |
 |---|---|
-| [Week-3/type_casting.md](Week-3/type_casting.md) | CAST, ::, TO_CHAR, TO_DATE, TO_NUMBER — đầy đủ ví dụ |
+| [Reference/type_casting.md](Reference/type_casting.md) | CAST, ::, TO_CHAR, TO_DATE, TO_NUMBER — đầy đủ ví dụ |
+| [Reference/datatypes_reference.md](Reference/datatypes_reference.md) | Toàn bộ kiểu dữ liệu PostgreSQL |
 
 ---
 
@@ -232,25 +229,26 @@ A: Repo này là tài liệu tự học. Nếu gặp lỗi, hãy:
 ### **Mỗi Tuần Làm Như Sau:**
 
 1. **Thứ 2–3: Đọc Bài Học**
-   - Mở `Week-X/lesson.md`
+   - Mở `Lessons & Examples/Beginner/Lesson/0X.Topic_lesson.md`
    - Đọc lý thuyết từng phần
    - Vẽ sơ đồ hoặc note lại khái niệm chính
 
 2. **Thứ 4–5: Chạy Ví Dụ**
    - Mở pgAdmin
-   - Copy query từ `examples.sql`
+   - Copy query từ `Lessons & Examples/Beginner/Example/0X.Topic_examples.sql`
    - Chạy từng câu 1, quan sát kết quả
    - Thử sửa query để hiểu sâu hơn
 
 3. **Thứ 6–7: Làm Bài Tập**
-   - Mở `exercises.md`
+   - Mở `Exercises/0X.Topic_exercises.md`
    - Tự viết query (không copy-paste!)
    - Kiểm tra kết quả
    - Ghi chú những chỗ khó
 
-4. **Chủ Nhật: Ôn Lại**
+4. **Chủ Nhật: Ôn Lại + Tra Cứu**
    - Ôn lại bài học tuần này
    - Ôn 1 bài tuần trước (để ghi nhớ lâu)
+   - Tra cứu nhanh trong `Reference/` nếu cần
 
 ---
 

@@ -48,44 +48,76 @@ Every new SQL concept must be introduced by comparison to its Excel equivalent:
 
 ```
 postgresql-db-learning/
-├── README.md            # Project overview & learning guide (start here)
-├── plan.md              # Main 10-week curriculum (the core deliverable)
-├── requirement.md       # Original project requirement
-├── .gitignore           # Git ignore rules
-├── Week-1/
-│   ├── lesson.md        # Detailed lesson content for Week 1
-│   ├── exercises.md     # Exercises for Week 1
-│   └── examples.sql     # SQL examples used in Week 1
-├── Week-2/
-│   ├── lesson.md        # Detailed lesson content for Week 2
-│   ├── exercises.md     # Exercises for Week 2
-│   └── examples.sql     # SQL examples used in Week 2
-├── Week-3/
-│   ├── lesson.md        # Detailed lesson content for Week 3
-│   ├── exercises.md     # Exercises for Week 3
-│   ├── examples.sql     # SQL examples used in Week 3
-│   └── type_casting.md  # Supplementary reference: Type Casting deep-dive
-├── Week-4/
-│   ├── lesson.md        # Detailed lesson content for Week 4
-│   ├── exercises.md     # Exercises for Week 4
-│   └── examples.sql     # SQL examples used in Week 4
+├── README.md                                      # Project overview & learning guide
+├── plan.md                                       # Main 10-week curriculum
+├── requirement.md                                # Original project requirement
+├── .gitignore
+│
+├── Lessons & Examples/                           # Lessons + runnable SQL examples
+│   ├── Lesson/                                  # Theory content (.md files)
+│   │   ├── 01.Why_Database_lesson.md
+│   │   ├── 02.Setup_PostgreSQL_lesson.md
+│   │   ├── 03.Datatype_and_Table_lesson.md
+│   │   └── 04.SELECT_Basics_lesson.md
+│   ├── Example/                                 # Runnable SQL examples (.sql files)
+│   │   ├── 01.Why_Database_examples.sql
+│   │   ├── 02.Setup_PostgreSQL_examples.sql
+│   │   ├── 03.Datatype_and_Table_examples.sql
+│   │   └── 04.SELECT_Basics_examples.sql
+│   └── Advanced/                                 # Advanced topics (future)
+│
+├── Exercises/                                    # Practice exercises (separate from lessons)
+│   ├── 01.Why_Database_exercises.md
+│   ├── 02.Setup_PostgreSQL_exercises.md
+│   ├── 03.Datatype_and_Table_exercises.md
+│   └── 04.SELECT_Basics_exercises.md
+│
+├── Reference/                                    # Quick-reference documents
+│   ├── type_casting.md
+│   └── datatypes_reference.md
+│
 ├── temp/
-│   ├── handover.md      # Session handover notes
-│   └── Week-*/plan.md   # Draft/planning notes per week
+│   └── ... (notes, drafts)
 └── .claude/
-    └── CLAUDE.md        # This file — AI assistant instructions
+    └── CLAUDE.md                                 # This file
 
 ```
 
-### Supplementary Reference Files
+### Folder Structure Rationale
 
-Some weeks include extra deep-dive reference files alongside the main lesson:
+**Lessons & Examples/Lesson/** — All theory content
+- Files: `0X.Topic_lesson.md`
+- Easy to find all lessons in one place
 
-| File | Week | Purpose |
+**Lessons & Examples/Example/** — All runnable examples
+- Files: `0X.Topic_examples.sql`
+- Separated from lessons for clarity — learners know where to find working code
+
+**Exercises/** — All practice problems
+- Files: `0X.Topic_exercises.md`
+- Flat structure (not nested by week) makes it easy to find exercises
+
+This structure clearly separates:
+1. **Theory** (Lesson/)
+2. **Working Examples** (Example/)
+3. **Practice** (Exercises/)
+4. **Reference** (Reference/)
+
+### File Naming Convention
+
+All learning content files follow the pattern: `0X.Topic_Type.ext`
+
+| Element | Example | Notes |
 |---|---|---|
-| `Week-3/type_casting.md` | 3 | Full reference for CAST, ::, TO_CHAR, TO_DATE, TO_NUMBER |
+| `0X` | `01`, `02`, `03`, `04` | Sequential number (matches week order) |
+| `.Topic` | `.Why_Database`, `.Setup_PostgreSQL` | Descriptive topic name |
+| `_Type` | `_lesson`, `_examples`, `_exercises` | Content type |
+| `.ext` | `.md` (lesson/exercise), `.sql` (examples) | File extension |
 
-When adding new supplementary files, link them from the main `lesson.md` of that week and add a row to this table.
+**Example file naming:**
+- `01.Why_Database_lesson.md` ← theory for topic 1
+- `01.Why_Database_examples.sql` ← working SQL examples for topic 1
+- `01.Why_Database_exercises.md` ← practice problems for topic 1
 
 ### plan.md — The Core File
 
@@ -111,6 +143,11 @@ The 10-week curriculum at `plan.md` is structured as:
 - SQL keywords remain in English (SELECT, WHERE, etc.) — these are universal
 - Use formal but friendly tone (không quá cứng nhắc, gần gũi như giải thích cho bạn bè)
 
+### File Organization
+- **Lesson files** (`*_lesson.md`): Theory, explanations, concepts — stored in `Lessons & Examples/Lesson/`
+- **Example files** (`*_examples.sql`): Runnable code, demonstrations — stored in `Lessons & Examples/Example/`
+- **Exercise files** (`*_exercises.md`): Practice problems with solutions — stored in `Exercises/`
+
 ### SQL Examples
 - SQL keywords in UPPERCASE: `SELECT`, `FROM`, `WHERE`, `GROUP BY`
 - Table/column names in Vietnamese snake_case: `nhan_vien`, `ho_ten`, `ngay_sinh`
@@ -120,12 +157,12 @@ The 10-week curriculum at `plan.md` is structured as:
   2. Then run UPDATE/DELETE
 
 ### Exercises
-- Each week ends with a "Bài tập" section
+- Each topic has a "Bài tập" section in `*_exercises.md`
 - Exercises are numbered and have three difficulty tiers where appropriate:
   - Cơ bản (basic)
   - Trung bình (intermediate)  
   - Nâng cao (advanced)
-- Exercises use the same example datasets introduced during that week
+- Exercises use the same example datasets introduced during that topic
 
 ### Example Datasets Used
 The curriculum uses these consistent example tables throughout:
@@ -145,6 +182,12 @@ If adding new content (additional lessons, exercises, reference sheets):
 3. **Vietnamese first** — write the explanation in Vietnamese before showing SQL code
 4. **Progressive complexity** — simpler version first, then add complexity
 5. **Warn about gotchas** — use `> ⚠️ **CẢNH BÁO:**` blocks for dangerous operations
+6. **Follow file naming convention** — `0X.TopicName_Type.ext` (e.g., `05.Filter_Data_lesson.md`)
+7. **Place files in correct folders**:
+   - Lessons → `Lessons & Examples/Lesson/`
+   - Examples → `Lessons & Examples/Example/`
+   - Exercises → `Exercises/`
+   - References → `Reference/`
 
 ## Notes
 
@@ -152,3 +195,5 @@ If adding new content (additional lessons, exercises, reference sheets):
 - She IS NOT comfortable with technical jargon — always define terms in plain language
 - Analogies matter more than precision at the beginner stage — prefer clear over technically exhaustive
 - Practical exercises are essential — theory without hands-on practice won't stick
+- Clear folder structure helps learners focus on content, not searching for files
+
