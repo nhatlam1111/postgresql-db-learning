@@ -7,15 +7,15 @@ Convert a lesson Markdown file (`*_lesson.md`) into a single-file HTML slide dec
 ## Output Location & Naming
 
 ```
-Slides/0X.TopicName_slides.html
+docs/Slides/0X.TopicName_slides.html
 ```
 
 | Source file | Slide output |
 |---|---|
-| `Lessons & Examples/Lesson/03.Datatype_and_Table_lesson.md` | `Slides/03.Datatype_and_Table_slides.html` |
-| `Lessons & Examples/Lesson/05.Filter_Data_lesson.md` | `Slides/05.Filter_Data_slides.html` |
+| `Lessons & Examples/Lesson/03.Datatype_and_Table_lesson.md` | `docs/Slides/03.Datatype_and_Table_slides.html` |
+| `Lessons & Examples/Lesson/05.Filter_Data_lesson.md` | `docs/Slides/05.Filter_Data_slides.html` |
 
-**Never** place slide files in `temp/` — always use `Slides/`.
+**Never** place slide files in `temp/` — always use `docs/Slides/`.
 
 ---
 
@@ -353,7 +353,7 @@ The full boilerplate for a new slide file:
 The canonical example of a complete slide deck built with this skill:
 
 ```
-Slides/03.Datatype_and_Table_slides.html
+docs/Slides/03.Datatype_and_Table_slides.html
 ```
 
 Consult it for:

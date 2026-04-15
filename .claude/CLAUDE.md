@@ -76,7 +76,7 @@ postgresql-db-learning/
 │   ├── type_casting.md
 │   └── datatypes_reference.md
 │
-├── Slides/                                       # HTML slide decks (one per lesson)
+├── docs/Slides/                                 # HTML slide decks (one per lesson)
 │   ├── 03.Datatype_and_Table_slides.html
 │   └── ... (0X.TopicName_slides.html)
 │
@@ -127,7 +127,7 @@ All learning content files follow the pattern: `0X.Topic_Type.ext`
 - `01.Why_Database_slides.html` ← HTML slide deck for topic 1
 
 **Slides/** — HTML slide decks for each lesson
-- Files: `0X.Topic_slides.html`
+- Files: `docs/Slides/0X.TopicName_slides.html`
 - One self-contained `.html` file per lesson — open directly in any browser
 - Built following the design system in `.claude/html_slide_skill.md`
 
@@ -200,7 +200,7 @@ If adding new content (additional lessons, exercises, reference sheets):
    - Examples → `Lessons & Examples/Example/`
    - Exercises → `Exercises/`
    - References → `Reference/`
-   - HTML Slides → `Slides/`
+   - HTML Slides → `docs/Slides/`
 8. **When creating HTML slides** — follow `.claude/html_slide_skill.md` exactly:
    - Dark theme with PostgreSQL blue + gold accent palette
    - Every concept slide includes Vietnamese explanation + SQL code + Excel analogy card
