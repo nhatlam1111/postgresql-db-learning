@@ -76,10 +76,15 @@ postgresql-db-learning/
 │   ├── type_casting.md
 │   └── datatypes_reference.md
 │
+├── Slides/                                       # HTML slide decks (one per lesson)
+│   ├── 03.Datatype_and_Table_slides.html
+│   └── ... (0X.TopicName_slides.html)
+│
 ├── temp/
 │   └── ... (notes, drafts)
 └── .claude/
-    └── CLAUDE.md                                 # This file
+    ├── CLAUDE.md                                 # This file
+    └── html_slide_skill.md                       # Skill: how to create HTML slide decks
 
 ```
 
@@ -102,6 +107,7 @@ This structure clearly separates:
 2. **Working Examples** (Example/)
 3. **Practice** (Exercises/)
 4. **Reference** (Reference/)
+5. **Visual Slides** (Slides/)
 
 ### File Naming Convention
 
@@ -118,6 +124,12 @@ All learning content files follow the pattern: `0X.Topic_Type.ext`
 - `01.Why_Database_lesson.md` ← theory for topic 1
 - `01.Why_Database_examples.sql` ← working SQL examples for topic 1
 - `01.Why_Database_exercises.md` ← practice problems for topic 1
+- `01.Why_Database_slides.html` ← HTML slide deck for topic 1
+
+**Slides/** — HTML slide decks for each lesson
+- Files: `0X.Topic_slides.html`
+- One self-contained `.html` file per lesson — open directly in any browser
+- Built following the design system in `.claude/html_slide_skill.md`
 
 ### plan.md — The Core File
 
@@ -188,6 +200,23 @@ If adding new content (additional lessons, exercises, reference sheets):
    - Examples → `Lessons & Examples/Example/`
    - Exercises → `Exercises/`
    - References → `Reference/`
+   - HTML Slides → `Slides/`
+8. **When creating HTML slides** — follow `.claude/html_slide_skill.md` exactly:
+   - Dark theme with PostgreSQL blue + gold accent palette
+   - Every concept slide includes Vietnamese explanation + SQL code + Excel analogy card
+   - Warnings from the lesson (`⚠️ CẢNH BÁO`) must appear as `card warning` components
+   - Single-file HTML (no external dependencies except Google Fonts CDN)
+   - Full keyboard navigation + TOC sidebar + progress bar
+
+## Skills
+
+Skill files live in `.claude/` and define repeatable patterns for content generation:
+
+| File | Purpose |
+|---|---|
+| `html_slide_skill.md` | Create a single-file HTML slide deck from a `*_lesson.md` file. Covers design system (color palette, fonts, CSS), all slide types (title, section divider, content, closing), layout components (cards, compare grids, diagrams), SQL syntax highlighting, and full navigation system (keyboard, TOC, progress bar). |
+
+---
 
 ## Notes
 
