@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuần 6: Hàm Tổng Hợp & GROUP BY — PostgreSQL</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --primary:       #336791;
+            --primary-light: #4a8db7;
+            --primary-dark:  #264d6e;
+            --accent:        #f9a825;
+            --accent-light:  #fdd835;
+            --bg:            #0f172a;
+            --bg-card:       #1e293b;
+            --bg-code:       #0d1117;
+            --text:          #e2e8f0;
+            --text-dim:      #94a3b8;
+            --text-bright:   #f8fafc;
+            --success:       #22c55e;
+            --danger:        #ef4444;
+            --warning:       #f59e0b;
+            --info:          #3b82f6;
+            --excel-green:   #217346;
+            --pg-blue:       #336791;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .slide-deck { width: 100vw; height: 100vh; position: relative; }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            padding: 52px 80px 64px;
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+        .slide.active { display: flex; opacity: 1; }
+
+        h1 { font-size: 2.8rem; font-weight: 800; color: var(--text-bright); margin-bottom: 12px; line-height: 1.2; }
+        h2 { font-size: 1.9rem; font-weight: 700; color: var(--accent); margin-bottom: 18px; line-height: 1.3; }
+        h3 { font-size: 1.2rem; font-weight: 600; color: var(--primary-light); margin-bottom: 10px; }
+        p, li { font-size: 1.05rem; line-height: 1.7; color: var(--text); }
+        ul, ol { padding-left: 26px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+
+        .subtitle { font-size: 1.25rem; color: var(--text-dim); margin-bottom: 28px; font-weight: 400; }
+        strong { color: var(--accent-light); font-weight: 600; }
+        em { color: var(--primary-light); font-style: normal; font-weight: 500; }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: var(--bg-code);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #7dd3fc;
+        }
+
+        pre {
+            background: var(--bg-code);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            line-height: 1.65;
+            overflow-x: auto;
+            margin: 10px 0;
+            color: #c9d1d9;
+        }
+        pre .keyword { color: #ff7b72; font-weight: 500; }
+        pre .string  { color: #a5d6ff; }
+        pre .comment { color: #8b949e; font-style: italic; }
+        pre .type    { color: #7ee787; }
+        pre .number  { color: #79c0ff; }
+        pre .func    { color: #d2a8ff; }
+        pre .op      { color: #f9a825; }
+
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.95rem; }
+        th { background: var(--primary-dark); color: var(--accent-light); padding: 10px 14px; text-align: left; font-weight: 600; font-size: 0.88rem; }
+        td { padding: 9px 14px; border-bottom: 1px solid #334155; color: var(--text); font-size: 0.92rem; }
+        tr:nth-child(even) td { background: rgba(30,41,59,0.5); }
+        tr:hover td { background: rgba(51,103,145,0.15); }
+
+        .card { background: var(--bg-card); border-radius: 14px; padding: 18px 22px; border: 1px solid #334155; margin: 8px 0; }
+        .card.excel   { border-left: 4px solid var(--excel-green); }
+        .card.pg      { border-left: 4px solid var(--pg-blue); }
+        .card.warning { border-left: 4px solid var(--danger); background: rgba(239,68,68,0.07); }
+        .card.tip     { border-left: 4px solid var(--success); background: rgba(34,197,94,0.07); }
+        .card.info    { border-left: 4px solid var(--info); background: rgba(59,130,246,0.07); }
+
+        .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 10px 0; }
+        .compare > div { background: var(--bg-card); border-radius: 12px; padding: 18px 20px; border: 1px solid #334155; }
+        .compare > div:first-child { border-top: 3px solid var(--excel-green); }
+        .compare > div:last-child  { border-top: 3px solid var(--pg-blue); }
+
+        .columns-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 10px 0; }
+        .columns-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 10px 0; }
+
+        .diagram { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 14px 0; flex-wrap: wrap; }
+        .diagram .box { background: var(--bg-card); border: 2px solid var(--primary-light); border-radius: 10px; padding: 12px 18px; text-align: center; min-width: 120px; }
+        .diagram .box.active-box { border-color: var(--accent); background: rgba(249,168,37,0.08); color: var(--accent-light); }
+        .diagram .box.success-box { border-color: var(--success); }
+        .diagram .arrow { color: var(--accent); font-size: 1.5rem; font-weight: 700; }
+
+        /* data-flow diagram */
+        .flow-col { display: flex; flex-direction: column; gap: 6px; }
+        .flow-arrow-down { text-align: center; color: var(--accent); font-size: 1.3rem; line-height: 1; }
+
+        /* aggregate box */
+        .agg-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 14px 0; }
+        .agg-box { background: var(--bg-card); border: 1px solid #334155; border-radius: 12px; padding: 14px 10px; text-align: center; }
+        .agg-box .func-name { font-family: 'Fira Code', monospace; font-size: 1.1rem; font-weight: 700; color: #d2a8ff; margin-bottom: 6px; }
+        .agg-box .excel-eq { font-size: 0.75rem; color: var(--excel-green); font-weight: 600; }
+        .agg-box .desc { font-size: 0.82rem; color: var(--text-dim); margin-top: 4px; }
+
+        /* pivot compare */
+        .pivot-compare { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: start; margin: 12px 0; }
+        .pivot-compare .vs-col { display: flex; align-items: center; justify-content: center; padding: 0 16px; }
+        .pivot-compare .vs-label { color: var(--accent); font-weight: 800; font-size: 1.8rem; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 4px; }
+
+        /* filter-visual (pre-formatted text blocks) */
+        .filter-visual {
+            background: var(--bg-code);
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid #30363d;
+            margin: 10px 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .row-pass   { color: var(--success); }
+        .row-fail   { color: #475569; text-decoration: line-through; }
+        .row-header { color: var(--accent); font-weight: 600; }
+        .row-dim    { color: var(--text-dim); }
+
+        /* WHERE vs HAVING flow */
+        .exec-flow { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+        .exec-flow .step { display: flex; align-items: center; gap: 16px; background: var(--bg-card); border-radius: 10px; padding: 10px 16px; border: 1px solid #334155; }
+        .exec-flow .step.active-step { border-color: var(--accent); background: rgba(249,168,37,0.08); }
+        .exec-flow .step.where-step  { border-color: var(--info); background: rgba(59,130,246,0.07); }
+        .exec-flow .step.having-step { border-color: var(--success); background: rgba(34,197,94,0.07); }
+        .exec-flow .num  { min-width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; background: var(--primary); color: #fff; }
+        .exec-flow .kw   { font-family: 'Fira Code', monospace; font-weight: 700; font-size: 1rem; min-width: 110px; color: #ff7b72; }
+        .exec-flow .note { color: var(--text-dim); font-size: 0.88rem; }
+        .exec-flow .tag  { margin-left: auto; font-size: 0.75rem; font-weight: 700; padding: 2px 10px; border-radius: 100px; }
+        .exec-flow .tag.where-tag  { background: rgba(59,130,246,0.2); color: var(--info); }
+        .exec-flow .tag.having-tag { background: rgba(34,197,94,0.2); color: var(--success); }
+
+        .highlight { background: linear-gradient(120deg,rgba(249,168,37,.2),rgba(249,168,37,.1)); padding: 2px 7px; border-radius: 4px; }
+        .text-danger  { color: var(--danger); }
+        .text-success { color: var(--success); }
+        .text-warning { color: var(--warning); }
+        .text-info    { color: var(--info); }
+        .text-dim     { color: var(--text-dim); }
+        .text-accent  { color: var(--accent); }
+        .text-bright  { color: var(--text-bright); }
+
+        .title-slide { text-align: center; justify-content: center; align-items: center; background: linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #0f172a 100%); }
+        .title-slide h1 { font-size: 3.2rem; background: linear-gradient(135deg, var(--accent), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
+        .title-slide .subtitle { font-size: 1.35rem; color: var(--text-dim); }
+        .title-slide .week-badge { display: inline-block; padding: 8px 24px; border: 2px solid var(--accent); border-radius: 100px; color: var(--accent); font-weight: 600; font-size: 1.1rem; margin-bottom: 24px; }
+
+        .section-slide { text-align: center; background: linear-gradient(135deg, var(--primary-dark), var(--bg)); justify-content: center; align-items: center; }
+        .section-slide h1 { font-size: 2.9rem; color: var(--text-bright); }
+        .section-slide .section-num { font-size: 5rem; font-weight: 800; color: var(--accent); opacity: 0.28; margin-bottom: -10px; }
+        .section-slide .subtitle { font-size: 1.2rem; color: var(--text-dim); margin-top: 12px; }
+
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 48px; background: rgba(15,23,42,0.96); border-top: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; z-index: 100; backdrop-filter: blur(8px); }
+        .nav-bar .page-info { color: var(--text-dim); font-size: 0.9rem; font-weight: 500; }
+        .nav-bar .controls { display: flex; gap: 8px; }
+        .nav-bar button { background: var(--primary-dark); color: var(--text); border: 1px solid #475569; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; }
+        .nav-bar button:hover { background: var(--primary-light); color: #fff; }
+
+        .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--primary-light)); transition: width 0.3s ease; z-index: 100; }
+
+        .toc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; backdrop-filter: blur(4px); }
+        .toc-overlay.open { display: block; }
+        .toc-panel { position: fixed; left: 0; top: 0; bottom: 0; width: 370px; background: var(--bg-card); border-right: 1px solid #334155; z-index: 201; padding: 24px; overflow-y: auto; transform: translateX(-100%); transition: transform 0.3s ease; }
+        .toc-overlay.open .toc-panel { transform: translateX(0); }
+        .toc-panel h3 { color: var(--accent); margin-bottom: 16px; font-size: 1.2rem; }
+        .toc-panel a { display: block; color: var(--text-dim); text-decoration: none; padding: 7px 12px; border-radius: 6px; font-size: 0.87rem; margin-bottom: 2px; transition: all 0.2s; }
+        .toc-panel a:hover { background: rgba(51,103,145,0.2); color: var(--text-bright); }
+        .toc-panel a.section-header { color: var(--accent-light); font-weight: 600; margin-top: 10px; font-size: 0.92rem; }
+
+        .slide-content { max-height: calc(100vh - 130px); overflow-y: auto; padding-right: 8px; }
+        .slide-content::-webkit-scrollbar { width: 5px; }
+        .slide-content::-webkit-scrollbar-track { background: transparent; }
+        .slide-content::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+        @media (max-width: 900px) {
+            .slide { padding: 36px 28px 60px; }
+            h1 { font-size: 2rem; } h2 { font-size: 1.5rem; }
+            .compare, .columns-2 { grid-template-columns: 1fr; }
+            .columns-3, .agg-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- ══ TOC ══ -->
+<div class="toc-overlay" id="tocOverlay" onclick="closeTOC()">
+    <div class="toc-panel" onclick="event.stopPropagation()">
+        <h3>📑 Mục Lục — Tuần 6</h3>
+        <a href="#" onclick="goSlide(0);return false;">🏠 Trang bìa</a>
+        <a href="#" onclick="goSlide(1);return false;">🎯 Mục tiêu tuần này</a>
+        <a href="#" onclick="goSlide(2);return false;">📖 Câu chuyện mở đầu</a>
+
+        <a href="#" class="section-header" onclick="goSlide(3);return false;">6.1 Hàm tổng hợp là gì?</a>
+        <a href="#" onclick="goSlide(4);return false;">Excel ↔ SQL — 5 hàm cơ bản</a>
+        <a href="#" onclick="goSlide(5);return false;">Bức tranh tổng thể — GROUP BY</a>
+
+        <a href="#" class="section-header" onclick="goSlide(6);return false;">6.2 COUNT()</a>
+        <a href="#" onclick="goSlide(7);return false;">COUNT(*) — đếm tất cả hàng</a>
+        <a href="#" onclick="goSlide(8);return false;">COUNT(cot) — bỏ qua NULL</a>
+        <a href="#" onclick="goSlide(9);return false;">COUNT(DISTINCT) — đếm khác nhau</a>
+
+        <a href="#" class="section-header" onclick="goSlide(10);return false;">6.3 SUM() và AVG()</a>
+        <a href="#" onclick="goSlide(11);return false;">SUM() — tính tổng</a>
+        <a href="#" onclick="goSlide(12);return false;">AVG() — tính trung bình</a>
+
+        <a href="#" class="section-header" onclick="goSlide(13);return false;">6.4 MIN() và MAX()</a>
+        <a href="#" onclick="goSlide(14);return false;">MIN / MAX + tổng hợp tất cả hàm</a>
+
+        <a href="#" class="section-header" onclick="goSlide(15);return false;">6.5 GROUP BY — Pivot Table</a>
+        <a href="#" onclick="goSlide(16);return false;">Pivot Table ↔ GROUP BY</a>
+        <a href="#" onclick="goSlide(17);return false;">Cú pháp GROUP BY</a>
+        <a href="#" onclick="goSlide(18);return false;">⚠️ Quy tắc vàng — lỗi hay gặp</a>
+        <a href="#" onclick="goSlide(19);return false;">Ví dụ GROUP BY thực tế</a>
+
+        <a href="#" class="section-header" onclick="goSlide(20);return false;">6.6 GROUP BY nhiều cột</a>
+        <a href="#" onclick="goSlide(21);return false;">Nhóm theo nhiều tiêu chí</a>
+
+        <a href="#" class="section-header" onclick="goSlide(22);return false;">6.7 HAVING — lọc nhóm</a>
+        <a href="#" onclick="goSlide(23);return false;">HAVING hoạt động như thế nào</a>
+        <a href="#" onclick="goSlide(24);return false;">Ví dụ HAVING thực tế</a>
+
+        <a href="#" class="section-header" onclick="goSlide(25);return false;">6.8 WHERE vs HAVING ⚠️</a>
+        <a href="#" onclick="goSlide(26);return false;">Bảng so sánh WHERE / HAVING</a>
+        <a href="#" onclick="goSlide(27);return false;">Sơ đồ luồng thực thi</a>
+        <a href="#" onclick="goSlide(28);return false;">Lỗi phổ biến + bảng quyết định</a>
+
+        <a href="#" class="section-header" onclick="goSlide(29);return false;">6.9 Kết hợp đầy đủ</a>
+        <a href="#" onclick="goSlide(30);return false;">Ví dụ thực tế từ A → Z</a>
+
+        <a href="#" class="section-header" onclick="goSlide(31);return false;">6.10 Thứ tự thực thi</a>
+        <a href="#" onclick="goSlide(32);return false;">Viết vs Thực thi</a>
+        <a href="#" onclick="goSlide(33);return false;">Alias — ai dùng được, ai không</a>
+
+        <a href="#" class="section-header" onclick="goSlide(34);return false;">📋 Tổng Kết</a>
+        <a href="#" onclick="goSlide(35);return false;">Bảng tra cứu nhanh</a>
+        <a href="#" onclick="goSlide(36);return false;">So sánh Excel ↔ SQL</a>
+        <a href="#" onclick="goSlide(37);return false;">✅ Checklist + Tiếp theo</a>
+    </div>
+</div>
+
+<div class="slide-deck" id="deck">
+
+<!-- ═══ SLIDE 0: TITLE ═══ -->
+<div class="slide title-slide active">
+    <div class="week-badge">TUẦN 6</div>
+    <h1>Hàm Tổng Hợp &amp; GROUP BY</h1>
+    <p class="subtitle">COUNT · SUM · AVG · MIN · MAX · GROUP BY · HAVING</p>
+    <p style="color:var(--text-dim);margin-top:20px;font-size:1rem;">⏱ Thời lượng: 3–4 giờ &nbsp;|&nbsp; Yêu cầu: Đã hoàn thành Tuần 5 (WHERE, ORDER BY)</p>
+    <p style="color:var(--text-dim);margin-top:12px;font-size:0.9rem;">← → Space &nbsp;điều hướng &nbsp;·&nbsp; M &nbsp;mục lục &nbsp;·&nbsp; Home/End &nbsp;đầu/cuối</p>
+</div>
+
+<!-- ═══ SLIDE 1: MỤC TIÊU ═══ -->
+<div class="slide">
+    <h2>🎯 Mục Tiêu Tuần 6</h2>
+    <div class="columns-3" style="margin-top:10px;">
+        <div class="card tip">
+            <div style="font-size:2rem;margin-bottom:8px;">🔢</div>
+            <h3>Hàm tổng hợp</h3>
+            <p>Dùng COUNT, SUM, AVG, MIN, MAX để tính toán trên toàn bộ tập dữ liệu hoặc từng nhóm</p>
+        </div>
+        <div class="card info">
+            <div style="font-size:2rem;margin-bottom:8px;">📊</div>
+            <h3>GROUP BY = Pivot Table</h3>
+            <p>Nhóm dữ liệu theo một hay nhiều cột — giống kéo field vào vùng Rows trong Pivot Table</p>
+        </div>
+        <div class="card excel">
+            <div style="font-size:2rem;margin-bottom:8px;">🔦</div>
+            <h3>HAVING — lọc nhóm</h3>
+            <p>Lọc kết quả sau khi tổng hợp — như filter trực tiếp trên kết quả Pivot Table</p>
+        </div>
+    </div>
+    <div class="card info" style="margin-top:10px;">
+        <p>📌 Sau tuần này bạn trả lời được: <em>"Phòng nào có từ 3 nhân viên đang làm việc trở lên và lương trung bình trên 18 triệu?"</em> — chỉ trong một câu SQL.</p>
+    </div>
+    <div class="card excel" style="margin-top:8px;">
+        <p>📊 <strong>Liên hệ Excel:</strong> Tuần này là trọng tâm nhất đối với người dùng Excel — mọi thứ bạn làm với Pivot Table đều có thể làm bằng GROUP BY, nhưng <strong>linh hoạt và tự động hóa được hơn rất nhiều.</strong></p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 2: CÂU CHUYỆN ═══ -->
+<div class="slide">
+    <h2>📖 Câu Chuyện Mở Đầu</h2>
+    <p style="margin-bottom:14px;">Cuối tháng, sếp gửi 4 câu hỏi:</p>
+    <div class="columns-2">
+        <div>
+            <div class="card" style="margin-bottom:8px;"><p>❓ <em>"Công ty hiện có bao nhiêu nhân viên đang làm việc?"</em></p></div>
+            <div class="card" style="margin-bottom:8px;"><p>❓ <em>"Tổng quỹ lương mỗi tháng là bao nhiêu?"</em></p></div>
+            <div class="card" style="margin-bottom:8px;"><p>❓ <em>"Phòng nào có lương trung bình cao nhất?"</em></p></div>
+            <div class="card"><p>❓ <em>"Ai có lương cao nhất, ai thấp nhất?"</em></p></div>
+        </div>
+        <div>
+            <div class="card excel" style="margin-bottom:10px;">
+                <h3>📊 Với Excel</h3>
+                <p>Gõ công thức vào từng ô: <code>=COUNT(B2:B100)</code>, <code>=SUM(C2:C100)</code>, <code>=AVERAGE(C2:C100)</code>...<br>Tạo Pivot Table để xem theo phòng ban.</p>
+                <p style="margin-top:8px;color:var(--text-dim);font-size:0.9rem;">Hạn chế: kết quả chỉ nằm trong file Excel đó.</p>
+            </div>
+            <div class="card pg">
+                <h3>🐘 Với SQL</h3>
+                <pre style="font-size:0.8rem;margin-top:8px;"><span class="keyword">SELECT</span>
+    <span class="func">COUNT</span>(*) <span class="keyword">AS</span> tong_nhan_vien,
+    <span class="func">SUM</span>(luong) <span class="keyword">AS</span> tong_quy_luong,
+    <span class="func">AVG</span>(luong) <span class="keyword">AS</span> luong_tb,
+    <span class="func">MAX</span>(luong) <span class="keyword">AS</span> cao_nhat,
+    <span class="func">MIN</span>(luong) <span class="keyword">AS</span> thap_nhat
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>;</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 3: SECTION 6.1 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6.1</div>
+    <h1>Hàm Tổng Hợp Là Gì?</h1>
+    <p class="subtitle">Tương đương SUM(), COUNT(), AVERAGE()... trong Excel</p>
+</div>
+
+<!-- ═══ SLIDE 4: 5 HÀM CƠ BẢN ═══ -->
+<div class="slide">
+    <h2>5 Hàm Tổng Hợp Cơ Bản — Excel ↔ SQL</h2>
+    <div class="agg-grid">
+        <div class="agg-box">
+            <div class="func-name">COUNT(*)</div>
+            <div class="excel-eq">=COUNTA()</div>
+            <div class="desc">Đếm tất cả hàng</div>
+        </div>
+        <div class="agg-box">
+            <div class="func-name">SUM()</div>
+            <div class="excel-eq">=SUM()</div>
+            <div class="desc">Tính tổng</div>
+        </div>
+        <div class="agg-box">
+            <div class="func-name">AVG()</div>
+            <div class="excel-eq">=AVERAGE()</div>
+            <div class="desc">Tính trung bình</div>
+        </div>
+        <div class="agg-box">
+            <div class="func-name">MIN()</div>
+            <div class="excel-eq">=MIN()</div>
+            <div class="desc">Giá trị nhỏ nhất</div>
+        </div>
+        <div class="agg-box">
+            <div class="func-name">MAX()</div>
+            <div class="excel-eq">=MAX()</div>
+            <div class="desc">Giá trị lớn nhất</div>
+        </div>
+    </div>
+    <div class="card excel" style="margin-bottom:10px;">
+        <p>📊 <strong>Điểm khác biệt quan trọng:</strong><br>
+        Excel: viết công thức cho <strong>một ô cụ thể</strong> → kéo xuống.<br>
+        SQL: hàm tổng hợp áp dụng cho <strong>toàn bộ tập kết quả</strong> — hoặc từng nhóm khi kết hợp GROUP BY.</p>
+    </div>
+    <div class="filter-visual"><span class="row-header">  Excel                    SQL</span>
+<span class="row-dim">  ─────────────────────────────────────────────────────────</span>
+<span class="row-pass">  =COUNT(B2:B100)    →    COUNT(*)  hoặc  COUNT(ten_cot)</span>
+<span class="row-pass">  =SUM(C2:C100)      →    SUM(luong)</span>
+<span class="row-pass">  =AVERAGE(C2:C100)  →    AVG(luong)</span>
+<span class="row-pass">  =MIN(C2:C100)      →    MIN(luong)</span>
+<span class="row-pass">  =MAX(C2:C100)      →    MAX(luong)</span></div>
+</div>
+
+<!-- ═══ SLIDE 5: BỨC TRANH TỔNG THỂ ═══ -->
+<div class="slide">
+    <h2>Bức Tranh Tổng Thể — GROUP BY = Pivot Table</h2>
+    <div class="compare">
+        <div>
+            <h3>📊 Pivot Table Excel</h3>
+            <div class="filter-visual" style="font-size:0.78rem;"><span class="row-header">Row Labels  │ Count │ Sum Lương    │ Avg Lương</span>
+<span class="row-dim">────────────┼───────┼──────────────┼──────────────</span>
+<span class="row-pass">IT          │   3   │   83,000,000 │  27,666,667</span>
+<span class="row-pass">Kế toán     │   3   │   47,000,000 │  15,666,667</span>
+<span class="row-pass">Kinh doanh  │   4   │   80,500,000 │  20,125,000</span>
+<span class="row-pass">Nhân sự     │   2   │   34,000,000 │  17,000,000</span></div>
+            <p style="font-size:0.85rem;color:var(--text-dim);margin-top:6px;">Kéo "Phòng ban" vào Rows, "Lương" vào Values</p>
+        </div>
+        <div>
+            <h3>🐘 GROUP BY SQL</h3>
+            <pre style="font-size:0.82rem;"><span class="keyword">SELECT</span>
+    phong_ban,
+    <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nv,
+    <span class="func">SUM</span>(luong) <span class="keyword">AS</span> tong_luong,
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong), <span class="number">0</span>) <span class="keyword">AS</span> luong_tb
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">ORDER BY</span> phong_ban;</pre>
+        </div>
+    </div>
+    <div class="card tip">
+        <p>💡 Kết quả y hệt nhau! Bạn đã dùng Pivot Table → bạn đã hiểu GROUP BY về mặt logic rồi.</p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 6: SECTION 6.2 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6.2</div>
+    <h1>COUNT()</h1>
+    <p class="subtitle">Đếm số hàng — tương đương COUNTA() và COUNTIF() trong Excel</p>
+</div>
+
+<!-- ═══ SLIDE 7: COUNT(*) ═══ -->
+<div class="slide">
+    <h2>COUNT(*) — Đếm Tất Cả Hàng</h2>
+    <p style="margin-bottom:12px;"><code>COUNT(*)</code> đếm toàn bộ hàng trong kết quả, <strong>kể cả hàng có NULL</strong> ở bất kỳ cột nào.</p>
+    <div class="columns-2">
+        <div>
+            <pre><span class="comment">-- Bao nhiêu nhân viên tất cả?</span>
+<span class="keyword">SELECT</span> <span class="func">COUNT</span>(*) <span class="keyword">AS</span> tong_nhan_vien
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            <div class="filter-visual" style="font-size:0.85rem;"><span class="row-header">  tong_nhan_vien</span>
+<span class="row-dim">  ───────────────</span>
+<span class="row-pass">              12</span></div>
+            <pre style="margin-top:8px;"><span class="comment">-- Đếm nhân viên đang làm việc</span>
+<span class="keyword">SELECT</span> <span class="func">COUNT</span>(*) <span class="keyword">AS</span> dang_lam
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>;</pre>
+        </div>
+        <div>
+            <div class="card excel">
+                <h3>📊 Tương đương Excel</h3>
+                <table style="margin-top:8px;font-size:0.88rem;">
+                    <tr><th>SQL</th><th>Excel</th></tr>
+                    <tr><td><code>COUNT(*)</code></td><td><code>=COUNTA(B2:B100)</code></td></tr>
+                    <tr><td><code>COUNT(*) WHERE ...</code></td><td><code>=COUNTIF(B2:B100, "đk")</code></td></tr>
+                </table>
+            </div>
+            <div class="card tip" style="margin-top:8px;">
+                <p>💡 <code>COUNT(*)</code> đếm số <strong>hàng</strong>, không phải số ô có giá trị. Kể cả hàng mà tất cả cột đều NULL vẫn được đếm.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 8: COUNT(cot) vs NULL ═══ -->
+<div class="slide">
+    <h2>COUNT(cột) — Bỏ Qua NULL</h2>
+    <p style="margin-bottom:12px;"><code>COUNT(ten_cot)</code> chỉ đếm hàng <strong>có giá trị</strong> trong cột đó — bỏ qua NULL hoàn toàn.</p>
+    <div class="filter-visual"><span class="row-header">  email                   COUNT(*) đếm?   COUNT(email) đếm?</span>
+<span class="row-dim">  ─────────────────────────────────────────────────────────────</span>
+<span class="row-pass">  mai.tran@cty.com        ✅ có            ✅ có</span>
+  NULL                    ✅ có            <span class="text-danger">❌ bỏ qua</span>
+<span class="row-pass">  an.nguyen@cty.com       ✅ có            ✅ có</span>
+  NULL                    ✅ có            <span class="text-danger">❌ bỏ qua</span>
+<span class="row-dim">  ─────────────────────────────────────────────────────────────</span>
+<span class="row-pass">  COUNT(*) = 4                             COUNT(email) = 2</span></div>
+    <pre style="margin-top:10px;">
+<span class="comment">-- Đếm nhân viên ĐÃ CÓ email</span>
+<span class="keyword">SELECT</span> <span class="func">COUNT</span>(email) <span class="keyword">AS</span> co_email <span class="keyword">FROM</span> nhan_vien;
+
+<span class="comment">-- Đếm nhân viên CHƯA CÓ email</span>
+<span class="keyword">SELECT</span> <span class="func">COUNT</span>(*) <span class="keyword">AS</span> chua_co_email <span class="keyword">FROM</span> nhan_vien <span class="keyword">WHERE</span> email <span class="op">IS NULL</span>;</pre>
+</div>
+
+<!-- ═══ SLIDE 9: COUNT DISTINCT ═══ -->
+<div class="slide">
+    <h2>3 Dạng COUNT — Phân Biệt Rõ</h2>
+    <div class="columns-3">
+        <div class="card" style="text-align:center;">
+            <p style="font-family:'Fira Code',monospace;font-size:1rem;color:#d2a8ff;font-weight:700;margin-bottom:8px;">COUNT(*)</p>
+            <p style="font-size:0.88rem;">Đếm <strong>tất cả hàng</strong><br>(kể cả hàng có NULL)</p>
+            <p style="color:var(--excel-green);font-size:0.8rem;margin-top:8px;">≈ COUNTA()</p>
+        </div>
+        <div class="card" style="text-align:center;">
+            <p style="font-family:'Fira Code',monospace;font-size:1rem;color:#d2a8ff;font-weight:700;margin-bottom:8px;">COUNT(cot)</p>
+            <p style="font-size:0.88rem;">Đếm hàng <strong>có giá trị</strong><br>(bỏ qua NULL)</p>
+            <p style="color:var(--excel-green);font-size:0.8rem;margin-top:8px;">≈ COUNT()</p>
+        </div>
+        <div class="card" style="text-align:center;">
+            <p style="font-family:'Fira Code',monospace;font-size:0.9rem;color:#d2a8ff;font-weight:700;margin-bottom:8px;">COUNT(DISTINCT cot)</p>
+            <p style="font-size:0.88rem;">Đếm giá trị <strong>khác nhau</strong><br>(bỏ trùng lặp)</p>
+            <p style="color:var(--excel-green);font-size:0.8rem;margin-top:8px;">≈ Remove Duplicates rồi COUNT</p>
+        </div>
+    </div>
+    <pre style="margin-top:10px;">
+<span class="comment">-- Có bao nhiêu phòng ban khác nhau?</span>
+<span class="keyword">SELECT</span> <span class="func">COUNT</span>(<span class="keyword">DISTINCT</span> phong_ban) <span class="keyword">AS</span> so_phong_ban
+<span class="keyword">FROM</span> nhan_vien;
+<span class="comment">-- Kết quả: 4  (IT, Kế toán, Kinh doanh, Nhân sự)</span>
+
+<span class="comment">-- Trong phòng Kinh doanh có mấy mức lương khác nhau?</span>
+<span class="keyword">SELECT</span> <span class="func">COUNT</span>(<span class="keyword">DISTINCT</span> luong) <span class="keyword">AS</span> so_muc_luong
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> phong_ban = <span class="string">'Kinh doanh'</span>;</pre>
+    <div class="card info">
+        <p>📌 <strong>Nguyên tắc chọn:</strong> Muốn đếm hàng → <code>COUNT(*)</code>. Muốn đếm hàng có giá trị → <code>COUNT(cot)</code>. Muốn đếm các giá trị riêng biệt → <code>COUNT(DISTINCT cot)</code>.</p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 10: SECTION 6.3 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6.3</div>
+    <h1>SUM() và AVG()</h1>
+    <p class="subtitle">Tính tổng và trung bình — =SUM() và =AVERAGE() trong Excel</p>
+</div>
+
+<!-- ═══ SLIDE 11: SUM ═══ -->
+<div class="slide">
+    <h2>SUM() — Tính Tổng</h2>
+    <div class="columns-2">
+        <div>
+            <pre><span class="comment">-- Tổng quỹ lương toàn công ty</span>
+<span class="keyword">SELECT</span> <span class="func">SUM</span>(luong) <span class="keyword">AS</span> tong_quy_luong
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>;</pre>
+            <div class="filter-visual" style="font-size:0.85rem;"><span class="row-header">  tong_quy_luong</span>
+<span class="row-dim">  ─────────────────</span>
+<span class="row-pass">       214,500,000</span>
+<span class="row-dim">  (214.5 triệu đ/tháng)</span></div>
+        </div>
+        <div>
+            <div class="card warning">
+                <h3>⚠️ SUM() với NULL</h3>
+                <p>SUM() <strong>tự động bỏ qua NULL</strong>. Nếu cột lương có một hàng NULL, SUM() vẫn tính đúng tổng cho các hàng còn lại.</p>
+            </div>
+            <div class="card tip" style="margin-top:8px;">
+                <h3>💡 Mẹo kiểm tra</h3>
+                <pre style="font-size:0.82rem;"><span class="comment">-- Kiểm tra tổng có khớp không</span>
+<span class="keyword">SELECT</span>
+    <span class="func">SUM</span>(luong) <span class="keyword">AS</span> tong,
+    <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_hang,
+    <span class="func">COUNT</span>(luong) <span class="keyword">AS</span> co_gia_tri
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 12: AVG ═══ -->
+<div class="slide">
+    <h2>AVG() — Tính Trung Bình</h2>
+    <div class="columns-2">
+        <div>
+            <pre><span class="comment">-- Lương trung bình (làm tròn đến đồng)</span>
+<span class="keyword">SELECT</span>
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong), <span class="number">0</span>) <span class="keyword">AS</span> luong_trung_binh
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>;</pre>
+            <div class="filter-visual" style="font-size:0.85rem;"><span class="row-header">  luong_trung_binh</span>
+<span class="row-dim">  ──────────────────</span>
+<span class="row-pass">          19,500,000</span></div>
+        </div>
+        <div>
+            <div class="card warning">
+                <h3>⚠️ AVG() với NULL — Quan trọng!</h3>
+                <p>AVG() chia tổng cho số hàng <strong>CÓ GIÁ TRỊ</strong>, không phải tổng số hàng:</p>
+                <div class="filter-visual" style="font-size:0.8rem;margin-top:8px;">3 hàng lương: 10tr, NULL, 20tr
+AVG(luong) = (10tr + 20tr) / 2
+           = 15tr   <span class="row-pass">← Đúng</span>
+Không phải  = 30tr / 3
+           = 10tr   <span class="row-fail">← Sai!</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="card info" style="margin-top:8px;">
+        <p>💡 Nên dùng <code>ROUND(AVG(luong), 0)</code> để làm tròn kết quả cho dễ đọc — giống <code>=ROUND(AVERAGE(...), 0)</code> trong Excel.</p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 13: SECTION 6.4 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6.4</div>
+    <h1>MIN() và MAX()</h1>
+    <p class="subtitle">Giá trị nhỏ nhất và lớn nhất — không chỉ dùng cho số!</p>
+</div>
+
+<!-- ═══ SLIDE 14: MIN MAX + TỔNG HỢP ═══ -->
+<div class="slide">
+    <h2>MIN() / MAX() + Tổng Hợp Tất Cả Hàm</h2>
+    <div class="columns-2">
+        <div>
+            <pre style="font-size:0.82rem;"><span class="comment">-- Lương cao nhất và thấp nhất</span>
+<span class="keyword">SELECT</span>
+    <span class="func">MIN</span>(luong) <span class="keyword">AS</span> thap_nhat,
+    <span class="func">MAX</span>(luong) <span class="keyword">AS</span> cao_nhat
+<span class="keyword">FROM</span> nhan_vien;
+
+<span class="comment">-- Dùng với ngày: ai vào sớm/muộn nhất?</span>
+<span class="keyword">SELECT</span>
+    <span class="func">MIN</span>(ngay_vao_lam) <span class="keyword">AS</span> vao_som_nhat,
+    <span class="func">MAX</span>(ngay_vao_lam) <span class="keyword">AS</span> vao_muon_nhat
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            <div class="card info" style="margin-top:8px;">
+                <p>💡 <strong>MIN/MAX không chỉ cho số:</strong><br>
+                • Ngày tháng: MIN = ngày cũ nhất<br>
+                • Text: MIN = đầu bảng chữ cái (A...)</p>
+            </div>
+        </div>
+        <div>
+            <h3 style="margin-bottom:8px;">Tổng hợp tất cả trong một query:</h3>
+            <pre style="font-size:0.78rem;"><span class="keyword">SELECT</span>
+    <span class="func">COUNT</span>(*)                 <span class="keyword">AS</span> tong_nv,
+    <span class="func">COUNT</span>(email)             <span class="keyword">AS</span> co_email,
+    <span class="func">SUM</span>(luong)               <span class="keyword">AS</span> tong_luong,
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong), <span class="number">0</span>)    <span class="keyword">AS</span> luong_tb,
+    <span class="func">MIN</span>(luong)               <span class="keyword">AS</span> luong_min,
+    <span class="func">MAX</span>(luong)               <span class="keyword">AS</span> luong_max
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>;</pre>
+            <div class="filter-visual" style="font-size:0.75rem;margin-top:8px;"><span class="row-header"> tong_nv │co_email│  tong_luong│  luong_tb│ luong_min│ luong_max</span>
+<span class="row-dim"> ────────┼────────┼────────────┼──────────┼──────────┼──────────</span>
+<span class="row-pass">      11 │      9 │ 214,500,000│19,500,000│13,000,000│30,000,000</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 15: SECTION 6.5 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6.5</div>
+    <h1>GROUP BY</h1>
+    <p class="subtitle">Nhóm dữ liệu theo cột — Pivot Table trong SQL</p>
+</div>
+
+<!-- ═══ SLIDE 16: PIVOT TABLE ↔ GROUP BY ═══ -->
+<div class="slide">
+    <h2>Pivot Table Excel ↔ GROUP BY SQL</h2>
+    <div class="compare">
+        <div>
+            <h3>📊 Cách làm trong Excel (Pivot Table)</h3>
+            <ul style="font-size:0.92rem;margin-top:8px;">
+                <li>Kéo <strong>"Phòng ban"</strong> vào vùng <strong>Rows</strong></li>
+                <li>Kéo <strong>"Nhân viên"</strong> vào Values → <strong>Count</strong></li>
+                <li>Kéo <strong>"Lương"</strong> vào Values → <strong>Sum</strong></li>
+                <li>Kéo <strong>"Lương"</strong> vào Values → <strong>Average</strong></li>
+            </ul>
+            <div class="card" style="margin-top:10px;font-size:0.82rem;font-family:'Fira Code',monospace;padding:12px 16px;">
+                <p style="color:var(--accent-light);margin-bottom:6px;">Kết quả Pivot Table:</p>
+                <p style="color:var(--text-dim);">IT          │ 3 │ 83,000,000 │ 27,666,667</p>
+                <p style="color:var(--text-dim);">Kế toán     │ 3 │ 47,000,000 │ 15,666,667</p>
+                <p style="color:var(--text-dim);">Kinh doanh  │ 4 │ 80,500,000 │ 20,125,000</p>
+                <p style="color:var(--text-dim);">Nhân sự     │ 2 │ 34,000,000 │ 17,000,000</p>
+            </div>
+        </div>
+        <div>
+            <h3>🐘 Cách làm trong SQL (GROUP BY)</h3>
+            <table style="margin-top:8px;font-size:0.82rem;">
+                <tr><th>Pivot Table</th><th>SQL</th></tr>
+                <tr><td>Kéo vào Rows</td><td><code>GROUP BY phong_ban</code></td></tr>
+                <tr><td>Values → Count</td><td><code>COUNT(*)</code> trong SELECT</td></tr>
+                <tr><td>Values → Sum</td><td><code>SUM(luong)</code> trong SELECT</td></tr>
+                <tr><td>Values → Average</td><td><code>AVG(luong)</code> trong SELECT</td></tr>
+            </table>
+            <pre style="margin-top:10px;font-size:0.82rem;"><span class="keyword">SELECT</span>
+    phong_ban,
+    <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nhan_vien,
+    <span class="func">SUM</span>(luong) <span class="keyword">AS</span> tong_luong,
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong),<span class="number">0</span>) <span class="keyword">AS</span> luong_tb
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">ORDER BY</span> phong_ban;</pre>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 17: CÚ PHÁP GROUP BY ═══ -->
+<div class="slide">
+    <h2>Cú Pháp GROUP BY</h2>
+    <div class="filter-visual"><span class="row-header">  ┌────────────────────────────────────────────────────────────────────┐</span>
+<span class="row-header">  │                     CÚ PHÁP GROUP BY                              │</span>
+<span class="row-header">  ├────────────────────────────────────────────────────────────────────┤</span>
+<span class="row-dim">  │                                                                    │</span>
+<span class="row-pass">  │  SELECT   cot_nhom, ham_tong_hop(cot_tinh)                         │</span>
+<span class="row-pass">  │  FROM     ten_bang                                                 │</span>
+<span class="row-pass">  │  WHERE    dieu_kien_loc_hang   ← Lọc hàng TRƯỚC khi nhóm          │</span>
+<span class="row-pass">  │  GROUP BY cot_nhom;            ← Nhóm theo cột này                 │</span>
+<span class="row-dim">  │                                                                    │</span>
+<span class="row-header">  │  QUY TẮC VÀNG:                                                     │</span>
+<span class="row-dim">  │  Mọi cột trong SELECT phải thuộc một trong hai loại:               │</span>
+<span class="row-pass">  │  ├── Cột nhóm:     có trong GROUP BY                               │</span>
+<span class="row-pass">  │  └── Cột tổng hợp: bên trong COUNT(), SUM(), AVG(), MIN(), MAX()   │</span>
+<span class="row-dim">  └────────────────────────────────────────────────────────────────────┘</span></div>
+    <div class="card excel">
+        <p>📊 <strong>Nhớ qua Pivot Table:</strong> Cột nhóm = vùng <strong>Rows</strong> (bạn kéo vào đây). Hàm tổng hợp = vùng <strong>Values</strong> (phải là số tổng hợp, không phải từng ô đơn lẻ).</p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 18: QUY TẮC VÀNG ═══ -->
+<div class="slide">
+    <h2>⚠️ Quy Tắc Vàng — Lỗi Hay Gặp Nhất</h2>
+    <div class="compare">
+        <div>
+            <h3 class="text-danger">❌ Sai — ho_ten không trong GROUP BY</h3>
+            <pre style="font-size:0.82rem;"><span class="keyword">SELECT</span> phong_ban, ho_ten, <span class="func">COUNT</span>(*)
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban;
+<span class="comment">-- ERROR: column "nhan_vien.ho_ten"</span>
+<span class="comment">-- must appear in the GROUP BY clause</span>
+<span class="comment">-- or be used in an aggregate function</span></pre>
+            <div class="filter-visual" style="font-size:0.78rem;margin-top:8px;"><span class="row-header">Vì sao lỗi? Nhóm IT có 3 người:</span>
+<span class="row-dim">  Phạm Minh Châu   │ IT │ 25,000,000</span>
+<span class="row-dim">  Đỗ Thị Phương    │ IT │ 30,000,000</span>
+<span class="row-dim">  Ngô Minh Khánh   │ IT │ 28,000,000</span>
+<span class="text-warning">  ← Máy không biết hiển thị ho_ten nào!</span></div>
+        </div>
+        <div>
+            <h3 class="text-success">✅ Đúng — chỉ cột nhóm + hàm tổng hợp</h3>
+            <pre style="font-size:0.82rem;"><span class="comment">-- Chỉ cột nhóm + hàm tổng hợp</span>
+<span class="keyword">SELECT</span> phong_ban, <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nv
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban;</pre>
+            <pre style="font-size:0.82rem;margin-top:8px;"><span class="comment">-- Nếu muốn cả ho_ten: thêm vào GROUP BY</span>
+<span class="comment">-- (lúc này mỗi người một nhóm)</span>
+<span class="keyword">SELECT</span> phong_ban, ho_ten, <span class="func">COUNT</span>(*)
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban, ho_ten;</pre>
+            <div class="card tip" style="margin-top:8px;">
+                <p>✅ Quy tắc đơn giản: chỉ SELECT những gì bạn đã bỏ vào GROUP BY hoặc bọc trong hàm tổng hợp.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 19: GROUP BY VÍ DỤ THỰC TẾ ═══ -->
+<div class="slide">
+    <h2>Ví Dụ GROUP BY Thực Tế</h2>
+    <div class="columns-2">
+        <div>
+            <pre style="font-size:0.82rem;"><span class="comment">-- Đếm nhân viên theo phòng ban</span>
+<span class="keyword">SELECT</span>
+    phong_ban,
+    <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nhan_vien
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">ORDER BY</span> so_nhan_vien <span class="op">DESC</span>;</pre>
+            <div class="filter-visual" style="font-size:0.82rem;margin-top:8px;"><span class="row-header"> phong_ban   │ so_nhan_vien</span>
+<span class="row-dim"> ────────────┼──────────────</span>
+<span class="row-pass"> Kinh doanh  │            4</span>
+<span class="row-pass"> IT          │            3</span>
+<span class="row-pass"> Kế toán     │            3</span>
+<span class="row-pass"> Nhân sự     │            2</span></div>
+        </div>
+        <div>
+            <pre style="font-size:0.78rem;"><span class="comment">-- Thống kê đầy đủ theo phòng ban</span>
+<span class="comment">-- (chỉ nhân viên đang làm)</span>
+<span class="keyword">SELECT</span>
+    phong_ban,
+    <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nv,
+    <span class="func">SUM</span>(luong) <span class="keyword">AS</span> tong_luong,
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong),<span class="number">0</span>) <span class="keyword">AS</span> luong_tb,
+    <span class="func">MIN</span>(luong) <span class="keyword">AS</span> luong_min,
+    <span class="func">MAX</span>(luong) <span class="keyword">AS</span> luong_max
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">ORDER BY</span> luong_tb <span class="op">DESC</span>;</pre>
+            <div class="card tip" style="margin-top:8px;">
+                <p>💡 <code>WHERE</code> chạy <strong>trước</strong> GROUP BY — bộ lọc hàng áp dụng trên dữ liệu thô, trước khi tạo nhóm.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 20: SECTION 6.6 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6.6</div>
+    <h1>GROUP BY Nhiều Cột</h1>
+    <p class="subtitle">Nhóm theo nhiều tiêu chí — như nhiều fields trong Rows của Pivot Table</p>
+</div>
+
+<!-- ═══ SLIDE 21: GROUP BY NHIỀU CỘT ═══ -->
+<div class="slide">
+    <h2>GROUP BY Nhiều Cột</h2>
+    <div class="compare">
+        <div>
+            <h3>📊 Pivot Table — 2 fields trong Rows</h3>
+            <div class="filter-visual" style="font-size:0.82rem;"><span class="row-header"> Phòng ban    │ Tình trạng  │ Count</span>
+<span class="row-dim"> ─────────────┼─────────────┼───────</span>
+<span class="row-pass"> IT           │ dang_lam    │   3</span>
+<span class="row-pass"> Kế toán      │ dang_lam    │   3</span>
+<span class="row-pass"> Kinh doanh   │ dang_lam    │   3</span>
+<span class="row-pass"> Kinh doanh   │ nghi_viec   │   1</span>
+<span class="row-pass"> Nhân sự      │ dang_lam    │   2</span></div>
+        </div>
+        <div>
+            <h3>🐘 GROUP BY 2 cột</h3>
+            <pre style="font-size:0.85rem;"><span class="keyword">SELECT</span>
+    phong_ban,
+    tinh_trang,
+    <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nhan_vien
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban, tinh_trang
+<span class="keyword">ORDER BY</span> phong_ban, tinh_trang;</pre>
+            <div class="card tip" style="margin-top:10px;">
+                <p>💡 Quy tắc vàng vẫn áp dụng: tất cả cột nhóm (<code>phong_ban</code>, <code>tinh_trang</code>) đều phải có trong GROUP BY.</p>
+            </div>
+        </div>
+    </div>
+    <div class="card info" style="margin-top:10px;">
+        <p>📌 Thêm ví dụ hữu ích: đếm email theo phòng ban và trạng thái email:</p>
+        <pre style="font-size:0.82rem;margin-top:8px;"><span class="keyword">SELECT</span> phong_ban, <span class="func">COUNT</span>(*) <span class="keyword">AS</span> tong_nv, <span class="func">COUNT</span>(email) <span class="keyword">AS</span> co_email,
+       <span class="func">COUNT</span>(*) - <span class="func">COUNT</span>(email) <span class="keyword">AS</span> chua_co_email
+<span class="keyword">FROM</span> nhan_vien <span class="keyword">GROUP BY</span> phong_ban <span class="keyword">ORDER BY</span> chua_co_email <span class="op">DESC</span>;</pre>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 22: SECTION 6.7 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6.7</div>
+    <h1>HAVING</h1>
+    <p class="subtitle">Lọc sau khi nhóm — như filter trực tiếp trên kết quả Pivot Table</p>
+</div>
+
+<!-- ═══ SLIDE 23: HAVING HOẠT ĐỘNG ═══ -->
+<div class="slide">
+    <h2>HAVING — Lọc Nhóm Sau Khi Tổng Hợp</h2>
+    <p style="margin-bottom:12px;"><strong>Ví dụ:</strong> "Chỉ hiển thị phòng ban có từ 3 nhân viên trở lên"</p>
+    <div class="columns-2">
+        <div>
+            <p style="font-size:0.9rem;color:var(--text-dim);margin-bottom:8px;">Bước 1 — GROUP BY tạo nhóm:</p>
+            <div class="filter-visual" style="font-size:0.82rem;"><span class="row-header"> phong_ban   │ so_nhan_vien</span>
+<span class="row-dim"> ────────────┼──────────────</span>
+<span class="row-pass"> IT          │      3       ← ✅ ≥ 3</span>
+<span class="row-pass"> Kế toán     │      3       ← ✅ ≥ 3</span>
+<span class="row-pass"> Kinh doanh  │      4       ← ✅ ≥ 3</span>
+<span class="row-fail"> Nhân sự     │      2       ← ❌ &lt; 3  bị loại</span></div>
+            <p style="font-size:0.9rem;color:var(--text-dim);margin-top:10px;margin-bottom:6px;">Bước 2 — HAVING lọc nhóm:</p>
+            <div class="filter-visual" style="font-size:0.82rem;"><span class="row-header"> phong_ban   │ so_nhan_vien</span>
+<span class="row-dim"> ────────────┼──────────────</span>
+<span class="row-pass"> IT          │      3</span>
+<span class="row-pass"> Kế toán     │      3</span>
+<span class="row-pass"> Kinh doanh  │      4</span></div>
+        </div>
+        <div>
+            <pre style="font-size:0.88rem;"><span class="comment">-- Chỉ lấy phòng có ≥ 3 nhân viên</span>
+<span class="keyword">SELECT</span>
+    phong_ban,
+    <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nhan_vien
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">HAVING</span> <span class="func">COUNT</span>(*) >= <span class="number">3</span>
+<span class="keyword">ORDER BY</span> so_nhan_vien <span class="op">DESC</span>;</pre>
+            <div class="card excel" style="margin-top:10px;">
+                <p>📊 <strong>Excel tương đương:</strong> Tạo Pivot Table xong, rồi dùng "Value Filters" → "Greater Than or Equal To" → 3 để lọc. HAVING làm điều đó tự động ngay trong câu SQL.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 24: HAVING VÍ DỤ ═══ -->
+<div class="slide">
+    <h2>Thêm Ví Dụ HAVING</h2>
+    <div class="columns-2">
+        <div>
+            <pre style="font-size:0.82rem;"><span class="comment">-- Phòng có lương TB trên 18 triệu</span>
+<span class="keyword">SELECT</span>
+    phong_ban,
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong), <span class="number">0</span>) <span class="keyword">AS</span> luong_tb
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">HAVING</span> <span class="func">AVG</span>(luong) > <span class="number">18000000</span>
+<span class="keyword">ORDER BY</span> luong_tb <span class="op">DESC</span>;</pre>
+        </div>
+        <div>
+            <pre style="font-size:0.82rem;"><span class="comment">-- Phòng có tổng quỹ lương trên 60tr</span>
+<span class="keyword">SELECT</span>
+    phong_ban,
+    <span class="func">SUM</span>(luong) <span class="keyword">AS</span> tong_luong
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">HAVING</span> <span class="func">SUM</span>(luong) > <span class="number">60000000</span>
+<span class="keyword">ORDER BY</span> tong_luong <span class="op">DESC</span>;</pre>
+        </div>
+    </div>
+    <div class="card info" style="margin-top:12px;">
+        <p>📌 <strong>Nhận xét:</strong> HAVING luôn dùng <strong>hàm tổng hợp</strong> trong điều kiện (<code>AVG(luong)</code>, <code>SUM(luong)</code>, <code>COUNT(*)</code>...). Đây là dấu hiệu nhận biết để phân biệt với WHERE.</p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 25: SECTION 6.8 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6.8</div>
+    <h1>WHERE vs HAVING</h1>
+    <p class="subtitle">Điểm dễ nhầm nhất — cần nhớ thật rõ!</p>
+</div>
+
+<!-- ═══ SLIDE 26: BẢNG SO SÁNH ═══ -->
+<div class="slide">
+    <h2>WHERE vs HAVING — Bảng So Sánh</h2>
+    <div class="compare">
+        <div>
+            <h3 style="color:var(--info);">🔵 WHERE — Lọc Hàng</h3>
+            <ul style="font-size:0.95rem;margin-top:8px;">
+                <li>Chạy <strong>TRƯỚC</strong> GROUP BY</li>
+                <li>Lọc từng <strong>hàng đơn lẻ</strong></li>
+                <li><strong>Không dùng</strong> hàm tổng hợp</li>
+                <li>Điều kiện trên dữ liệu thô</li>
+            </ul>
+            <pre style="margin-top:12px;font-size:0.85rem;"><span class="keyword">WHERE</span> phong_ban = <span class="string">'IT'</span>
+<span class="keyword">WHERE</span> luong > <span class="number">20000000</span>
+<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span></pre>
+        </div>
+        <div>
+            <h3 style="color:var(--success);">🟢 HAVING — Lọc Nhóm</h3>
+            <ul style="font-size:0.95rem;margin-top:8px;">
+                <li>Chạy <strong>SAU</strong> GROUP BY</li>
+                <li>Lọc từng <strong>nhóm</strong></li>
+                <li><strong>Thường dùng</strong> hàm tổng hợp</li>
+                <li>Điều kiện trên kết quả tổng hợp</li>
+            </ul>
+            <pre style="margin-top:12px;font-size:0.85rem;"><span class="keyword">HAVING</span> <span class="func">COUNT</span>(*) >= <span class="number">3</span>
+<span class="keyword">HAVING</span> <span class="func">AVG</span>(luong) > <span class="number">18000000</span>
+<span class="keyword">HAVING</span> <span class="func">SUM</span>(luong) > <span class="number">60000000</span></pre>
+        </div>
+    </div>
+    <div class="card tip" style="margin-top:12px;">
+        <p>💡 <strong>Cách nhớ nhanh:</strong> Thấy hàm tổng hợp trong điều kiện (COUNT, SUM, AVG, MIN, MAX) → dùng <strong>HAVING</strong>. Điều kiện trên từng hàng thông thường → dùng <strong>WHERE</strong>.</p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 27: SƠ ĐỒ LUỒNG ═══ -->
+<div class="slide">
+    <h2>Sơ Đồ Luồng — WHERE và HAVING Ở Đâu?</h2>
+    <div class="exec-flow">
+        <div class="step">
+            <div class="num">1</div>
+            <div class="kw">FROM</div>
+            <div class="note">Lấy toàn bộ bảng nhan_vien — 12 hàng</div>
+        </div>
+        <div class="step where-step">
+            <div class="num" style="background:var(--info);">2</div>
+            <div class="kw">WHERE</div>
+            <div class="note">Lọc hàng: <code>tinh_trang = 'dang_lam'</code> → còn 11 hàng</div>
+            <div class="tag where-tag">Lọc HÀNG</div>
+        </div>
+        <div class="step">
+            <div class="num">3</div>
+            <div class="kw">GROUP BY</div>
+            <div class="note">Tạo nhóm theo phong_ban → 4 nhóm</div>
+        </div>
+        <div class="step">
+            <div class="num">4</div>
+            <div class="kw">Tính hàm</div>
+            <div class="note">Tính COUNT(*), AVG(luong)... trên mỗi nhóm</div>
+        </div>
+        <div class="step having-step">
+            <div class="num" style="background:var(--success);">5</div>
+            <div class="kw">HAVING</div>
+            <div class="note">Lọc nhóm: <code>AVG(luong) &gt; 18tr</code> → còn 2 nhóm</div>
+            <div class="tag having-tag">Lọc NHÓM</div>
+        </div>
+        <div class="step">
+            <div class="num">6</div>
+            <div class="kw">SELECT</div>
+            <div class="note">Chọn cột hiển thị từ kết quả đã lọc</div>
+        </div>
+        <div class="step">
+            <div class="num">7</div>
+            <div class="kw">ORDER BY</div>
+            <div class="note">Sắp xếp kết quả cuối cùng</div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 28: LỖI PHỔ BIẾN + BẢNG QUYẾT ĐỊNH ═══ -->
+<div class="slide">
+    <h2>Lỗi Phổ Biến + Bảng Quyết Định Nhanh</h2>
+    <div class="compare">
+        <div>
+            <h3 class="text-danger">❌ Dùng WHERE thay HAVING</h3>
+            <pre style="font-size:0.82rem;"><span class="keyword">SELECT</span> phong_ban, <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nv
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> <span class="func">COUNT</span>(*) >= <span class="number">3</span>   <span class="comment">← LỖI!</span>
+<span class="keyword">GROUP BY</span> phong_ban;
+<span class="comment">-- ERROR: aggregate functions are</span>
+<span class="comment">-- not allowed in WHERE</span></pre>
+            <pre style="font-size:0.82rem;margin-top:8px;"><span class="comment">✅ ĐÚNG:</span>
+<span class="keyword">SELECT</span> phong_ban, <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nv
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">HAVING</span> <span class="func">COUNT</span>(*) >= <span class="number">3</span>;</pre>
+        </div>
+        <div>
+            <h3>📋 Bảng Quyết Định</h3>
+            <table style="margin-top:8px;font-size:0.82rem;">
+                <tr><th>Điều kiện lọc</th><th>Dùng gì?</th></tr>
+                <tr><td><code>phong_ban = 'IT'</code></td><td><span class="text-info">WHERE</span></td></tr>
+                <tr><td><code>luong &gt; 20000000</code></td><td><span class="text-info">WHERE</span></td></tr>
+                <tr><td><code>tinh_trang = 'dang_lam'</code></td><td><span class="text-info">WHERE</span></td></tr>
+                <tr><td><code>COUNT(*) &gt;= 3</code></td><td><span class="text-success">HAVING</span></td></tr>
+                <tr><td><code>AVG(luong) &gt; 18tr</code></td><td><span class="text-success">HAVING</span></td></tr>
+                <tr><td><code>SUM(luong) &gt; 60tr</code></td><td><span class="text-success">HAVING</span></td></tr>
+                <tr><td><code>MAX(luong) &lt; 30tr</code></td><td><span class="text-success">HAVING</span></td></tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 29: SECTION 6.9 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6.9</div>
+    <h1>Kết Hợp Đầy Đủ</h1>
+    <p class="subtitle">WHERE + GROUP BY + HAVING + ORDER BY — câu SQL hoàn chỉnh</p>
+</div>
+
+<!-- ═══ SLIDE 30: VÍ DỤ ĐẦY ĐỦ ═══ -->
+<div class="slide">
+    <h2>Ví Dụ Thực Tế — Từ Yêu Cầu Đến SQL</h2>
+    <div class="card info" style="margin-bottom:12px;">
+        <p><em>"Với nhân viên đang làm việc, cho tôi các phòng có từ 2 người trở lên VÀ lương TB trên 17 triệu. Sắp theo lương TB cao nhất."</em></p>
+    </div>
+    <div class="columns-2">
+        <div>
+            <pre style="font-size:0.8rem;"><span class="keyword">SELECT</span>
+    phong_ban,
+    <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nhan_vien,
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong),<span class="number">0</span>) <span class="keyword">AS</span> luong_tb,
+    <span class="func">MIN</span>(luong) <span class="keyword">AS</span> luong_min,
+    <span class="func">MAX</span>(luong) <span class="keyword">AS</span> luong_max
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>  <span class="comment">← ① Lọc hàng</span>
+<span class="keyword">GROUP BY</span> phong_ban               <span class="comment">← ② Tạo nhóm</span>
+<span class="keyword">HAVING</span> <span class="func">COUNT</span>(*) >= <span class="number">2</span>            <span class="comment">← ③ Lọc nhóm (1)</span>
+   <span class="keyword">AND</span> <span class="func">AVG</span>(luong) > <span class="number">17000000</span>   <span class="comment">← ③ Lọc nhóm (2)</span>
+<span class="keyword">ORDER BY</span> luong_tb <span class="op">DESC</span>;          <span class="comment">← ④ Sắp xếp</span></pre>
+        </div>
+        <div>
+            <p style="font-size:0.88rem;color:var(--text-dim);margin-bottom:8px;">Kết quả:</p>
+            <div class="filter-visual" style="font-size:0.78rem;"><span class="row-header"> phong_ban  │so_nv│  luong_tb│  luong_min│ luong_max</span>
+<span class="row-dim"> ───────────┼─────┼──────────┼───────────┼──────────</span>
+<span class="row-pass"> IT         │   3 │27,666,667│ 25,000,000│30,000,000</span>
+<span class="row-pass"> Kinh doanh │   3 │20,333,333│ 20,000,000│21,000,000</span>
+<span class="row-pass"> Nhân sự    │   2 │17,000,000│ 16,000,000│18,000,000</span>
+<span class="row-dim"> (Kế toán bị loại vì lương TB &lt; 17tr)</span></div>
+            <div class="card tip" style="margin-top:10px;">
+                <p>💡 HAVING có thể kết hợp nhiều điều kiện với AND/OR — giống WHERE!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 31: SECTION 6.10 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6.10</div>
+    <h1>Thứ Tự Thực Thi Đầy Đủ</h1>
+    <p class="subtitle">Bức tranh hoàn chỉnh — tại sao alias có chỗ dùng được, có chỗ không</p>
+</div>
+
+<!-- ═══ SLIDE 32: THỨ TỰ THỰC THI ═══ -->
+<div class="slide">
+    <h2>Thứ Tự Viết ≠ Thứ Tự Thực Thi</h2>
+    <div class="compare">
+        <div>
+            <h3>📝 Thứ tự VIẾT (bạn gõ)</h3>
+            <pre style="font-size:0.9rem;"><span class="keyword">SELECT</span>   phong_ban, <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nv
+<span class="keyword">FROM</span>     nhan_vien
+<span class="keyword">WHERE</span>    tinh_trang = <span class="string">'dang_lam'</span>
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">HAVING</span>   <span class="func">COUNT</span>(*) >= <span class="number">2</span>
+<span class="keyword">ORDER BY</span> so_nv <span class="op">DESC</span>
+<span class="keyword">LIMIT</span>    <span class="number">3</span></pre>
+        </div>
+        <div>
+            <h3>⚙️ Thứ tự THỰC THI (máy chạy)</h3>
+            <div class="exec-flow" style="gap:4px;">
+                <div class="step" style="padding:8px 14px;"><div class="num" style="font-size:0.8rem;">1</div><div class="kw" style="font-size:0.9rem;">FROM</div><div class="note" style="font-size:0.82rem;">Lấy bảng</div></div>
+                <div class="step where-step" style="padding:8px 14px;"><div class="num" style="background:var(--info);font-size:0.8rem;">2</div><div class="kw" style="font-size:0.9rem;">WHERE</div><div class="note" style="font-size:0.82rem;">Lọc hàng</div></div>
+                <div class="step" style="padding:8px 14px;"><div class="num" style="font-size:0.8rem;">3</div><div class="kw" style="font-size:0.9rem;">GROUP BY</div><div class="note" style="font-size:0.82rem;">Tạo nhóm</div></div>
+                <div class="step having-step" style="padding:8px 14px;"><div class="num" style="background:var(--success);font-size:0.8rem;">4</div><div class="kw" style="font-size:0.9rem;">HAVING</div><div class="note" style="font-size:0.82rem;">Lọc nhóm</div></div>
+                <div class="step active-step" style="padding:8px 14px;"><div class="num" style="font-size:0.8rem;">5</div><div class="kw" style="font-size:0.9rem;">SELECT</div><div class="note" style="font-size:0.82rem;">Chọn cột, đặt alias</div></div>
+                <div class="step" style="padding:8px 14px;"><div class="num" style="font-size:0.8rem;">6</div><div class="kw" style="font-size:0.9rem;">ORDER BY</div><div class="note" style="font-size:0.82rem;">Sắp xếp</div></div>
+                <div class="step" style="padding:8px 14px;"><div class="num" style="font-size:0.8rem;">7</div><div class="kw" style="font-size:0.9rem;">LIMIT</div><div class="note" style="font-size:0.82rem;">Giới hạn hàng</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 33: ALIAS RULES ═══ -->
+<div class="slide">
+    <h2>Alias — Ai Dùng Được, Ai Không?</h2>
+    <div class="card warning" style="margin-bottom:12px;">
+        <p>⚠️ <strong>Lỗi phổ biến:</strong> Dùng alias (đặt trong SELECT) ở HAVING — bị lỗi vì HAVING chạy <strong>trước</strong> SELECT:</p>
+    </div>
+    <div class="compare">
+        <div>
+            <h3 class="text-danger">❌ Sai — alias trong HAVING</h3>
+            <pre style="font-size:0.85rem;"><span class="keyword">SELECT</span> phong_ban,
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong),<span class="number">0</span>) <span class="keyword">AS</span> luong_tb
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">HAVING</span> luong_tb > <span class="number">18000000</span>;
+<span class="comment">-- ERROR: column "luong_tb" does not exist</span></pre>
+        </div>
+        <div>
+            <h3 class="text-success">✅ Đúng — lặp lại hàm trong HAVING</h3>
+            <pre style="font-size:0.85rem;"><span class="keyword">SELECT</span> phong_ban,
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong),<span class="number">0</span>) <span class="keyword">AS</span> luong_tb
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">HAVING</span> <span class="func">AVG</span>(luong) > <span class="number">18000000</span>;
+<span class="comment">-- ✅ Lặp lại AVG(luong), không dùng alias</span></pre>
+        </div>
+    </div>
+    <div class="card pg" style="margin-top:10px;">
+        <table style="margin:0;font-size:0.88rem;">
+            <tr><th>Mệnh đề</th><th>Dùng alias?</th><th>Lý do</th></tr>
+            <tr><td>WHERE</td><td><span class="text-danger">❌ Không</span></td><td>Chạy trước SELECT (bước 2)</td></tr>
+            <tr><td>GROUP BY</td><td><span class="text-danger">❌ Không</span> (chuẩn)</td><td>Chạy trước SELECT (bước 3)</td></tr>
+            <tr><td>HAVING</td><td><span class="text-danger">❌ Không</span> (chuẩn)</td><td>Chạy trước SELECT (bước 4)</td></tr>
+            <tr><td>ORDER BY</td><td><span class="text-success">✅ Được</span></td><td>Chạy sau SELECT (bước 6)</td></tr>
+        </table>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 34: SECTION TỔNG KẾT ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">📋</div>
+    <h1>Tổng Kết Tuần 6</h1>
+    <p class="subtitle">Bảng tra cứu · So sánh Excel · Checklist</p>
+</div>
+
+<!-- ═══ SLIDE 35: BẢNG TRA CỨU NHANH ═══ -->
+<div class="slide">
+    <h2>📋 Bảng Tra Cứu Nhanh</h2>
+    <div class="slide-content">
+        <table>
+            <tr><th>Nhu cầu</th><th>SQL</th></tr>
+            <tr><td>Đếm tất cả hàng</td><td><code>COUNT(*)</code></td></tr>
+            <tr><td>Đếm hàng có giá trị (bỏ NULL)</td><td><code>COUNT(ten_cot)</code></td></tr>
+            <tr><td>Đếm giá trị khác nhau</td><td><code>COUNT(DISTINCT ten_cot)</code></td></tr>
+            <tr><td>Tính tổng</td><td><code>SUM(ten_cot)</code></td></tr>
+            <tr><td>Tính trung bình</td><td><code>ROUND(AVG(ten_cot), 0)</code></td></tr>
+            <tr><td>Giá trị nhỏ nhất</td><td><code>MIN(ten_cot)</code></td></tr>
+            <tr><td>Giá trị lớn nhất</td><td><code>MAX(ten_cot)</code></td></tr>
+            <tr><td>Nhóm dữ liệu theo 1 cột</td><td><code>GROUP BY ten_cot</code></td></tr>
+            <tr><td>Nhóm theo nhiều cột</td><td><code>GROUP BY cot1, cot2</code></td></tr>
+            <tr><td>Lọc hàng trước khi nhóm</td><td><code>WHERE dieu_kien</code> (trước GROUP BY)</td></tr>
+            <tr><td>Lọc nhóm sau khi tổng hợp</td><td><code>HAVING ham_tong_hop(...) dieu_kien</code></td></tr>
+        </table>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 36: SO SÁNH EXCEL ═══ -->
+<div class="slide">
+    <h2>📊 So Sánh Excel ↔ SQL — Tuần 6</h2>
+    <div class="slide-content">
+        <table>
+            <tr><th>Excel</th><th>SQL</th></tr>
+            <tr><td><code>=COUNT(B2:B100)</code> (số ô số)</td><td><code>SELECT COUNT(*) FROM bang</code></td></tr>
+            <tr><td><code>=COUNTA(B2:B100)</code> (không trống)</td><td><code>SELECT COUNT(ten_cot) FROM bang</code></td></tr>
+            <tr><td><code>=SUM(C2:C100)</code></td><td><code>SELECT SUM(luong) FROM bang</code></td></tr>
+            <tr><td><code>=AVERAGE(C2:C100)</code></td><td><code>SELECT AVG(luong) FROM bang</code></td></tr>
+            <tr><td><code>=MIN(C2:C100)</code></td><td><code>SELECT MIN(luong) FROM bang</code></td></tr>
+            <tr><td><code>=MAX(C2:C100)</code></td><td><code>SELECT MAX(luong) FROM bang</code></td></tr>
+            <tr><td>Kéo field vào vùng Rows (Pivot)</td><td><code>GROUP BY ten_cot</code></td></tr>
+            <tr><td>Pivot Values → Sum</td><td><code>SUM(ten_cot)</code> trong SELECT</td></tr>
+            <tr><td>Pivot Values → Count</td><td><code>COUNT(*)</code> trong SELECT</td></tr>
+            <tr><td>Filter dữ liệu nguồn trước Pivot</td><td><code>WHERE dieu_kien</code> (trước GROUP BY)</td></tr>
+            <tr><td>Value Filters trên kết quả Pivot</td><td><code>HAVING dieu_kien</code> (sau GROUP BY)</td></tr>
+        </table>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 37: CHECKLIST + CLOSING ═══ -->
+<div class="slide title-slide">
+    <div class="week-badge" style="border-color:var(--success);color:var(--success);">TIẾP THEO</div>
+    <h1>Tuần 7: JOIN — Kết Nối Nhiều Bảng</h1>
+    <p class="subtitle">INNER JOIN · LEFT JOIN · RIGHT JOIN · FOREIGN KEY · VLOOKUP trong SQL</p>
+    <div style="margin-top:24px;text-align:left;max-width:700px;">
+        <p style="color:var(--accent-light);font-weight:600;margin-bottom:10px;">✅ Checklist Tuần 6 — trước khi tiếp tục:</p>
+        <div class="columns-2" style="gap:10px;">
+            <div>
+                <div class="card" style="padding:12px 16px;margin-bottom:8px;"><p style="font-size:0.88rem;">☑ Phân biệt COUNT(*), COUNT(cot), COUNT(DISTINCT)</p></div>
+                <div class="card" style="padding:12px 16px;margin-bottom:8px;"><p style="font-size:0.88rem;">☑ Dùng SUM, AVG, MIN, MAX trên số và ngày tháng</p></div>
+                <div class="card" style="padding:12px 16px;margin-bottom:8px;"><p style="font-size:0.88rem;">☑ Viết GROUP BY một và nhiều cột</p></div>
+                <div class="card" style="padding:12px 16px;"><p style="font-size:0.88rem;">☑ Giải thích quy tắc vàng GROUP BY</p></div>
+            </div>
+            <div>
+                <div class="card" style="padding:12px 16px;margin-bottom:8px;"><p style="font-size:0.88rem;">☑ Dùng HAVING để lọc nhóm</p></div>
+                <div class="card" style="padding:12px 16px;margin-bottom:8px;"><p style="font-size:0.88rem;">☑ Phân biệt WHERE (lọc hàng) và HAVING (lọc nhóm)</p></div>
+                <div class="card" style="padding:12px 16px;margin-bottom:8px;"><p style="font-size:0.88rem;">☑ Kết hợp đầy đủ: WHERE + GROUP BY + HAVING + ORDER BY</p></div>
+                <div class="card" style="padding:12px 16px;"><p style="font-size:0.88rem;">☑ Hiểu tại sao HAVING không dùng alias</p></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div><!-- /slide-deck -->
+
+<div class="nav-bar">
+    <div><button onclick="toggleTOC()">☰ Mục Lục</button></div>
+    <div class="page-info">
+        <span id="currentSlide">1</span> / <span id="totalSlides">38</span>
+    </div>
+    <div class="controls">
+        <button onclick="prevSlide()">◄ Trước</button>
+        <button onclick="nextSlide()">Tiếp ►</button>
+    </div>
+</div>
+
+<script>
+    const slides = document.querySelectorAll('.slide');
+    const total  = slides.length;
+    let current  = 0;
+
+    document.getElementById('totalSlides').textContent = total;
+
+    function showSlide(n) {
+        slides[current].classList.remove('active');
+        current = Math.max(0, Math.min(n, total - 1));
+        slides[current].classList.add('active');
+        document.getElementById('currentSlide').textContent = current + 1;
+        document.getElementById('progressBar').style.width = ((current + 1) / total * 100) + '%';
+    }
+
+    function nextSlide() { showSlide(current + 1); }
+    function prevSlide() { showSlide(current - 1); }
+    function goSlide(n)  { showSlide(n); closeTOC(); }
+
+    document.addEventListener('keydown', e => {
+        if      (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+        else if (e.key === 'ArrowLeft')                   { e.preventDefault(); prevSlide(); }
+        else if (e.key === 'Home')                        { e.preventDefault(); showSlide(0); }
+        else if (e.key === 'End')                         { e.preventDefault(); showSlide(total - 1); }
+        else if (e.key === 'm' || e.key === 'M')          { toggleTOC(); }
+        else if (e.key === 'Escape')                      { closeTOC(); }
+    });
+
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend',   e => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 50) dx < 0 ? nextSlide() : prevSlide();
+    }, { passive: true });
+
+    function toggleTOC() { document.getElementById('tocOverlay').classList.toggle('open'); }
+    function closeTOC()  { document.getElementById('tocOverlay').classList.remove('open'); }
+
+    showSlide(0);
+</script>
+</body>
+</html>
