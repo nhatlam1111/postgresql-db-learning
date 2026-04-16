@@ -1,305 +1,112 @@
-# 📚 PostgreSQL Database Learning
+# PostgreSQL DB Learning
 
-Chương trình học **PostgreSQL từ cơ bản đến nâng cao** dành cho người mới bắt đầu, sử dụng **Excel làm cầu nối** để dễ hiểu các khái niệm.
+Chương trình học PostgreSQL bằng tiếng Việt dành cho người mới bắt đầu, đặc biệt phù hợp với người đã quen Excel, Pivot Table, VLOOKUP, Filter và muốn chuyển sang làm việc với cơ sở dữ liệu.
 
----
+Repo này dùng Excel làm cầu nối để giải thích SQL:
 
-## 🎯 Mục Tiêu
-
-- Hiểu rõ cơ sở dữ liệu (CSDL) hoạt động như thế nào
-- Từ làm quen công cụ → viết các query phức tạp
-- Áp dụng vào dự án thực tế
-- Dễ dàng chuyển đổi skills từ Excel sang SQL
-
----
-
-## 👥 Đối Tượng
-
-- Người **chưa từng học lập trình** nhưng **giỏi Excel**
-- Muốn nâng cấp kỹ năng phân tích dữ liệu
-- Sẵn sàng tập trung 3–5 giờ/tuần để học và thực hành
-
----
-
-## 📂 Cấu Trúc Thư Mục
-
-```
-postgresql-db-learning/
-├── README.md                                      ← Bạn đang xem file này
-├── plan.md                                       ← Kế hoạch chi tiết 10 tuần
-├── requirement.md                                ← Yêu cầu cài đặt, công cụ
-├── .gitignore
-│
-├── Lessons & Examples/                           ← 📖 Bài học + ví dụ SQL
-│   ├── Lesson/                                  ← Bài học lý thuyết
-│   │   ├── 01.Why_Database_lesson.md
-│   │   ├── 02.Setup_PostgreSQL_lesson.md
-│   │   ├── 03.Datatype_and_Table_lesson.md
-│   │   └── 04.SELECT_Basics_lesson.md
-│   ├── Example/                                 ← Ví dụ minh họa (chạy thật)
-│   │   ├── 01.Why_Database_examples.sql
-│   │   ├── 02.Setup_PostgreSQL_examples.sql
-│   │   ├── 03.Datatype_and_Table_examples.sql
-│   │   └── 04.SELECT_Basics_examples.sql
-│   └── Advanced/                                 ← Dành cho nội dung nâng cao (sắp có)
-│
-├── Exercises/                                    ← 💪 Bài tập thực hành
-│   ├── 01.Why_Database_exercises.md
-│   ├── 02.Setup_PostgreSQL_exercises.md
-│   ├── 03.Datatype_and_Table_exercises.md
-│   └── 04.SELECT_Basics_exercises.md
-│
-├── Reference/                                    ← 📎 Tài liệu tra cứu nhanh
-│   ├── type_casting.md                          ← CAST, ::, TO_CHAR, TO_DATE, TO_NUMBER
-│   └── datatypes_reference.md                   ← Toàn bộ kiểu dữ liệu PostgreSQL
-│
-├── temp/                                         ← Folder tạm (notes, handover...)
-│
-└── .claude/
-    └── CLAUDE.md                                ← Hướng dẫn cho AI assistant
-```
-
----
-
-## 📖 Nội Dung Học
-
-### **Tuần 1: Tại Sao Cần Cơ Sở Dữ Liệu?**
-- So sánh Excel vs CSDL
-- Thuật ngữ nền tảng (Database, Table, Column, Row...)
-- Tại sao chọn PostgreSQL?
-
-### **Tuần 2: Cài Đặt PostgreSQL & Làm Quen Công Cụ**
-- Cài đặt PostgreSQL trên máy
-- Sử dụng pgAdmin (giao diện quản lý)
-- Tạo kết nối đầu tiên
-
-### **Tuần 3: Tạo Bảng & Nhập Dữ Liệu**
-- Thiết kế bảng từ đầu
-- Kiểu dữ liệu phổ biến (INTEGER, TEXT, DATE, BOOLEAN, NUMERIC...)
-- **Chuyển đổi kiểu dữ liệu** (Type Casting) → [Xem chi tiết](Week-3/type_casting.md)
-- INSERT dữ liệu vào bảng
-
-### **Tuần 4: Truy Vấn Dữ Liệu — SELECT Cơ Bản**
-- Câu lệnh SELECT đầu tiên
-- Chọn cột cụ thể, tính toán trong query
-- Alias (đặt tên lại cột)
-- DISTINCT (loại bỏ trùng lặp)
-- Hàm chuỗi, số, ngày cơ bản
-
-### **Tuần 5: Lọc & Sắp Xếp Dữ Liệu**
-- WHERE clause (lọc điều kiện)
-- ORDER BY (sắp xếp)
-- LIMIT (giới hạn số bản ghi)
-
-### **Tuần 6: Hàm Tổng Hợp & GROUP BY**
-- COUNT, SUM, AVG, MIN, MAX
-- GROUP BY (tổng hợp theo nhóm)
-- HAVING (lọc nhóm)
-
-### **Tuần 7: Kết Nối Nhiều Bảng — JOIN**
-- INNER JOIN
-- LEFT JOIN, RIGHT JOIN
-- FULL OUTER JOIN
-
-### **Tuần 8: Truy Vấn Nâng Cao & Subquery**
-- Subquery (truy vấn con)
-- UNION (hợp dữ liệu từ nhiều bảng)
-- CTE (Common Table Expressions)
-
-### **Tuần 9: Cập Nhật & Quản Lý Dữ Liệu**
-- UPDATE (sửa dữ liệu)
-- DELETE (xóa dữ liệu)
-- Transactions (giao dịch)
-
-### **Tuần 10: Dự Án Tổng Hợp**
-- Xây dựng CSDL từ đầu
-- Viết query phức tạp
-- Giải quyết các bài toán thực tế
-
----
-
-## 🚀 Cách Sử Dụng Repo Này
-
-### 1. **Bắt đầu học từ Tuần 1**
-```
-1. Đọc Lessons & Examples/Lesson/01.Why_Database_lesson.md để hiểu lý thuyết
-2. Chạy các ví dụ trong Lessons & Examples/Example/01.Why_Database_examples.sql
-3. Làm bài tập trong Exercises/01.Why_Database_exercises.md
-4. Sang tuần tiếp theo
-```
-
-### 2. **Chuẩn Bị Công Cụ**
-Xem file [`requirement.md`](requirement.md) để biết cần cài đặt gì:
-- PostgreSQL server
-- pgAdmin hoặc công cụ SQL client khác
-- (Optional) DBeaver cho giao diện hiện đại hơn
-
-### 3. **Tài Liệu Tra Cứu Nhanh**
-Khi cần tra cứu, vào thư mục `Reference/`:
-
-| File | Nội dung |
+| Excel | PostgreSQL / SQL |
 |---|---|
-| [Reference/type_casting.md](Reference/type_casting.md) | CAST, ::, TO_CHAR, TO_DATE, TO_NUMBER — đầy đủ ví dụ |
-| [Reference/datatypes_reference.md](Reference/datatypes_reference.md) | Toàn bộ kiểu dữ liệu PostgreSQL |
+| Workbook | Database |
+| Sheet | Table |
+| Filter | WHERE |
+| Sort | ORDER BY |
+| Remove Duplicates | DISTINCT |
+| VLOOKUP / INDEX-MATCH | JOIN |
+| Pivot Table | GROUP BY |
+| SUM / AVERAGE / COUNT | SUM() / AVG() / COUNT() |
+| IF / IFS | CASE WHEN |
+| IFERROR | COALESCE |
 
----
+Lộ trình tổng thể là 10 tuần. Hiện tại repo đã có học liệu từ tuần 1 đến tuần 7, kèm lesson, ví dụ SQL và bài tập thực hành.
 
-## 💡 Phương Pháp Học
+## Học Online
 
-### **Lấy Excel Làm Cầu Nối**
-Mỗi khái niệm PostgreSQL sẽ được so sánh với thao tác tương ứng trong Excel:
+- Website GitHub Pages: <https://nhatlam1111.github.io/postgresql-db-learning/>
+- Bản local trong repo: `docs/index.html`
+- Slide HTML đã xuất bản: thư mục `docs/Slides/`
 
-| Excel | PostgreSQL | Giải thích |
-|---|---|---|
-| **Sheet** | **Table** | Nơi chứa dữ liệu có cấu trúc |
-| **Cột A, B, C** | **Columns** | Loại thông tin (tên, tuổi, lương) |
-| **Filter** | **WHERE** | Lọc dữ liệu theo điều kiện |
-| **Pivot Table** | **GROUP BY** | Tổng hợp dữ liệu theo nhóm |
-| **VLOOKUP** | **JOIN** | Kết nối dữ liệu từ nhiều sheet/bảng |
+## Dự Án Này Dùng Cho Ai?
 
-### **Học Kết Hợp**
-- 🧠 **Lý thuyết** (30%): Hiểu khái niệm
-- ✏️ **Ví dụ** (30%): Chạy query mẫu
-- 💪 **Bài tập** (40%): Tự viết query, thử sai
+- Người chưa từng học lập trình hoặc SQL
+- Người làm việc nhiều với Excel và dữ liệu
+- Người muốn học PostgreSQL theo cách thực hành, dễ liên hệ với công việc thật
+- Người cần tài liệu bằng tiếng Việt, giải thích chậm và rõ ràng
 
-### **Thời Gian Học**
-- ⏱️ **3–5 giờ/tuần** để theo kịp
-- 🔄 **Ôn tập**: Mỗi 2 tuần ôn lại kiến thức cũ
-- 📊 **Dự án nhỏ**: Tuần 5, Tuần 8, Tuần 10
+## Cách Học Repo Này
 
----
+Mỗi chủ đề được tách thành 3 phần để học từ lý thuyết đến thực hành:
 
-## 📚 Tài Liệu Tham Khảo
+1. Đọc file `*_lesson.md` để hiểu khái niệm
+2. Chạy file `*_examples.sql` trong PostgreSQL hoặc DBeaver
+3. Làm file `*_exercises.md` để tự luyện
+4. Nếu muốn xem nhanh, mở slide HTML hoặc truy cập GitHub Pages
 
-### **Chính Thức**
-- [PostgreSQL Official Documentation](https://www.postgresql.org/docs/)
-- [SQL Tutorial – w3schools](https://www.w3schools.com/sql/)
+Lượt học đề xuất:
 
-### **Hướng Dẫn Chi Tiết**
-- [PostgreSQL Data Type Formatting](https://www.postgresql.org/docs/current/functions-formatting.html)
-- [PostgreSQL Date/Time Functions](https://www.postgresql.org/docs/current/functions-datetime.html)
+1. Bắt đầu từ tuần 1 và học theo thứ tự
+2. Sau mỗi lesson, chạy toàn bộ ví dụ SQL để nhìn thấy kết quả thật
+3. Tự viết lại query trước khi xem đáp án bài tập
+4. Chỉ chuyển sang tuần mới khi đã hiểu tuần trước
 
-### **Công Cụ**
-- **pgAdmin**: https://www.pgadmin.org/
-- **DBeaver**: https://dbeaver.io/
-- **PostgreSQL**: https://www.postgresql.org/download/
+## Cấu Trúc Project
 
----
+> Cấu trúc bên dưới đã bỏ qua các file và thư mục nằm trong `.gitignore`.
 
-## 🎓 Các Giai Đoạn Học Tập
+```text
+postgresql-db-learning/
+|- docs/
+|  |- index.html                  # Trang tổng hợp để học trên trình duyệt
+|  `- Slides/                     # Slide HTML theo từng chủ đề đã xuất bản
+|- Exercises/                     # Bài tập thực hành theo từng tuần / chủ đề
+|- Lessons & Examples/
+|  |- Example/                    # File SQL ví dụ có thể chạy trực tiếp
+|  `- Lesson/                     # Bài học lý thuyết bằng Markdown
+`- Reference/                     # Tài liệu tra cứu nhanh
+```
 
-### **Giai Đoạn 1: Tìm Hiểu (Tuần 1–3)**
-✅ Biết CSDL là gì, cài đặt công cụ, tạo bảng đầu tiên
+## Học Liệu Hiện Có
 
-### **Giai Đoạn 2: Truy Vấn Cơ Bản (Tuần 4–5)**
-✅ SELECT, WHERE, ORDER BY — đủ để làm việc với dữ liệu
+| Tuần | Chủ đề | Lesson | Example SQL | Bài tập | Slide |
+|---|---|---|---|---|---|
+| 1 | Tại sao cần cơ sở dữ liệu? | [Lesson](Lessons%20%26%20Examples/Lesson/01.Why_Database_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/01.Why_Database_examples.sql) | [Exercise](Exercises/01.Why_Database_exercises.md) | [HTML](docs/Slides/01.Why_Database_slides.html) |
+| 2 | Cài đặt PostgreSQL & Làm quen công cụ | [Lesson](Lessons%20%26%20Examples/Lesson/02.Setup_PostgreSQL_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/02.Setup_PostgreSQL_examples.sql) | [Exercise](Exercises/02.Setup_PostgreSQL_exercises.md) | - |
+| 3 | Kiểu dữ liệu & Tạo bảng | [Lesson](Lessons%20%26%20Examples/Lesson/03.Datatype_and_Table_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/03.Datatype_and_Table_examples.sql) | [Exercise](Exercises/03.Datatype_and_Table_exercises.md) | [HTML](docs/Slides/03.Datatype_and_Table_slides.html) |
+| 4 | Truy vấn dữ liệu - SELECT cơ bản | [Lesson](Lessons%20%26%20Examples/Lesson/04.SELECT_Basics_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/04.SELECT_Basics_examples.sql) | [Exercise](Exercises/04.SELECT_Basics_exercises.md) | [HTML](docs/Slides/04.SELECT_Basics_slides.html) |
+| 5 | Lọc & Sắp xếp dữ liệu | [Lesson](Lessons%20%26%20Examples/Lesson/05.Filter_Data_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/05.Filter_Data_examples.sql) | [Exercise](Exercises/05.Filter_Data_exercises.md) | [HTML](docs/Slides/05.Filter_Data_slides.html) |
+| 6 | Hàm tổng hợp & GROUP BY | [Lesson](Lessons%20%26%20Examples/Lesson/06.Aggregate_Functions_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/06.Aggregate_Functions_examples.sql) | [Exercise](Exercises/06.Aggregate_Functions_exercises.md) | - |
+| 7 | Kết nối nhiều bảng - JOIN | [Lesson](Lessons%20%26%20Examples/Lesson/07.JOIN_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/07.JOIN_examples.sql) | [Exercise](Exercises/07.JOIN_exercises.md) | - |
 
-### **Giai Đoạn 3: Phân Tích Nâng Cao (Tuần 6–8)**
-✅ GROUP BY, JOIN, Subquery — giải quyết bài toán phức tạp
+## Cần Chuẩn Bị Gì Để Học?
 
-### **Giai Đoạn 4: Thực Chiến (Tuần 9–10)**
-✅ UPDATE/DELETE, Transactions, Dự án tổng hợp
+- PostgreSQL trên máy tính Windows
+- DBeaver để viết và chạy SQL
+- Một database để thực hành, ví dụ `hoc_sql`
 
----
+Nếu bạn chưa cài đặt xong, hãy bắt đầu từ học liệu tuần 2.
 
-## ❓ Câu Hỏi Thường Gặp
+## Cách Chạy Các Ví Dụ SQL
 
-### **P: Tôi chưa biết lập trình, có học được không?**
-A: Có! Khóa này được thiết kế dành riêng cho người chưa có background lập trình. Excel là nền tảng đủ rồi.
+1. Mở PostgreSQL và kết nối bằng DBeaver
+2. Tạo hoặc chọn database học tập, ví dụ `hoc_sql`
+3. Mở file trong thư mục `Lessons & Examples/Example/`
+4. Chạy từng đoạn bằng `Ctrl+Enter` hoặc chạy cả file nếu phù hợp
+5. So sánh kết quả trả về với phần giải thích trong lesson
 
-### **P: Cần bao lâu để thành thạo?**
-A: Khoảng 8–10 tuần nếu học bài bản. Sau đó, cần thực hành thêm trên dự án thực tế.
+## Đặc Điểm Của Học Liệu
 
-### **P: Tôi quên cú pháp WHERE clause rồi?**
-A: Quay lại Tuần 5 và ôn lại nhanh. Repo này được tổ chức theo tuần để dễ tham khảo lại.
+- Toàn bộ giải thích được viết bằng tiếng Việt
+- SQL keywords giữ nguyên bằng tiếng Anh theo quy ước chung
+- Ví dụ dùng bộ bảng nhất quán để học dần theo độ khó
+- Mỗi khái niệm mới đều có liên hệ với thao tác quen thuộc trong Excel
+- Bài tập đi từ cơ bản đến nâng cao trong cùng một chủ đề
 
-### **P: Phải code trên máy tính?**
-A: Có, bạn cần cài PostgreSQL + pgAdmin (miễn phí). Sau đó, mở pgAdmin và copy-paste query từ file .sql.
+## Tài Liệu Tham Khảo Nhanh
 
-### **P: Có support không?**
-A: Repo này là tài liệu tự học. Nếu gặp lỗi, hãy:
-1. Đọc lại bài học
-2. So sánh code với ví dụ
-3. Tìm trên Google hoặc PostgreSQL docs
+- [Kiểu dữ liệu PostgreSQL](Reference/datatypes_reference.md)
+- [Ép kiểu dữ liệu](Reference/type_casting.md)
 
----
+## Ghi Chú
 
-## 📝 Hướng Dẫn Tự Học
-
-### **Mỗi Tuần Làm Như Sau:**
-
-1. **Thứ 2–3: Đọc Bài Học**
-   - Mở `Lessons & Examples/Beginner/Lesson/0X.Topic_lesson.md`
-   - Đọc lý thuyết từng phần
-   - Vẽ sơ đồ hoặc note lại khái niệm chính
-
-2. **Thứ 4–5: Chạy Ví Dụ**
-   - Mở pgAdmin
-   - Copy query từ `Lessons & Examples/Beginner/Example/0X.Topic_examples.sql`
-   - Chạy từng câu 1, quan sát kết quả
-   - Thử sửa query để hiểu sâu hơn
-
-3. **Thứ 6–7: Làm Bài Tập**
-   - Mở `Exercises/0X.Topic_exercises.md`
-   - Tự viết query (không copy-paste!)
-   - Kiểm tra kết quả
-   - Ghi chú những chỗ khó
-
-4. **Chủ Nhật: Ôn Lại + Tra Cứu**
-   - Ôn lại bài học tuần này
-   - Ôn 1 bài tuần trước (để ghi nhớ lâu)
-   - Tra cứu nhanh trong `Reference/` nếu cần
-
----
-
-## 🎯 Mục Tiêu Cuối Cùng
-
-Sau khóa học này, bạn sẽ có thể:
-
-✅ Thiết kế bảng CSDL từ đầu  
-✅ Viết query SELECT phức tạp (JOIN, GROUP BY, Subquery)  
-✅ Import/Export dữ liệu an toàn  
-✅ Phân tích dữ liệu nhanh hơn Excel nhiều lần  
-✅ Tự học thêm các kỹ năng PostgreSQL khác  
-
----
-
-## 📞 Liên Hệ & Phản Hồi
-
-Nếu bạn:
-- Phát hiện lỗi trong tài liệu
-- Muốn đề xuất thêm nội dung
-- Có câu hỏi về bài học
-
-**Hãy tạo Issue hoặc Pull Request** trên repository này.
-
----
-
-## 📄 License
-
-Tài liệu này được viết để phục vụ mục đích giáo dục. Tự do sử dụng, chia sẻ, và chỉnh sửa cho mục đích cá nhân hoặc giáo dục.
-
----
-
-## 📅 Tiến Độ Học
-
-| Tuần | Chủ Đề | Trạng Thái |
-|---|---|---|
-| 1 | Tại sao cần CSDL? | ✅ |
-| 2 | Cài đặt & Công cụ | ✅ |
-| 3 | Tạo bảng & Nhập dữ liệu | ✅ |
-| 4 | SELECT cơ bản | ✅ |
-| 5 | WHERE & ORDER BY | 📝 |
-| 6 | GROUP BY & Aggregate | 📝 |
-| 7 | JOIN | 📝 |
-| 8 | Subquery & CTE | 📝 |
-| 9 | UPDATE & DELETE | 📝 |
-| 10 | Dự án tổng hợp | 📝 |
-
-**Chú thích:** ✅ Hoàn thành | 📝 Đang soạn | 🔳 Chưa bắt đầu
-
----
-
-**Happy Learning! 🎉**
-
-*Cập nhật lần cuối: Tháng 4, 2026*
+- Đây là repo học tập, ưu tiên sự rõ ràng và tính dễ hiểu trước khi tối ưu kỹ thuật.
+- Khi học các lệnh có khả năng sửa dữ liệu như `UPDATE` hoặc `DELETE`, nên tập thói quen `SELECT` với cùng `WHERE` trước để tránh thao tác nhầm.
+- Nếu bạn muốn học trên trình duyệt thay vì mở file Markdown, GitHub Pages là điểm vào tốt nhất.

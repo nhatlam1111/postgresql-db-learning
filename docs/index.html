@@ -483,6 +483,15 @@
             background: rgba(249, 168, 37, 0.2);
             border-color: var(--accent);
         }
+        .btn-action.example {
+            color: #d2a8ff;
+            border-color: rgba(210, 168, 255, 0.4);
+            background: rgba(210, 168, 255, 0.08);
+        }
+        .btn-action.example:hover {
+            background: rgba(210, 168, 255, 0.2);
+            border-color: #d2a8ff;
+        }
 
         /* Left accent stripe per week */
         .week-card::before {
@@ -723,7 +732,7 @@
         <div class="section-label">Chương Trình Học</div>
         <div class="section-title">10 Tuần — Từ Cơ Bản Đến Dự Án Thực Tế</div>
         <p class="section-sub">
-            Tuần 1–5 đã có đầy đủ tài liệu. Các tuần còn lại đang được hoàn thiện.
+            Tuần 1–7 đã có đầy đủ tài liệu. Các tuần còn lại đang được hoàn thiện.
             <span style="color: var(--accent);">✦ Slide</span> là bài giảng dạng trình chiếu, mở thẳng trên trình duyệt.
         </p>
     </div>
@@ -732,7 +741,7 @@
         <div class="week-grid">
 
             <!-- ── TUẦN 1 ── -->
-            <div class="week-card available">
+            <div class="week-card available has-slide">
                 <div class="week-card-header">
                     <span class="week-num">TUẦN 1</span>
                     <span class="week-badge-card done">✅ Hoàn thành</span>
@@ -747,7 +756,9 @@
                 </div>
                 <div class="week-card-actions">
                     <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/01.Why_Database_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action example" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Example/01.Why_Database_examples.sql" target="_blank" rel="noopener">💾 Ví dụ SQL</a>
                     <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/01.Why_Database_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
+                    <a class="btn-action slide" href="Slides/01.Why_Database_slides.html" target="_blank">✦ Slides</a>
                 </div>
             </div>
 
@@ -767,6 +778,7 @@
                 </div>
                 <div class="week-card-actions">
                     <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/02.Setup_PostgreSQL_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action example" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Example/02.Setup_PostgreSQL_examples.sql" target="_blank" rel="noopener">💾 Ví dụ SQL</a>
                     <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/02.Setup_PostgreSQL_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
                 </div>
             </div>
@@ -788,13 +800,14 @@
                 </div>
                 <div class="week-card-actions">
                     <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/03.Datatype_and_Table_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action example" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Example/03.Datatype_and_Table_examples.sql" target="_blank" rel="noopener">💾 Ví dụ SQL</a>
                     <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/03.Datatype_and_Table_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
                     <a class="btn-action slide" href="Slides/03.Datatype_and_Table_slides.html" target="_blank">✦ Slides</a>
                 </div>
             </div>
 
             <!-- ── TUẦN 4 ── -->
-            <div class="week-card available">
+            <div class="week-card available has-slide">
                 <div class="week-card-header">
                     <span class="week-num">TUẦN 4</span>
                     <span class="week-badge-card done">✅ Hoàn thành</span>
@@ -810,7 +823,9 @@
                 </div>
                 <div class="week-card-actions">
                     <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/04.SELECT_Basics_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action example" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Example/04.SELECT_Basics_examples.sql" target="_blank" rel="noopener">💾 Ví dụ SQL</a>
                     <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/04.SELECT_Basics_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
+                    <a class="btn-action slide" href="Slides/04.SELECT_Basics_slides.html" target="_blank">✦ Slides</a>
                 </div>
             </div>
 
@@ -830,15 +845,17 @@
                 </div>
                 <div class="week-card-actions">
                     <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/05.Filter_Data_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action example" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Example/05.Filter_Data_examples.sql" target="_blank" rel="noopener">💾 Ví dụ SQL</a>
                     <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/05.Filter_Data_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
+                    <a class="btn-action slide" href="Slides/05.Filter_Data_slides.html" target="_blank">✦ Slides</a>
                 </div>
             </div>
 
             <!-- ── TUẦN 6 ── -->
-            <div class="week-card coming-soon">
+            <div class="week-card available">
                 <div class="week-card-header">
                     <span class="week-num">TUẦN 6</span>
-                    <span class="week-badge-card progress">📝 Đang cập nhật</span>
+                    <span class="week-badge-card done">✅ Hoàn thành</span>
                 </div>
                 <div class="week-card-body">
                     <h3>Hàm Tổng Hợp & GROUP BY</h3>
@@ -848,14 +865,18 @@
                         <li>HAVING — lọc nhóm</li>
                     </ul>
                 </div>
-                <div class="coming-soon-tag">Nội dung sẽ sớm được cập nhật...</div>
+                <div class="week-card-actions">
+                    <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/06.Aggregate_Functions_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action example" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Example/06.Aggregate_Functions_examples.sql" target="_blank" rel="noopener">💾 Ví dụ SQL</a>
+                    <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/06.Aggregate_Functions_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
+                </div>
             </div>
 
             <!-- ── TUẦN 7 ── -->
-            <div class="week-card coming-soon">
+            <div class="week-card available">
                 <div class="week-card-header">
                     <span class="week-num">TUẦN 7</span>
-                    <span class="week-badge-card progress">📝 Đang cập nhật</span>
+                    <span class="week-badge-card done">✅ Hoàn thành</span>
                 </div>
                 <div class="week-card-body">
                     <h3>Kết Nối Nhiều Bảng — JOIN</h3>
@@ -865,7 +886,11 @@
                         <li>FOREIGN KEY & quan hệ bảng</li>
                     </ul>
                 </div>
-                <div class="coming-soon-tag">Nội dung sẽ sớm được cập nhật...</div>
+                <div class="week-card-actions">
+                    <a class="btn-action lesson" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Lesson/07.JOIN_lesson.md" target="_blank" rel="noopener">📖 Bài học</a>
+                    <a class="btn-action example" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Lessons%20%26%20Examples/Example/07.JOIN_examples.sql" target="_blank" rel="noopener">💾 Ví dụ SQL</a>
+                    <a class="btn-action exercise" href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/Exercises/07.JOIN_exercises.md" target="_blank" rel="noopener">✏️ Bài tập</a>
+                </div>
             </div>
 
             <!-- ── TUẦN 8 ── -->
@@ -972,7 +997,9 @@
         <a href="https://github.com/nhatlam1111/postgresql-db-learning" target="_blank" rel="noopener">⭐ GitHub Repository</a>
         <a href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/plan.md" target="_blank" rel="noopener">📋 Kế Hoạch Học</a>
         <a href="https://github.com/nhatlam1111/postgresql-db-learning/blob/main/README.md" target="_blank" rel="noopener">📄 README</a>
+        <a href="Slides/01.Why_Database_slides.html" target="_blank">▶ Slides Tuần 1</a>
         <a href="Slides/03.Datatype_and_Table_slides.html" target="_blank">▶ Slides Tuần 3</a>
+        <a href="Slides/04.SELECT_Basics_slides.html" target="_blank">▶ Slides Tuần 4</a>
     </div>
     <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-dim);">
         Built with ❤️ · Open Source · MIT License

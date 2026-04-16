@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuần 4: SELECT Cơ Bản — PostgreSQL</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --primary:       #336791;
+            --primary-light: #4a8db7;
+            --primary-dark:  #264d6e;
+            --accent:        #f9a825;
+            --accent-light:  #fdd835;
+            --bg:            #0f172a;
+            --bg-card:       #1e293b;
+            --bg-code:       #0d1117;
+            --text:          #e2e8f0;
+            --text-dim:      #94a3b8;
+            --text-bright:   #f8fafc;
+            --success:       #22c55e;
+            --danger:        #ef4444;
+            --warning:       #f59e0b;
+            --info:          #3b82f6;
+            --excel-green:   #217346;
+            --pg-blue:       #336791;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ── Slide container ── */
+        .slide-deck {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px 80px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .slide.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* ── Typography ── */
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--text-bright);
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+        h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 24px;
+            line-height: 1.3;
+        }
+        h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-light);
+            margin-bottom: 14px;
+        }
+        p, li {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: var(--text);
+        }
+        ul, ol {
+            padding-left: 28px;
+            margin-bottom: 16px;
+        }
+        li { margin-bottom: 8px; }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-dim);
+            margin-bottom: 32px;
+            font-weight: 400;
+        }
+
+        strong { color: var(--accent-light); font-weight: 600; }
+        em { color: var(--primary-light); font-style: normal; font-weight: 500; }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: var(--bg-code);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.95em;
+            color: #7dd3fc;
+        }
+
+        pre {
+            background: var(--bg-code);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 18px 22px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin: 12px 0;
+            color: #c9d1d9;
+        }
+        pre .keyword { color: #ff7b72; font-weight: 500; }
+        pre .string  { color: #a5d6ff; }
+        pre .comment { color: #8b949e; font-style: italic; }
+        pre .type    { color: #7ee787; }
+        pre .number  { color: #79c0ff; }
+        pre .func    { color: #d2a8ff; }
+        pre .op      { color: #ff9e64; }
+
+        /* ── Tables ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.97rem;
+        }
+        th {
+            background: var(--primary-dark);
+            color: var(--accent-light);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        td {
+            padding: 9px 14px;
+            border-bottom: 1px solid #334155;
+            color: var(--text);
+        }
+        tr:nth-child(even) td { background: rgba(30, 41, 59, 0.5); }
+        tr:hover td { background: rgba(51, 103, 145, 0.15); }
+
+        /* ── Cards / Boxes ── */
+        .card {
+            background: var(--bg-card);
+            border-radius: 14px;
+            padding: 20px 24px;
+            border: 1px solid #334155;
+            margin: 10px 0;
+        }
+        .card.excel   { border-left: 4px solid var(--excel-green); }
+        .card.pg      { border-left: 4px solid var(--pg-blue); }
+        .card.warning { border-left: 4px solid var(--danger); background: rgba(239,68,68,0.07); }
+        .card.tip     { border-left: 4px solid var(--success); background: rgba(34,197,94,0.07); }
+        .card.info    { border-left: 4px solid var(--info); background: rgba(59,130,246,0.07); }
+
+        /* ── Compare layout ── */
+        .compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 12px 0;
+        }
+        .compare > div {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 18px 22px;
+            border: 1px solid #334155;
+        }
+        .compare > div:first-child { border-top: 3px solid var(--excel-green); }
+        .compare > div:last-child  { border-top: 3px solid var(--pg-blue); }
+
+        .columns-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 10px 0;
+        }
+        .columns-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 10px 0;
+        }
+
+        /* ── Badge / Tag ── */
+        .badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge.excel   { background: var(--excel-green); color: #fff; }
+        .badge.pg      { background: var(--pg-blue); color: #fff; }
+        .badge.danger  { background: var(--danger); color: #fff; }
+        .badge.success { background: var(--success); color: #000; }
+        .badge.info    { background: var(--info); color: #fff; }
+
+        /* ── Visual diagram ── */
+        .diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 16px 0;
+            font-size: 1rem;
+            flex-wrap: wrap;
+        }
+        .diagram .box {
+            background: var(--bg-card);
+            border: 2px solid var(--primary-light);
+            border-radius: 10px;
+            padding: 12px 20px;
+            text-align: center;
+            min-width: 110px;
+        }
+        .diagram .arrow { color: var(--accent); font-size: 1.4rem; font-weight: 700; }
+
+        /* ── Execution order flow ── */
+        .exec-flow {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            margin: 16px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .exec-step {
+            background: var(--bg-card);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 10px 16px;
+            text-align: center;
+            font-size: 0.85rem;
+            min-width: 90px;
+        }
+        .exec-step .num {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--accent);
+            display: block;
+            line-height: 1;
+        }
+        .exec-step .label {
+            font-family: 'Fira Code', monospace;
+            color: #ff7b72;
+            font-size: 0.85rem;
+        }
+        .exec-arrow { color: var(--accent); font-size: 1.2rem; align-self: center; padding: 0 4px; }
+
+        /* ── Highlight text ── */
+        .highlight {
+            background: linear-gradient(120deg, rgba(249,168,37,0.2), rgba(249,168,37,0.1));
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .text-danger  { color: var(--danger); }
+        .text-success { color: var(--success); }
+        .text-warning { color: var(--warning); }
+        .text-info    { color: var(--info); }
+        .text-dim     { color: var(--text-dim); }
+        .text-accent  { color: var(--accent); }
+        .text-bright  { color: var(--text-bright); }
+
+        /* ── Title slide ── */
+        .title-slide {
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #0f172a 100%);
+        }
+        .title-slide h1 {
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+        .title-slide .subtitle { font-size: 1.5rem; color: var(--text-dim); }
+        .title-slide .week-badge {
+            display: inline-block;
+            padding: 8px 24px;
+            border: 2px solid var(--accent);
+            border-radius: 100px;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 24px;
+        }
+
+        /* ── Section divider slide ── */
+        .section-slide {
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-dark), var(--bg));
+        }
+        .section-slide h1 { font-size: 3rem; color: var(--text-bright); }
+        .section-slide .section-num {
+            font-size: 5rem;
+            font-weight: 800;
+            color: var(--accent);
+            opacity: 0.3;
+            margin-bottom: -10px;
+        }
+
+        /* ── Navigation ── */
+        .nav-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 48px;
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+        .nav-bar .page-info { color: var(--text-dim); font-size: 0.9rem; font-weight: 500; }
+        .nav-bar .controls  { display: flex; gap: 8px; }
+        .nav-bar button {
+            background: var(--primary-dark);
+            color: var(--text);
+            border: 1px solid #475569;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-bar button:hover { background: var(--primary-light); color: #fff; }
+
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--primary-light));
+            transition: width 0.3s ease;
+            z-index: 100;
+        }
+
+        /* ── TOC Sidebar ── */
+        .toc-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            display: none;
+            backdrop-filter: blur(4px);
+        }
+        .toc-overlay.open { display: block; }
+        .toc-panel {
+            position: fixed;
+            left: 0; top: 0; bottom: 0;
+            width: 380px;
+            background: var(--bg-card);
+            border-right: 1px solid #334155;
+            z-index: 201;
+            padding: 24px;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        .toc-overlay.open .toc-panel { transform: translateX(0); }
+        .toc-panel h3 { color: var(--accent); margin-bottom: 16px; font-size: 1.2rem; }
+        .toc-panel a {
+            display: block;
+            color: var(--text-dim);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            margin-bottom: 2px;
+            transition: all 0.2s;
+        }
+        .toc-panel a:hover, .toc-panel a.current {
+            background: rgba(51,103,145,0.2);
+            color: var(--text-bright);
+        }
+        .toc-panel a.section-header {
+            color: var(--accent-light);
+            font-weight: 600;
+            margin-top: 10px;
+            font-size: 0.92rem;
+        }
+
+        /* ── Scrollable slide content ── */
+        .slide-content {
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .slide-content::-webkit-scrollbar { width: 5px; }
+        .slide-content::-webkit-scrollbar-track { background: transparent; }
+        .slide-content::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+        /* ── Animations ── */
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .slide { padding: 40px 32px; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+            .compare, .columns-2 { grid-template-columns: 1fr; }
+            .columns-3 { grid-template-columns: 1fr; }
+            .title-slide h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- ▸ TOC Overlay ◂ -->
+<div class="toc-overlay" id="tocOverlay" onclick="closeTOC()">
+    <div class="toc-panel" onclick="event.stopPropagation()">
+        <h3>📑 Mục Lục</h3>
+        <a href="#" class="section-header" onclick="goSlide(0);return false;">Trang bìa</a>
+        <a href="#" onclick="goSlide(1);return false;">Mục tiêu tuần 4</a>
+        <a href="#" onclick="goSlide(2);return false;">Câu chuyện mở đầu</a>
+
+        <a href="#" class="section-header" onclick="goSlide(3);return false;">4.1 SELECT</a>
+        <a href="#" onclick="goSlide(3);return false;">SELECT * và cột cụ thể</a>
+        <a href="#" onclick="goSlide(4);return false;">Cú pháp đầy đủ</a>
+        <a href="#" onclick="goSlide(5);return false;">Thứ tự từ khóa SQL</a>
+        <a href="#" onclick="goSlide(6);return false;">So sánh Excel ↔ SELECT</a>
+
+        <a href="#" class="section-header" onclick="goSlide(7);return false;">4.2 AS — Alias</a>
+        <a href="#" onclick="goSlide(7);return false;">Alias là gì?</a>
+        <a href="#" onclick="goSlide(8);return false;">Quy tắc đặt Alias</a>
+        <a href="#" onclick="goSlide(9);return false;">AS với tính toán & Table Alias</a>
+
+        <a href="#" class="section-header" onclick="goSlide(10);return false;">4.3 Biểu Thức Tính Toán</a>
+        <a href="#" onclick="goSlide(10);return false;">Toán tử số học</a>
+        <a href="#" onclick="goSlide(11);return false;">⚠️ Bẫy chia số nguyên</a>
+        <a href="#" onclick="goSlide(12);return false;">Hàm làm tròn</a>
+        <a href="#" onclick="goSlide(13);return false;">Ví dụ: Báo cáo lương</a>
+
+        <a href="#" class="section-header" onclick="goSlide(14);return false;">4.4 DISTINCT</a>
+        <a href="#" onclick="goSlide(14);return false;">DISTINCT cơ bản</a>
+        <a href="#" onclick="goSlide(15);return false;">DISTINCT nhiều cột & COUNT</a>
+
+        <a href="#" class="section-header" onclick="goSlide(16);return false;">4.5 Hàm Xử Lý Chuỗi</a>
+        <a href="#" onclick="goSlide(16);return false;">Nối chuỗi || và CONCAT</a>
+        <a href="#" onclick="goSlide(17);return false;">Bảng hàm chuỗi</a>
+        <a href="#" onclick="goSlide(18);return false;">Ví dụ thực tế chuỗi</a>
+
+        <a href="#" class="section-header" onclick="goSlide(19);return false;">4.6 Hàm Số Học</a>
+        <a href="#" onclick="goSlide(19);return false;">Bảng hàm số học</a>
+        <a href="#" onclick="goSlide(20);return false;">Ví dụ thực tế số học</a>
+
+        <a href="#" class="section-header" onclick="goSlide(21);return false;">4.7 LIMIT & OFFSET</a>
+        <a href="#" onclick="goSlide(21);return false;">LIMIT — Giới hạn hàng</a>
+        <a href="#" onclick="goSlide(22);return false;">OFFSET — Phân trang</a>
+
+        <a href="#" class="section-header" onclick="goSlide(23);return false;">4.8 Thứ Tự Thực Thi</a>
+        <a href="#" onclick="goSlide(23);return false;">Logical Execution Order</a>
+        <a href="#" onclick="goSlide(24);return false;">Quy ước viết SQL đẹp</a>
+
+        <a href="#" class="section-header" onclick="goSlide(25);return false;">4.9 Hàm Ngày/Giờ</a>
+        <a href="#" onclick="goSlide(25);return false;">Bảng hàm ngày/giờ</a>
+        <a href="#" onclick="goSlide(26);return false;">EXTRACT & AGE</a>
+        <a href="#" onclick="goSlide(27);return false;">TO_CHAR & Ví dụ tổng hợp</a>
+
+        <a href="#" class="section-header" onclick="goSlide(28);return false;">Tổng Kết</a>
+        <a href="#" onclick="goSlide(28);return false;">Checklist kỹ năng</a>
+        <a href="#" onclick="goSlide(29);return false;">Bảng Excel ↔ PostgreSQL</a>
+        <a href="#" onclick="goSlide(30);return false;">Tiếp theo — Tuần 5</a>
+    </div>
+</div>
+
+<div class="slide-deck" id="deck">
+
+<!-- ════════════════ SLIDE 0: TITLE ════════════════ -->
+<div class="slide title-slide active">
+    <div class="week-badge">TUẦN 4</div>
+    <h1>SELECT Cơ Bản</h1>
+    <p class="subtitle">SELECT · AS · DISTINCT · Hàm Chuỗi · Hàm Số · LIMIT · Hàm Ngày</p>
+    <p style="margin-top:32px;color:var(--text-dim);font-size:0.95rem;">
+        ⏱ Thời lượng: 4–5 giờ &nbsp;|&nbsp; Yêu cầu: Đã hoàn thành Tuần 3, bảng <code>nhan_vien</code> đã có dữ liệu
+    </p>
+    <p style="margin-top:24px;color:var(--text-dim);font-size:0.85rem;">
+        Nhấn <kbd style="background:#334155;padding:2px 8px;border-radius:4px;">→</kbd> hoặc
+        <kbd style="background:#334155;padding:2px 8px;border-radius:4px;">Space</kbd> để tiếp tục &nbsp;·&nbsp;
+        <kbd style="background:#334155;padding:2px 8px;border-radius:4px;">M</kbd> để mở mục lục
+    </p>
+</div>
+
+<!-- ════════════════ SLIDE 1: MỤC TIÊU ════════════════ -->
+<div class="slide">
+    <h2>🎯 Mục Tiêu Tuần 4</h2>
+    <div class="columns-2">
+        <div>
+            <div class="card" style="margin-bottom:12px;">
+                <p>✅ Viết <strong>SELECT</strong> để đọc dữ liệu từ bảng</p>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+                <p>✅ Dùng <strong>AS</strong> đặt tên cột tiếng Việt dễ đọc</p>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+                <p>✅ <strong>Tính toán</strong> trực tiếp trong SELECT</p>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+                <p>✅ <strong>DISTINCT</strong> — loại bỏ giá trị trùng</p>
+            </div>
+        </div>
+        <div>
+            <div class="card" style="margin-bottom:12px;">
+                <p>✅ Dùng <strong>hàm chuỗi</strong>: UPPER, LOWER, LEFT, TRIM…</p>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+                <p>✅ Dùng <strong>LIMIT + OFFSET</strong> để xem một phần dữ liệu</p>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+                <p>✅ Dùng <strong>hàm ngày/giờ</strong>: EXTRACT, AGE, TO_CHAR</p>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+                <p>✅ Hiểu <strong>thứ tự thực thi</strong> câu SQL</p>
+            </div>
+        </div>
+    </div>
+    <div class="card excel" style="margin-top:8px;">
+        <p>📊 <strong>Tương đương Excel:</strong> Tuần này giống như bạn đang <em>xây dựng báo cáo từ dữ liệu thô</em> — chọn cột, đổi tên header, thêm cột tính toán, loại trùng, lọc N dòng đầu.</p>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 2: CÂU CHUYỆN MỞ ĐẦU ════════════════ -->
+<div class="slide">
+    <h2>📖 Tại Sao SELECT Quan Trọng?</h2>
+    <p style="margin-bottom:20px;font-size:1.15rem;">Sếp giao cho bạn file <strong>200.000 dòng nhân viên</strong>. Câu hỏi: "Có bao nhiêu nhân viên đang làm ở phòng Kinh doanh?"</p>
+    <div class="compare">
+        <div>
+            <h3>📊 Với Excel</h3>
+            <ol>
+                <li>Mở file → chờ load <em>(2–3 phút?)</em></li>
+                <li>Filter cột "Phòng ban"</li>
+                <li>Filter cột "Đang làm"</li>
+                <li>Nhìn số ở thanh status bar</li>
+            </ol>
+        </div>
+        <div>
+            <h3>🐘 Với PostgreSQL</h3>
+            <pre><span class="keyword">SELECT</span> <span class="func">COUNT</span>(*)
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> phong_ban = <span class="string">'Kinh doanh'</span>
+  <span class="keyword">AND</span> dang_lam = <span class="keyword">TRUE</span>;</pre>
+            <p class="text-success" style="margin-top:8px;">⚡ Kết quả xuất hiện dưới <strong>1 giây</strong>, dù bảng có 200 triệu hàng!</p>
+        </div>
+    </div>
+    <div class="card tip" style="margin-top:12px;">
+        <p>💡 <strong>SELECT</strong> là lệnh để <strong>đọc dữ liệu</strong> — không thay đổi, không xóa, chỉ xem. Đây là lệnh bạn sẽ dùng <em>nhiều nhất</em> trong cả sự nghiệp.</p>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 3: SECTION 4.1 ════════════════ -->
+<div class="slide section-slide">
+    <div class="section-num">4.1</div>
+    <h1>SELECT — Câu Lệnh Quan Trọng Nhất</h1>
+    <p class="subtitle">Đọc dữ liệu từ bảng — cú pháp cơ bản</p>
+</div>
+
+<!-- ════════════════ SLIDE 4: SELECT * VÀ CỘT CỤ THỂ ════════════════ -->
+<div class="slide">
+    <h2>SELECT * và SELECT Cột Cụ Thể</h2>
+    <div class="columns-2">
+        <div>
+            <div class="card pg" style="margin-bottom:12px;">
+                <h3>SELECT * — Lấy tất cả cột</h3>
+                <pre><span class="comment">-- Xem toàn bộ bảng</span>
+<span class="comment">-- Như mở sheet, nhìn toàn bộ</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> nhan_vien;</pre>
+                <p style="margin-top:8px;font-size:0.95rem;color:var(--text-dim);">Dấu <code>*</code> = "lấy tất cả cột"</p>
+            </div>
+            <div class="card warning">
+                <p>⚠️ <strong>Tránh dùng SELECT * trong thực tế</strong> — lấy thừa dữ liệu → chậm hơn, code dễ lỗi khi cấu trúc bảng thay đổi.</p>
+            </div>
+        </div>
+        <div>
+            <div class="card pg">
+                <h3>SELECT cột cụ thể</h3>
+                <pre><span class="comment">-- Chỉ xem 3 cột cần thiết</span>
+<span class="comment">-- Như ẩn cột trong Excel</span>
+<span class="keyword">SELECT</span> ho_ten, luong, phong_ban
+<span class="keyword">FROM</span> nhan_vien;</pre>
+                <p style="margin-top:10px;font-size:0.95rem;"><strong>Kết quả:</strong></p>
+                <pre style="font-size:0.82rem;"> ho_ten         | luong    | phong_ban
+ Trần Thị Mai   | 15000000 | Kế toán
+ Nguyễn Văn An  | 20000000 | Kinh doanh
+ Lê Thị Bình    | 18000000 | Nhân sự</pre>
+            </div>
+        </div>
+    </div>
+    <div class="card excel">
+        <p>📊 <strong>Thứ tự cột:</strong> Trong SELECT bạn có thể đổi thứ tự cột tùy ý — giống như kéo cột sang trái/phải trong Excel. <code>SELECT phong_ban, ho_ten</code> hoàn toàn hợp lệ dù trong bảng <code>ho_ten</code> đứng trước.</p>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 5: CÚ PHÁP ĐẦY ĐỦ ════════════════ -->
+<div class="slide">
+    <h2>Cú Pháp SELECT Đầy Đủ</h2>
+    <div class="card info" style="margin-bottom:16px;">
+        <p>Phần tối thiểu bắt buộc: <code><span style="color:#ff7b72">SELECT</span> ... <span style="color:#ff7b72">FROM</span> ...</code> — các phần còn lại là tùy chọn.</p>
+    </div>
+    <pre style="font-size:0.95rem;"><span class="keyword">SELECT</span>  [<span class="keyword">DISTINCT</span>]  cot1, cot2, cot3, ...   <span class="comment">← Tuần 4 ✅</span>
+<span class="keyword">FROM</span>    ten_bang                              <span class="comment">← Tuần 4 ✅</span>
+[<span class="keyword">WHERE</span>     dieu_kien]                         <span class="comment">← Lọc hàng       (Tuần 5)</span>
+[<span class="keyword">GROUP BY</span>  cot_nhom]                          <span class="comment">← Nhóm dữ liệu   (Tuần 6)</span>
+[<span class="keyword">HAVING</span>    dieu_kien_nhom]                    <span class="comment">← Lọc nhóm       (Tuần 6)</span>
+[<span class="keyword">ORDER BY</span>  cot [<span class="keyword">ASC</span>|<span class="keyword">DESC</span>]]                  <span class="comment">← Sắp xếp        (Tuần 5)</span>
+[<span class="keyword">LIMIT</span>  n  <span class="keyword">OFFSET</span>  m]                        <span class="comment">← Phân trang     (Tuần 4 ✅)</span></pre>
+    <div class="columns-2" style="margin-top:12px;">
+        <div class="card" style="text-align:center;">
+            <p class="text-accent" style="font-size:1.2rem;font-weight:700;">Câu SQL tối giản</p>
+            <pre style="text-align:left;"><span class="keyword">SELECT</span> *
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            <p class="text-dim" style="font-size:0.9rem;">Hợp lệ 100%</p>
+        </div>
+        <div class="card" style="text-align:center;">
+            <p class="text-accent" style="font-size:1.2rem;font-weight:700;">Câu SQL đầy đủ</p>
+            <pre style="text-align:left;font-size:0.8rem;"><span class="keyword">SELECT DISTINCT</span> phong_ban,
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong),<span class="number">0</span>) <span class="keyword">AS</span> tb
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> ngay_vao > <span class="string">'2022-01-01'</span>
+<span class="keyword">GROUP BY</span> phong_ban
+<span class="keyword">HAVING</span> <span class="func">AVG</span>(luong) > <span class="number">15000000</span>
+<span class="keyword">ORDER BY</span> tb <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">3</span>;</pre>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 6: THỨ TỰ TỪ KHÓA ════════════════ -->
+<div class="slide">
+    <h2>Thứ Tự Viết ≠ Thứ Tự Thực Thi</h2>
+    <p style="margin-bottom:16px;">SQL có thứ tự từ khóa <strong>cố định khi viết</strong>, nhưng PostgreSQL <strong>thực thi theo thứ tự hoàn toàn khác</strong>:</p>
+
+    <div class="columns-2">
+        <div class="card">
+            <h3>📝 Thứ tự VIẾT (bạn gõ)</h3>
+            <ol style="font-family:'Fira Code',monospace;font-size:0.95rem;padding-left:20px;">
+                <li style="color:#ff7b72;margin-bottom:6px;">SELECT [DISTINCT]</li>
+                <li style="color:#ff7b72;margin-bottom:6px;">FROM</li>
+                <li style="color:#94a3b8;margin-bottom:6px;">WHERE</li>
+                <li style="color:#94a3b8;margin-bottom:6px;">GROUP BY</li>
+                <li style="color:#94a3b8;margin-bottom:6px;">HAVING</li>
+                <li style="color:#94a3b8;margin-bottom:6px;">ORDER BY</li>
+                <li style="color:#ff7b72;margin-bottom:6px;">LIMIT / OFFSET</li>
+            </ol>
+        </div>
+        <div class="card warning">
+            <h3>⚙️ Thứ tự THỰC THI (PostgreSQL xử lý)</h3>
+            <ol style="font-family:'Fira Code',monospace;font-size:0.95rem;padding-left:20px;">
+                <li style="color:#7ee787;margin-bottom:6px;">FROM (xác định bảng)</li>
+                <li style="color:#7ee787;margin-bottom:6px;">WHERE (lọc hàng)</li>
+                <li style="color:#7ee787;margin-bottom:6px;">GROUP BY</li>
+                <li style="color:#7ee787;margin-bottom:6px;">HAVING</li>
+                <li style="color:#f9a825;margin-bottom:6px;">SELECT ← bước 5!</li>
+                <li style="color:#7ee787;margin-bottom:6px;">ORDER BY</li>
+                <li style="color:#7ee787;margin-bottom:6px;">LIMIT / OFFSET</li>
+            </ol>
+        </div>
+    </div>
+    <div class="card warning" style="margin-top:12px;">
+        <p>⚠️ <strong>Hệ quả quan trọng:</strong> WHERE chạy ở <em>bước 2</em>, còn SELECT chạy ở <em>bước 5</em> → trong WHERE, bạn <strong>KHÔNG dùng được alias</strong> đã đặt trong SELECT. (Chi tiết ở slide 4.8)</p>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 7: SECTION 4.2 ════════════════ -->
+<div class="slide section-slide">
+    <div class="section-num">4.2</div>
+    <h1>AS — Đặt Tên Hiển Thị</h1>
+    <p class="subtitle">Alias — đặt tên mới cho cột trong kết quả truy vấn</p>
+</div>
+
+<!-- ════════════════ SLIDE 8: ALIAS LÀ GÌ ════════════════ -->
+<div class="slide">
+    <h2>AS — Alias Là Gì?</h2>
+    <div class="card excel" style="margin-bottom:16px;">
+        <p>📊 <strong>Trong Excel:</strong> khi làm báo cáo bạn gõ vào hàng đầu: <em>"Họ và Tên"</em>, <em>"Mức Lương (VNĐ)"</em>, <em>"Phòng Ban"</em> thay vì giữ nguyên <code>ho_ten</code>, <code>luong</code>, <code>phong_ban</code>.<br>
+        Trong SQL, <strong>AS</strong> làm điều y chang — tên thật của cột trong bảng <strong>không thay đổi</strong>.</p>
+    </div>
+    <div class="columns-2">
+        <div>
+            <pre><span class="comment">-- Alias đơn giản</span>
+<span class="keyword">SELECT</span>
+    ho_ten      <span class="keyword">AS</span> <span class="string">"Họ và tên"</span>,
+    luong       <span class="keyword">AS</span> <span class="string">"Mức lương (VNĐ)"</span>,
+    phong_ban   <span class="keyword">AS</span> <span class="string">"Phòng ban"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+        </div>
+        <div>
+            <p style="margin-bottom:10px;"><strong>Kết quả:</strong></p>
+            <pre style="font-size:0.82rem;"> Họ và tên       | Mức lương (VNĐ) | Phòng ban
+ Trần Thị Mai    |        15000000 | Kế toán
+ Nguyễn Văn An   |        20000000 | Kinh doanh</pre>
+            <div class="card tip" style="margin-top:12px;">
+                <p>💡 Alias tồn tại <em>chỉ trong kết quả truy vấn</em> — bảng gốc không bị ảnh hưởng.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 9: QUY TẮC ALIAS ════════════════ -->
+<div class="slide">
+    <h2>Quy Tắc Đặt Alias</h2>
+    <table>
+        <thead>
+            <tr><th>Tình huống</th><th>Cú pháp</th><th>Ví dụ</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Có khoảng trắng hoặc dấu tiếng Việt</td><td>Dùng nháy kép <code>"..."</code></td><td><code>AS "Họ và tên"</code></td></tr>
+            <tr><td>Chỉ chữ thường, số, gạch dưới</td><td>Có thể bỏ nháy kép</td><td><code>AS tong_luong</code></td></tr>
+            <tr><td>Muốn giữ nguyên chữ Hoa</td><td>Dùng nháy kép <code>"..."</code></td><td><code>AS "TongLuong"</code></td></tr>
+        </tbody>
+    </table>
+    <div class="card warning" style="margin-top:16px;">
+        <h3>⚠️ Cảnh Báo: Nháy Đơn vs Nháy Kép</h3>
+        <pre><span class="comment">-- ✅ ĐÚNG: alias dùng nháy kép, giá trị dùng nháy đơn</span>
+<span class="keyword">SELECT</span> ho_ten <span class="keyword">AS</span> <span class="string">"Họ tên"</span>
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> phong_ban = <span class="string">'Kế toán'</span>;
+
+<span class="comment">-- ❌ SAI: alias không dùng nháy đơn</span>
+<span class="keyword">SELECT</span> ho_ten <span class="keyword">AS</span> <span class="string" style="color:var(--danger);">'Họ tên'</span>  <span class="comment">← Lỗi!</span></pre>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 10: AS VỚI TÍNH TOÁN + TABLE ALIAS ════════════════ -->
+<div class="slide">
+    <h2>AS Với Tính Toán &amp; Table Alias</h2>
+    <div class="columns-2">
+        <div>
+            <h3>Alias cho cột tính toán</h3>
+            <pre><span class="keyword">SELECT</span>
+    ho_ten,
+    luong             <span class="keyword">AS</span> <span class="string">"Lương trước thuế"</span>,
+    <span class="func">ROUND</span>(luong*<span class="number">0.10</span>,<span class="number">0</span>) <span class="keyword">AS</span> <span class="string">"Thuế TNCN (10%)"</span>,
+    <span class="func">ROUND</span>(luong*<span class="number">0.90</span>,<span class="number">0</span>) <span class="keyword">AS</span> <span class="string">"Lương sau thuế"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            <p style="margin-top:10px;font-size:0.9rem;color:var(--text-dim);">Alias làm cho cột tính toán trở nên dễ đọc trong báo cáo.</p>
+        </div>
+        <div>
+            <h3>Table Alias (Alias bảng)</h3>
+            <pre><span class="comment">-- "nv" là alias cho bảng nhan_vien</span>
+<span class="keyword">SELECT</span> nv.ho_ten, nv.luong
+<span class="keyword">FROM</span> nhan_vien <span class="keyword">AS</span> nv;
+
+<span class="comment">-- Cách viết tắt (bỏ AS cũng được)</span>
+<span class="keyword">SELECT</span> nv.ho_ten, nv.luong
+<span class="keyword">FROM</span> nhan_vien nv;</pre>
+            <div class="card info" style="margin-top:12px;">
+                <p>💡 Hiện tại với 1 bảng, alias bảng chưa cần thiết. Sẽ <em>rất quan trọng</em> khi học JOIN ở Tuần 7!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 11: SECTION 4.3 ════════════════ -->
+<div class="slide section-slide">
+    <div class="section-num">4.3</div>
+    <h1>Biểu Thức Tính Toán</h1>
+    <p class="subtitle">Tính toán trong SELECT — như công thức Excel trong ô</p>
+</div>
+
+<!-- ════════════════ SLIDE 12: TOÁN TỬ SỐ HỌC ════════════════ -->
+<div class="slide">
+    <h2>Toán Tử Số Học</h2>
+    <table>
+        <thead>
+            <tr><th>Toán tử</th><th>Ý nghĩa</th><th>Ví dụ SQL</th><th>Excel tương đương</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>+</code></td><td>Cộng</td><td><code>luong + 5000000</code></td><td><code>=B2+5000000</code></td></tr>
+            <tr><td><code>-</code></td><td>Trừ</td><td><code>luong - 2000000</code></td><td><code>=B2-2000000</code></td></tr>
+            <tr><td><code>*</code></td><td>Nhân</td><td><code>gia * so_luong</code></td><td><code>=C2*D2</code></td></tr>
+            <tr><td><code>/</code></td><td>Chia</td><td><code>luong / 12</code></td><td><code>=B2/12</code></td></tr>
+            <tr><td><code>%</code></td><td>Phần dư (modulo)</td><td><code>so_luong % 10</code></td><td><code>=MOD(A1,10)</code></td></tr>
+        </tbody>
+    </table>
+    <pre style="margin-top:16px;"><span class="comment">-- Tính lương tháng → lương tuần → lương ngày</span>
+<span class="keyword">SELECT</span>
+    ho_ten,
+    luong                            <span class="keyword">AS</span> <span class="string">"Lương tháng"</span>,
+    <span class="func">ROUND</span>(luong / <span class="number">4.33</span>, <span class="number">0</span>)           <span class="keyword">AS</span> <span class="string">"Lương tuần"</span>,
+    <span class="func">ROUND</span>(luong / <span class="number">26</span>, <span class="number">0</span>)             <span class="keyword">AS</span> <span class="string">"Lương ngày (26 ngày công)"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+</div>
+
+<!-- ════════════════ SLIDE 13: BẪY CHIA SỐ NGUYÊN ════════════════ -->
+<div class="slide">
+    <h2>⚠️ Bẫy: Chia Số Nguyên</h2>
+    <div class="card warning" style="margin-bottom:16px;">
+        <p>⚠️ <strong>CẢNH BÁO:</strong> Chia số nguyên cho số nguyên → kết quả là số nguyên (<strong>phần thập phân bị cắt!</strong>)</p>
+    </div>
+    <div class="columns-2">
+        <div>
+            <h3 class="text-danger">❌ Kết quả SAI</h3>
+            <pre><span class="keyword">SELECT</span> <span class="number">7</span> / <span class="number">2</span>;    <span class="comment">← Kết quả: 3 (không phải 3.5!)</span>
+<span class="keyword">SELECT</span> <span class="number">10</span> / <span class="number">3</span>;   <span class="comment">← Kết quả: 3 (không phải 3.33...)</span>
+
+<span class="comment">-- Nguy hiểm thực tế:</span>
+<span class="keyword">SELECT</span> luong / <span class="number">12</span> <span class="keyword">FROM</span> nhan_vien;
+<span class="comment">-- Nếu luong là INTEGER → kết quả bị cắt!</span></pre>
+        </div>
+        <div>
+            <h3 class="text-success">✅ Cách Sửa</h3>
+            <pre><span class="comment">-- Cách 1: Dùng số thập phân</span>
+<span class="keyword">SELECT</span> <span class="number">7.0</span> / <span class="number">2</span>;          <span class="comment">← 3.5 ✅</span>
+
+<span class="comment">-- Cách 2: Ép kiểu (type cast)</span>
+<span class="keyword">SELECT</span> <span class="number">7</span>::<span class="type">NUMERIC</span> / <span class="number">2</span>;  <span class="comment">← 3.5 ✅</span>
+<span class="keyword">SELECT</span> <span class="func">CAST</span>(<span class="number">7</span> <span class="keyword">AS</span> <span class="type">NUMERIC</span>) / <span class="number">2</span>;  <span class="comment">← 3.5 ✅</span>
+
+<span class="comment">-- Ví dụ thực tế an toàn:</span>
+<span class="keyword">SELECT</span> luong / <span class="number">12.0</span> <span class="keyword">FROM</span> nhan_vien; <span class="comment">✅</span>
+<span class="keyword">SELECT</span> luong::<span class="type">NUMERIC</span> / <span class="number">12</span> <span class="keyword">FROM</span> nhan_vien; <span class="comment">✅</span></pre>
+        </div>
+    </div>
+    <div class="card excel" style="margin-top:12px;">
+        <p>📊 <strong>So sánh Excel:</strong> Excel không có vấn đề này — mọi phép chia đều cho kết quả thập phân tự động. SQL nghiêm ngặt hơn về kiểu dữ liệu!</p>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 14: HÀM LÀM TRÒN ════════════════ -->
+<div class="slide">
+    <h2>Các Hàm Làm Tròn</h2>
+    <table>
+        <thead>
+            <tr><th>Hàm</th><th>Ý nghĩa</th><th>Ví dụ</th><th>Kết quả</th><th>Excel</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>ROUND(n, d)</code></td><td>Làm tròn d chữ số thập phân</td><td><code>ROUND(15.567, 2)</code></td><td><code>15.57</code></td><td><code>=ROUND(A1,2)</code></td></tr>
+            <tr><td><code>ROUND(n, 0)</code></td><td>Làm tròn đến số nguyên</td><td><code>ROUND(15.5, 0)</code></td><td><code>16</code></td><td><code>=ROUND(A1,0)</code></td></tr>
+            <tr><td><code>ROUND(n, -1)</code></td><td>Làm tròn đến hàng chục</td><td><code>ROUND(1567, -1)</code></td><td><code>1570</code></td><td><code>=ROUND(A1,-1)</code></td></tr>
+            <tr><td><code>CEIL(n)</code></td><td>Làm tròn lên (trần)</td><td><code>CEIL(9.1)</code></td><td><code>10</code></td><td><code>=CEILING.MATH(A1)</code></td></tr>
+            <tr><td><code>FLOOR(n)</code></td><td>Làm tròn xuống (sàn)</td><td><code>FLOOR(9.9)</code></td><td><code>9</code></td><td><code>=FLOOR.MATH(A1)</code></td></tr>
+            <tr><td><code>TRUNC(n, d)</code></td><td>Cắt thẳng (không làm tròn)</td><td><code>TRUNC(9.99, 1)</code></td><td><code>9.9</code></td><td><code>=TRUNC(A1,1)</code></td></tr>
+        </tbody>
+    </table>
+    <pre style="margin-top:12px;"><span class="keyword">SELECT</span>
+    <span class="func">ROUND</span>(<span class="number">15567890.5</span>, <span class="number">0</span>)   <span class="keyword">AS</span> <span class="string">"Làm tròn nguyên"</span>,  <span class="comment">-- 15567891</span>
+    <span class="func">ROUND</span>(<span class="number">15567890.5</span>, <span class="number">-3</span>)  <span class="keyword">AS</span> <span class="string">"Làm tròn nghìn"</span>,   <span class="comment">-- 15568000</span>
+    <span class="func">CEIL</span>(<span class="number">15.001</span>)            <span class="keyword">AS</span> <span class="string">"Làm tròn lên"</span>,     <span class="comment">-- 16</span>
+    <span class="func">FLOOR</span>(<span class="number">15.999</span>)           <span class="keyword">AS</span> <span class="string">"Làm tròn xuống"</span>,   <span class="comment">-- 15</span>
+    <span class="func">TRUNC</span>(<span class="number">15.999</span>, <span class="number">0</span>)        <span class="keyword">AS</span> <span class="string">"Cắt thẳng"</span>;        <span class="comment">-- 15</span></pre>
+</div>
+
+<!-- ════════════════ SLIDE 15: VÍ DỤ BÁO CÁO LƯƠNG ════════════════ -->
+<div class="slide">
+    <h2>Ví Dụ Thực Tế: Báo Cáo Lương</h2>
+    <div class="card excel" style="margin-bottom:12px;">
+        <p>📊 <strong>Tương đương Excel:</strong> Đây chính xác là điều bạn làm với nhiều cột công thức trong Excel — SQL làm được y chang nhưng nhanh hơn nhiều với triệu hàng!</p>
+    </div>
+    <div class="slide-content">
+        <pre><span class="comment">-- Báo cáo lương với các khoản bảo hiểm</span>
+<span class="keyword">SELECT</span>
+    ho_ten                                    <span class="keyword">AS</span> <span class="string">"Họ và tên"</span>,
+    phong_ban                                 <span class="keyword">AS</span> <span class="string">"Phòng ban"</span>,
+    luong                                     <span class="keyword">AS</span> <span class="string">"Lương gross"</span>,
+    <span class="func">ROUND</span>(luong * <span class="number">0.08</span>, <span class="number">0</span>)                   <span class="keyword">AS</span> <span class="string">"BHXH (8%)"</span>,
+    <span class="func">ROUND</span>(luong * <span class="number">0.015</span>, <span class="number">0</span>)                  <span class="keyword">AS</span> <span class="string">"BHYT (1.5%)"</span>,
+    <span class="func">ROUND</span>(luong * <span class="number">0.01</span>, <span class="number">0</span>)                   <span class="keyword">AS</span> <span class="string">"BHTN (1%)"</span>,
+    <span class="func">ROUND</span>(luong * <span class="number">0.105</span>, <span class="number">0</span>)                  <span class="keyword">AS</span> <span class="string">"Tổng BH (10.5%)"</span>,
+    <span class="func">ROUND</span>(luong - luong * <span class="number">0.105</span>, <span class="number">0</span>)          <span class="keyword">AS</span> <span class="string">"Thu nhập chịu thuế"</span>,
+    <span class="func">ROUND</span>((luong - luong * <span class="number">0.105</span>) * <span class="number">0.10</span>, <span class="number">0</span>) <span class="keyword">AS</span> <span class="string">"Thuế TNCN (~10%)"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 16: SECTION 4.4 ════════════════ -->
+<div class="slide section-slide">
+    <div class="section-num">4.4</div>
+    <h1>DISTINCT — Loại Bỏ Giá Trị Trùng</h1>
+    <p class="subtitle">Tương đương Remove Duplicates trong Excel</p>
+</div>
+
+<!-- ════════════════ SLIDE 17: DISTINCT CƠ BẢN ════════════════ -->
+<div class="slide">
+    <h2>DISTINCT Cơ Bản</h2>
+    <p style="margin-bottom:16px;">Bảng <code>nhan_vien</code> có 6 nhân viên, 4 phòng ban. Câu hỏi: <strong>"Có những phòng ban nào?"</strong></p>
+    <div class="compare">
+        <div>
+            <h3 class="text-danger">❌ Không có DISTINCT</h3>
+            <pre><span class="keyword">SELECT</span> phong_ban
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            <p style="margin-top:8px;">Kết quả: <em>Kế toán, Kinh doanh, Nhân sự, IT, Kế toán, Kinh doanh</em></p>
+            <p class="text-danger" style="margin-top:6px;">6 hàng — bị trùng! ❌</p>
+        </div>
+        <div>
+            <h3 class="text-success">✅ Có DISTINCT</h3>
+            <pre><span class="keyword">SELECT DISTINCT</span> phong_ban
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            <p style="margin-top:8px;">Kết quả: <em>Kế toán, Kinh doanh, Nhân sự, IT</em></p>
+            <p class="text-success" style="margin-top:6px;">4 hàng — không trùng! ✅</p>
+        </div>
+    </div>
+    <div class="card excel" style="margin-top:16px;">
+        <p>📊 <strong>Tương đương Excel:</strong> Data tab → Remove Duplicates → chọn cột cần loại trùng. SQL làm điều tương tự mà <em>không thay đổi dữ liệu gốc</em>.</p>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 18: DISTINCT NHIỀU CỘT ════════════════ -->
+<div class="slide">
+    <h2>DISTINCT Nhiều Cột &amp; COUNT(DISTINCT)</h2>
+    <div class="columns-2">
+        <div>
+            <h3>DISTINCT trên nhiều cột</h3>
+            <pre><span class="comment">-- Tổ hợp (phong_ban, chuc_vu) duy nhất</span>
+<span class="keyword">SELECT DISTINCT</span> phong_ban, chuc_vu
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            <div class="card info" style="margin-top:12px;">
+                <p>💡 Không phải "phòng ban duy nhất" + "chức vụ duy nhất", mà là <em>cặp (phong_ban, chuc_vu) duy nhất</em>.</p>
+            </div>
+            <div class="card excel" style="margin-top:10px;">
+                <p>📊 <strong>Excel:</strong> Remove Duplicates → tích chọn <em>cả hai</em> cột cùng lúc.</p>
+            </div>
+        </div>
+        <div>
+            <h3>COUNT(DISTINCT ...) — Đếm giá trị khác nhau</h3>
+            <pre><span class="comment">-- Có bao nhiêu phòng ban?</span>
+<span class="keyword">SELECT</span> <span class="func">COUNT</span>(<span class="keyword">DISTINCT</span> phong_ban)
+    <span class="keyword">AS</span> <span class="string">"Số phòng ban"</span>
+<span class="keyword">FROM</span> nhan_vien;
+<span class="comment">-- Kết quả: 4</span>
+
+<span class="comment">-- Có bao nhiêu danh mục sản phẩm?</span>
+<span class="keyword">SELECT</span> <span class="func">COUNT</span>(<span class="keyword">DISTINCT</span> danh_muc)
+    <span class="keyword">AS</span> <span class="string">"Số danh mục"</span>
+<span class="keyword">FROM</span> san_pham;</pre>
+            <div class="card excel" style="margin-top:10px;">
+                <p>📊 <strong>Excel:</strong> <code>=SUMPRODUCT(1/COUNTIF(A2:A100,A2:A100))</code> — công thức phức tạp! SQL đơn giản hơn nhiều.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 19: SECTION 4.5 ════════════════ -->
+<div class="slide section-slide">
+    <div class="section-num">4.5</div>
+    <h1>Hàm Xử Lý Chuỗi</h1>
+    <p class="subtitle">UPPER · LOWER · TRIM · LEFT · SUBSTRING · CONCAT…</p>
+</div>
+
+<!-- ════════════════ SLIDE 20: NỐI CHUỖI ════════════════ -->
+<div class="slide">
+    <h2>Nối Chuỗi: || và CONCAT()</h2>
+    <div class="columns-2">
+        <div>
+            <h3>Toán tử || (pipe pipe)</h3>
+            <pre><span class="comment">-- Nối họ tên với phòng ban</span>
+<span class="keyword">SELECT</span>
+    ho_ten || <span class="string">' - '</span> || phong_ban
+    <span class="keyword">AS</span> <span class="string">"Thông tin nhân viên"</span>
+<span class="keyword">FROM</span> nhan_vien;
+<span class="comment">-- Trần Thị Mai - Kế toán</span>
+<span class="comment">-- Nguyễn Văn An - Kinh doanh</span></pre>
+            <div class="card excel" style="margin-top:10px;">
+                <p>📊 <strong>Excel:</strong> <code>=A2 &amp; " - " &amp; F2</code></p>
+            </div>
+        </div>
+        <div>
+            <div class="card warning" style="margin-bottom:12px;">
+                <h3>⚠️ Bẫy: || với NULL</h3>
+                <pre style="font-size:0.82rem;"><span class="comment">-- Nếu email là NULL:</span>
+<span class="keyword">SELECT</span> <span class="string">'Email: '</span> || email <span class="keyword">FROM</span> nhan_vien;
+<span class="comment">-- Người không có email → NULL!</span>
+<span class="comment">-- (mất cả phần "Email: ")</span></pre>
+            </div>
+            <h3>CONCAT() — An toàn hơn với NULL</h3>
+            <pre><span class="comment">-- CONCAT() bỏ qua NULL</span>
+<span class="keyword">SELECT</span>
+    <span class="string">'Email: '</span> || <span class="func">COALESCE</span>(email, <span class="string">'Chưa có'</span>)
+<span class="keyword">FROM</span> nhan_vien;
+<span class="comment">-- "Email: Chưa có" khi email = NULL</span></pre>
+        </div>
+    </div>
+    <table style="margin-top:12px;font-size:0.9rem;">
+        <thead><tr><th>Tình huống</th><th><code>||</code> kết quả</th><th><code>CONCAT()</code> kết quả</th></tr></thead>
+        <tbody>
+            <tr><td>Mọi cột có giá trị</td><td class="text-success">'A - B'</td><td class="text-success">'A - B'</td></tr>
+            <tr><td>Một cột là NULL</td><td class="text-danger">NULL</td><td class="text-success">'A - ' (bỏ qua NULL)</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ════════════════ SLIDE 21: BẢNG HÀM CHUỖI ════════════════ -->
+<div class="slide">
+    <h2>Bảng Hàm Chuỗi Thường Dùng</h2>
+    <div class="slide-content">
+        <table>
+            <thead>
+                <tr><th>Hàm SQL</th><th>Ý nghĩa</th><th>Ví dụ</th><th>Kết quả</th><th>Excel</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>UPPER(s)</code></td><td>Chuyển CHỮ HOA</td><td><code>UPPER('hello')</code></td><td><code>'HELLO'</code></td><td><code>=UPPER(A1)</code></td></tr>
+                <tr><td><code>LOWER(s)</code></td><td>Chuyển chữ thường</td><td><code>LOWER('HELLO')</code></td><td><code>'hello'</code></td><td><code>=LOWER(A1)</code></td></tr>
+                <tr><td><code>INITCAP(s)</code></td><td>Hoa chữ đầu mỗi từ</td><td><code>INITCAP('hello world')</code></td><td><code>'Hello World'</code></td><td><code>=PROPER(A1)</code></td></tr>
+                <tr><td><code>LENGTH(s)</code></td><td>Đếm số ký tự</td><td><code>LENGTH('hello')</code></td><td><code>5</code></td><td><code>=LEN(A1)</code></td></tr>
+                <tr><td><code>TRIM(s)</code></td><td>Xóa khoảng trắng 2 đầu</td><td><code>TRIM('  hi  ')</code></td><td><code>'hi'</code></td><td><code>=TRIM(A1)</code></td></tr>
+                <tr><td><code>LEFT(s, n)</code></td><td>Lấy n ký tự bên trái</td><td><code>LEFT('hello', 3)</code></td><td><code>'hel'</code></td><td><code>=LEFT(A1,3)</code></td></tr>
+                <tr><td><code>RIGHT(s, n)</code></td><td>Lấy n ký tự bên phải</td><td><code>RIGHT('hello', 3)</code></td><td><code>'llo'</code></td><td><code>=RIGHT(A1,3)</code></td></tr>
+                <tr><td><code>SUBSTRING(s, from, count)</code></td><td>Cắt chuỗi tại vị trí</td><td><code>SUBSTRING('hello', 2, 3)</code></td><td><code>'ell'</code></td><td><code>=MID(A1,2,3)</code></td></tr>
+                <tr><td><code>REPLACE(s, old, new)</code></td><td>Thay thế chuỗi</td><td><code>REPLACE('hello','l','r')</code></td><td><code>'herro'</code></td><td><code>=SUBSTITUTE()</code></td></tr>
+                <tr><td><code>POSITION(sub IN s)</code></td><td>Tìm vị trí chuỗi con</td><td><code>POSITION('ll' IN 'hello')</code></td><td><code>3</code></td><td><code>=FIND(sub,A1)</code></td></tr>
+                <tr><td><code>SPLIT_PART(s, sep, n)</code></td><td>Tách theo dấu phân cách</td><td><code>SPLIT_PART('a,b,c',',',2)</code></td><td><code>'b'</code></td><td>*(không có)*</td></tr>
+                <tr><td><code>LPAD(s, n, c)</code></td><td>Thêm ký tự c vào trái</td><td><code>LPAD('5', 3, '0')</code></td><td><code>'005'</code></td><td><code>=TEXT(A1,"000")</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 22: VÍ DỤ THỰC TẾ CHUỖI ════════════════ -->
+<div class="slide">
+    <h2>Ví Dụ Thực Tế: Xử Lý Chuỗi</h2>
+    <div class="slide-content">
+        <pre><span class="comment">-- Chuẩn hóa email: chữ thường + xóa khoảng trắng</span>
+<span class="keyword">SELECT</span>
+    ho_ten,
+    <span class="func">LOWER</span>(<span class="func">TRIM</span>(email))       <span class="keyword">AS</span> <span class="string">"Email chuẩn hóa"</span>,
+    <span class="func">LENGTH</span>(email)            <span class="keyword">AS</span> <span class="string">"Độ dài email"</span>
+<span class="keyword">FROM</span> nhan_vien;
+
+<span class="comment">-- Tạo username từ email (lấy phần trước @)</span>
+<span class="keyword">SELECT</span>
+    ho_ten,
+    email,
+    <span class="func">SPLIT_PART</span>(email, <span class="string">'@'</span>, <span class="number">1</span>)  <span class="keyword">AS</span> <span class="string">"Username"</span>
+<span class="keyword">FROM</span> nhan_vien;
+
+<span class="comment">-- Mã nhân viên dạng NV-001, NV-002...</span>
+<span class="keyword">SELECT</span>
+    <span class="string">'NV-'</span> || <span class="func">LPAD</span>(id::<span class="type">TEXT</span>, <span class="number">3</span>, <span class="string">'0'</span>)  <span class="keyword">AS</span> <span class="string">"Mã NV"</span>,
+    ho_ten
+<span class="keyword">FROM</span> nhan_vien;
+<span class="comment">-- Kết quả: NV-001, NV-002, NV-003...</span>
+
+<span class="comment">-- Kiểm tra email hợp lệ (có chứa @)</span>
+<span class="keyword">SELECT</span>
+    ho_ten,
+    email,
+    <span class="func">POSITION</span>(<span class="string">'@'</span> <span class="keyword">IN</span> email) > <span class="number">0</span>  <span class="keyword">AS</span> <span class="string">"Có @ không?"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 23: SECTION 4.6 ════════════════ -->
+<div class="slide section-slide">
+    <div class="section-num">4.6</div>
+    <h1>Hàm Số Học</h1>
+    <p class="subtitle">ABS · POWER · SQRT · MOD · PI…</p>
+</div>
+
+<!-- ════════════════ SLIDE 24: BẢNG HÀM SỐ HỌC ════════════════ -->
+<div class="slide">
+    <h2>Bảng Hàm Số Học Thường Dùng</h2>
+    <div class="slide-content">
+        <table>
+            <thead>
+                <tr><th>Hàm SQL</th><th>Ý nghĩa</th><th>Ví dụ</th><th>Kết quả</th><th>Excel</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>ABS(n)</code></td><td>Giá trị tuyệt đối</td><td><code>ABS(-15)</code></td><td><code>15</code></td><td><code>=ABS(A1)</code></td></tr>
+                <tr><td><code>POWER(b, e)</code></td><td>Luỹ thừa b^e</td><td><code>POWER(2, 10)</code></td><td><code>1024</code></td><td><code>=POWER(A1,10)</code></td></tr>
+                <tr><td><code>SQRT(n)</code></td><td>Căn bậc hai</td><td><code>SQRT(16)</code></td><td><code>4</code></td><td><code>=SQRT(A1)</code></td></tr>
+                <tr><td><code>MOD(n, m)</code></td><td>Phần dư phép chia</td><td><code>MOD(10, 3)</code></td><td><code>1</code></td><td><code>=MOD(A1,3)</code></td></tr>
+                <tr><td><code>SIGN(n)</code></td><td>Dấu của số (-1, 0, 1)</td><td><code>SIGN(-5)</code></td><td><code>-1</code></td><td><code>=SIGN(A1)</code></td></tr>
+                <tr><td><code>PI()</code></td><td>Hằng số π</td><td><code>PI()</code></td><td><code>3.14159...</code></td><td><code>=PI()</code></td></tr>
+                <tr><td><code>EXP(n)</code></td><td>e^n (e ≈ 2.718)</td><td><code>EXP(1)</code></td><td><code>2.71828...</code></td><td><code>=EXP(A1)</code></td></tr>
+                <tr><td><code>LN(n)</code></td><td>Logarithm tự nhiên</td><td><code>LN(EXP(1))</code></td><td><code>1</code></td><td><code>=LN(A1)</code></td></tr>
+                <tr><td><code>LOG(base, n)</code></td><td>Logarithm cơ số bất kỳ</td><td><code>LOG(10, 100)</code></td><td><code>2</code></td><td><code>=LOG(A1,10)</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 25: VÍ DỤ SỐ HỌC ════════════════ -->
+<div class="slide">
+    <h2>Ví Dụ Thực Tế: Hàm Số Học</h2>
+    <pre><span class="comment">-- Tính các chỉ số thống kê lương</span>
+<span class="keyword">SELECT</span>
+    <span class="func">ROUND</span>(<span class="func">MIN</span>(luong), <span class="number">0</span>)    <span class="keyword">AS</span> <span class="string">"Lương thấp nhất"</span>,
+    <span class="func">ROUND</span>(<span class="func">MAX</span>(luong), <span class="number">0</span>)    <span class="keyword">AS</span> <span class="string">"Lương cao nhất"</span>,
+    <span class="func">ROUND</span>(<span class="func">AVG</span>(luong), <span class="number">0</span>)    <span class="keyword">AS</span> <span class="string">"Lương trung bình"</span>,
+    <span class="func">MAX</span>(luong) - <span class="func">MIN</span>(luong) <span class="keyword">AS</span> <span class="string">"Chênh lệch cao - thấp"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+    <pre style="margin-top:12px;"><span class="comment">-- Quy lương về hàng triệu đồng</span>
+<span class="keyword">SELECT</span>
+    ho_ten,
+    luong,
+    <span class="func">ROUND</span>(luong / <span class="number">1000000.0</span>, <span class="number">1</span>) <span class="keyword">AS</span> <span class="string">"Lương (triệu đồng)"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+    <pre style="margin-top:12px;"><span class="comment">-- Kiểm tra lương chia 12 tháng còn dư bao nhiêu đồng</span>
+<span class="keyword">SELECT</span>
+    ho_ten,
+    luong,
+    <span class="func">MOD</span>(luong, <span class="number">12</span>) <span class="keyword">AS</span> <span class="string">"Phần dư khi chia 12"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+</div>
+
+<!-- ════════════════ SLIDE 26: SECTION 4.7 ════════════════ -->
+<div class="slide section-slide">
+    <div class="section-num">4.7</div>
+    <h1>LIMIT &amp; OFFSET</h1>
+    <p class="subtitle">Xem một phần dữ liệu — Phân trang</p>
+</div>
+
+<!-- ════════════════ SLIDE 27: LIMIT ════════════════ -->
+<div class="slide">
+    <h2>LIMIT — Giới Hạn Số Hàng</h2>
+    <div class="card excel" style="margin-bottom:16px;">
+        <p>📊 <strong>Tương đương Excel:</strong> Giống như bạn kéo xuống đến hàng thứ 10 để xem sơ qua — thay vì phải nhìn toàn bộ 200.000 hàng.</p>
+    </div>
+    <div class="columns-2">
+        <div>
+            <pre><span class="comment">-- Chỉ lấy 5 hàng đầu</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> nhan_vien <span class="keyword">LIMIT</span> <span class="number">5</span>;
+
+<span class="comment">-- Preview 10 sản phẩm đầu</span>
+<span class="keyword">SELECT</span> ten_sp, gia
+<span class="keyword">FROM</span> san_pham <span class="keyword">LIMIT</span> <span class="number">10</span>;
+
+<span class="comment">-- 3 sản phẩm đắt nhất</span>
+<span class="keyword">SELECT</span> ten_sp, gia
+<span class="keyword">FROM</span> san_pham
+<span class="keyword">ORDER BY</span> gia <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">3</span>;</pre>
+        </div>
+        <div>
+            <div class="card warning">
+                <h3>⚠️ Không có ORDER BY → thứ tự không đảm bảo!</h3>
+                <p style="margin-top:8px;">Nếu không có ORDER BY, PostgreSQL có thể trả về bất kỳ hàng nào — không nhất thiết là hàng bạn INSERT vào đầu tiên.</p>
+            </div>
+            <div class="card tip" style="margin-top:12px;">
+                <h3>✅ Cách đúng</h3>
+                <pre style="font-size:0.82rem;"><span class="comment">-- Luôn kết hợp LIMIT với ORDER BY</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> san_pham
+<span class="keyword">ORDER BY</span> id <span class="keyword">LIMIT</span> <span class="number">5</span>;
+
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> san_pham
+<span class="keyword">ORDER BY</span> gia <span class="keyword">DESC LIMIT</span> <span class="number">5</span>;</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 28: OFFSET ════════════════ -->
+<div class="slide">
+    <h2>OFFSET — Phân Trang Dữ Liệu</h2>
+    <p style="margin-bottom:16px;"><code>OFFSET</code> kết hợp với <code>LIMIT</code> cho phép <strong>phân trang</strong> — các trang web hiển thị danh sách sản phẩm (trang 1, 2, 3...) đều dùng kỹ thuật này!</p>
+    <div class="columns-2">
+        <div>
+            <pre><span class="comment">-- Trang 1: Hàng 1–10</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> san_pham
+<span class="keyword">LIMIT</span> <span class="number">10</span> <span class="keyword">OFFSET</span> <span class="number">0</span>;
+
+<span class="comment">-- Trang 2: Hàng 11–20</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> san_pham
+<span class="keyword">LIMIT</span> <span class="number">10</span> <span class="keyword">OFFSET</span> <span class="number">10</span>;
+
+<span class="comment">-- Trang 3: Hàng 21–30</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> san_pham
+<span class="keyword">LIMIT</span> <span class="number">10</span> <span class="keyword">OFFSET</span> <span class="number">20</span>;</pre>
+        </div>
+        <div>
+            <div class="card info">
+                <h3>💡 Công thức tính OFFSET</h3>
+                <p style="font-size:1.1rem;margin-top:8px;text-align:center;font-family:'Fira Code',monospace;">
+                    OFFSET = (số_trang - 1) × số_hàng_mỗi_trang
+                </p>
+                <table style="margin-top:12px;font-size:0.88rem;">
+                    <thead><tr><th>Trang</th><th>LIMIT</th><th>OFFSET</th></tr></thead>
+                    <tbody>
+                        <tr><td>Trang 1</td><td>10</td><td>0</td></tr>
+                        <tr><td>Trang 2</td><td>10</td><td>10</td></tr>
+                        <tr><td>Trang 5</td><td>10</td><td>40</td></tr>
+                        <tr><td>Trang N</td><td>10</td><td>(N-1)×10</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 29: SECTION 4.8 ════════════════ -->
+<div class="slide section-slide">
+    <div class="section-num">4.8</div>
+    <h1>Thứ Tự Thực Thi &amp; Viết SQL Đẹp</h1>
+    <p class="subtitle">Logical Execution Order — Quy ước code sạch</p>
+</div>
+
+<!-- ════════════════ SLIDE 30: EXECUTION ORDER ════════════════ -->
+<div class="slide">
+    <h2>Thứ Tự Thực Thi — Logical Execution Order</h2>
+    <div class="exec-flow" style="margin:20px 0;">
+        <div class="exec-step"><span class="num">1</span><span class="label">FROM</span><small style="display:block;color:#94a3b8;font-size:0.72rem;">Xác định bảng</small></div>
+        <span class="exec-arrow">→</span>
+        <div class="exec-step"><span class="num">2</span><span class="label">WHERE</span><small style="display:block;color:#94a3b8;font-size:0.72rem;">Lọc hàng</small></div>
+        <span class="exec-arrow">→</span>
+        <div class="exec-step"><span class="num">3</span><span class="label">GROUP BY</span><small style="display:block;color:#94a3b8;font-size:0.72rem;">Nhóm</small></div>
+        <span class="exec-arrow">→</span>
+        <div class="exec-step"><span class="num">4</span><span class="label">HAVING</span><small style="display:block;color:#94a3b8;font-size:0.72rem;">Lọc nhóm</small></div>
+        <span class="exec-arrow">→</span>
+        <div class="exec-step" style="border-color:var(--accent);"><span class="num" style="color:var(--accent);">5</span><span class="label" style="color:var(--accent);">SELECT</span><small style="display:block;color:#94a3b8;font-size:0.72rem;">Chọn cột</small></div>
+        <span class="exec-arrow">→</span>
+        <div class="exec-step"><span class="num">6</span><span class="label">ORDER BY</span><small style="display:block;color:#94a3b8;font-size:0.72rem;">Sắp xếp</small></div>
+        <span class="exec-arrow">→</span>
+        <div class="exec-step"><span class="num">7</span><span class="label">LIMIT</span><small style="display:block;color:#94a3b8;font-size:0.72rem;">Kết quả</small></div>
+    </div>
+    <div class="card warning" style="margin-bottom:12px;">
+        <p>⚠️ <strong>WHERE chạy ở bước 2, SELECT chạy ở bước 5</strong> → Alias đặt trong SELECT <em>chưa tồn tại</em> khi WHERE chạy!</p>
+    </div>
+    <div class="compare">
+        <div>
+            <h3 class="text-danger">❌ SAI — WHERE dùng alias</h3>
+            <pre style="font-size:0.85rem;"><span class="keyword">SELECT</span> luong * <span class="number">0.90</span> <span class="keyword">AS</span> luong_sau_thue
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> luong_sau_thue > <span class="number">15000000</span>;
+<span class="comment">← ❌ Lỗi! WHERE chạy trước SELECT</span></pre>
+        </div>
+        <div>
+            <h3 class="text-success">✅ ĐÚNG — dùng biểu thức gốc</h3>
+            <pre style="font-size:0.85rem;"><span class="keyword">SELECT</span> luong * <span class="number">0.90</span> <span class="keyword">AS</span> luong_sau_thue
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> luong * <span class="number">0.90</span> > <span class="number">15000000</span>;
+<span class="comment">← ✅ Dùng lại biểu thức gốc</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 31: QUY ƯỚC VIẾT SQL ════════════════ -->
+<div class="slide">
+    <h2>Quy Ước Viết SQL Đẹp</h2>
+    <div class="slide-content">
+        <div class="columns-2">
+            <div>
+                <div class="card tip" style="margin-bottom:12px;">
+                    <h3>✅ Nguyên tắc 1: Keyword HOA, tên cột thường</h3>
+                    <pre style="font-size:0.82rem;"><span class="comment">-- Tốt</span>
+<span class="keyword">SELECT</span> ho_ten, luong
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> phong_ban = <span class="string">'IT'</span>;
+
+<span class="comment">-- Không tốt</span>
+select ho_ten, luong from nhan_vien
+where phong_ban = 'IT';</pre>
+                </div>
+                <div class="card tip">
+                    <h3>✅ Nguyên tắc 2: Mỗi cột một dòng</h3>
+                    <pre style="font-size:0.82rem;"><span class="keyword">SELECT</span>
+    ho_ten      <span class="keyword">AS</span> <span class="string">"Họ và tên"</span>,
+    phong_ban   <span class="keyword">AS</span> <span class="string">"Phòng ban"</span>,
+    luong       <span class="keyword">AS</span> <span class="string">"Lương"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+                </div>
+            </div>
+            <div>
+                <div class="card tip" style="margin-bottom:12px;">
+                    <h3>✅ Nguyên tắc 3: Comment giải thích</h3>
+                    <pre style="font-size:0.82rem;"><span class="comment">-- Báo cáo lương tháng 4/2026</span>
+<span class="comment">-- Chỉ nhân viên đang làm việc</span>
+<span class="keyword">SELECT</span>
+    ho_ten                 <span class="keyword">AS</span> <span class="string">"Họ và tên"</span>,
+    luong                  <span class="keyword">AS</span> <span class="string">"Lương gross"</span>,
+    <span class="func">ROUND</span>(luong*<span class="number">0.90</span>,<span class="number">0</span>)  <span class="keyword">AS</span> <span class="string">"Lương thực nhận"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+                </div>
+                <div class="card tip">
+                    <h3>✅ Nguyên tắc 4: Căn thẳng alias</h3>
+                    <pre style="font-size:0.82rem;"><span class="keyword">SELECT</span>
+    ho_ten      <span class="keyword">AS</span> <span class="string">"Họ và tên"</span>,
+    phong_ban   <span class="keyword">AS</span> <span class="string">"Phòng ban"</span>,
+    luong       <span class="keyword">AS</span> <span class="string">"Lương"</span>
+<span class="comment">-- Alias căn thẳng → dễ đọc hơn</span></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 32: SECTION 4.9 ════════════════ -->
+<div class="slide section-slide">
+    <div class="section-num">4.9</div>
+    <h1>Hàm Ngày / Giờ Cơ Bản</h1>
+    <p class="subtitle">CURRENT_DATE · AGE · EXTRACT · TO_CHAR</p>
+</div>
+
+<!-- ════════════════ SLIDE 33: BẢNG HÀM NGÀY/GIỜ ════════════════ -->
+<div class="slide">
+    <h2>Bảng Hàm Ngày/Giờ Thường Dùng</h2>
+    <div class="slide-content">
+        <table>
+            <thead>
+                <tr><th>Hàm</th><th>Ý nghĩa</th><th>Kết quả ví dụ</th><th>Excel</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>CURRENT_DATE</code></td><td>Ngày hôm nay</td><td><code>2026-04-16</code></td><td><code>=TODAY()</code></td></tr>
+                <tr><td><code>CURRENT_TIMESTAMP</code></td><td>Thời điểm hiện tại</td><td><code>2026-04-16 10:30:25+07</code></td><td><code>=NOW()</code></td></tr>
+                <tr><td><code>now()</code></td><td>Tương đương CURRENT_TIMESTAMP</td><td>*(như trên)*</td><td><code>=NOW()</code></td></tr>
+                <tr><td><code>AGE(date)</code></td><td>Tuổi từ ngày đó đến hôm nay</td><td><code>30 years 6 mons 5 days</code></td><td>*(không có)*</td></tr>
+                <tr><td><code>AGE(date1, date2)</code></td><td>Khoảng cách giữa 2 ngày</td><td><code>2 years 3 mons</code></td><td><code>=DATEDIF(A1,B1,"Y")</code></td></tr>
+                <tr><td><code>EXTRACT(field FROM date)</code></td><td>Lấy thành phần ngày/giờ</td><td><code>2026</code> (lấy năm)</td><td><code>=YEAR(A1)</code></td></tr>
+                <tr><td><code>TO_CHAR(date, 'format')</code></td><td>Chuyển ngày thành chuỗi</td><td><code>'16/04/2026'</code></td><td><code>=TEXT(A1,"DD/MM/YYYY")</code></td></tr>
+                <tr><td><code>TO_DATE(string, 'format')</code></td><td>Chuyển chuỗi thành ngày</td><td><code>2026-04-16</code></td><td><code>=DATEVALUE(...)</code></td></tr>
+                <tr><td><code>date + n</code></td><td>Cộng thêm n ngày</td><td><code>CURRENT_DATE + 7</code></td><td><code>=A1+7</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 34: EXTRACT & AGE ════════════════ -->
+<div class="slide">
+    <h2>EXTRACT &amp; AGE — Trích Xuất Thành Phần Ngày</h2>
+    <div class="columns-2">
+        <div>
+            <h3>EXTRACT — Lấy thành phần</h3>
+            <pre style="font-size:0.85rem;"><span class="func">EXTRACT</span>(<span class="keyword">YEAR</span>    <span class="keyword">FROM</span> ngay_sinh)  <span class="comment">-- 1995</span>
+<span class="func">EXTRACT</span>(<span class="keyword">MONTH</span>   <span class="keyword">FROM</span> ngay_sinh)  <span class="comment">-- 3</span>
+<span class="func">EXTRACT</span>(<span class="keyword">DAY</span>     <span class="keyword">FROM</span> ngay_sinh)  <span class="comment">-- 20</span>
+<span class="func">EXTRACT</span>(<span class="keyword">HOUR</span>    <span class="keyword">FROM</span> thoi_gian)  <span class="comment">-- 14</span>
+<span class="func">EXTRACT</span>(<span class="keyword">MINUTE</span>  <span class="keyword">FROM</span> thoi_gian)  <span class="comment">-- 30</span>
+<span class="func">EXTRACT</span>(DOW     <span class="keyword">FROM</span> ngay_sinh)  <span class="comment">-- 0=CN...6=T7</span>
+<span class="func">EXTRACT</span>(WEEK    <span class="keyword">FROM</span> ngay_sinh)  <span class="comment">-- Tuần 1-53</span>
+<span class="func">EXTRACT</span>(QUARTER <span class="keyword">FROM</span> ngay_sinh)  <span class="comment">-- Quý 1-4</span></pre>
+        </div>
+        <div>
+            <h3>AGE — Tính tuổi</h3>
+            <pre style="font-size:0.85rem;"><span class="comment">-- Tính tuổi nhân viên</span>
+<span class="keyword">SELECT</span>
+    ho_ten,
+    ngay_sinh,
+    <span class="func">AGE</span>(ngay_sinh)              <span class="keyword">AS</span> <span class="string">"Tuổi đầy đủ"</span>,
+    <span class="func">EXTRACT</span>(<span class="keyword">YEAR</span> <span class="keyword">FROM</span>
+        <span class="func">AGE</span>(ngay_sinh))           <span class="keyword">AS</span> <span class="string">"Số tuổi"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            <div class="card info" style="margin-top:10px;">
+                <p><strong>Kết quả "Tuổi đầy đủ":</strong><br>
+                <code>30 years 1 mon 25 days</code><br>
+                <strong>Kết quả "Số tuổi":</strong> <code>30</code> ← dễ dùng hơn!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 35: TO_CHAR & VÍ DỤ TỔNG HỢP ════════════════ -->
+<div class="slide">
+    <h2>TO_CHAR — Format Ngày Theo Ý Muốn</h2>
+    <div class="columns-2">
+        <div>
+            <h3>Các format hay dùng</h3>
+            <pre style="font-size:0.85rem;"><span class="func">TO_CHAR</span>(ngay_sinh, <span class="string">'DD/MM/YYYY'</span>)
+<span class="comment">-- 20/03/1995</span>
+<span class="func">TO_CHAR</span>(ngay_sinh, <span class="string">'YYYY-MM-DD'</span>)
+<span class="comment">-- 1995-03-20  (chuẩn ISO)</span>
+<span class="func">TO_CHAR</span>(ngay_sinh, <span class="string">'DD "tháng" MM "năm" YYYY'</span>)
+<span class="comment">-- 20 tháng 03 năm 1995</span>
+<span class="func">TO_CHAR</span>(<span class="func">now</span>(), <span class="string">'HH24:MI:SS'</span>)
+<span class="comment">-- 14:30:25  (giờ 24h)</span></pre>
+            <div class="card excel" style="margin-top:10px;">
+                <p>📊 <strong>Excel:</strong> <code>=TEXT(A1,"DD/MM/YYYY")</code></p>
+            </div>
+        </div>
+        <div>
+            <h3>Ví dụ tổng hợp</h3>
+            <pre style="font-size:0.82rem;"><span class="keyword">SELECT</span>
+    ho_ten                     <span class="keyword">AS</span> <span class="string">"Họ và tên"</span>,
+    <span class="func">TO_CHAR</span>(ngay_sinh,
+        <span class="string">'DD/MM/YYYY'</span>)          <span class="keyword">AS</span> <span class="string">"Ngày sinh"</span>,
+    <span class="func">EXTRACT</span>(<span class="keyword">YEAR</span> <span class="keyword">FROM</span>
+        <span class="func">AGE</span>(ngay_sinh))          <span class="keyword">AS</span> <span class="string">"Tuổi"</span>,
+    <span class="func">EXTRACT</span>(<span class="keyword">YEAR</span> <span class="keyword">FROM</span>
+        <span class="func">AGE</span>(ngay_vao))           <span class="keyword">AS</span> <span class="string">"Năm làm việc"</span>,
+    CURRENT_DATE - ngay_vao    <span class="keyword">AS</span> <span class="string">"Số ngày đã làm"</span>
+<span class="keyword">FROM</span> nhan_vien;</pre>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 36: TỔNG KẾT ════════════════ -->
+<div class="slide">
+    <h2>✅ Checklist Kỹ Năng Tuần 4</h2>
+    <div class="columns-2">
+        <div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ Viết <code>SELECT *</code> và <code>SELECT cot1, cot2</code></p></div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ Dùng <code>AS</code> đặt tên cột tiếng Việt dễ đọc</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ Tính toán trong SELECT (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code>)</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ Tránh bẫy chia số nguyên (<code>7/2 = 3</code>)</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ Dùng <code>DISTINCT</code> xem giá trị không trùng</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ <code>COUNT(DISTINCT col)</code> đếm giá trị khác nhau</p></div>
+        </div>
+        <div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ Nối chuỗi với <code>||</code> và khác biệt với <code>CONCAT()</code></p></div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ Ít nhất 5 hàm chuỗi: UPPER, LOWER, LENGTH, TRIM, LEFT…</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ Dùng ROUND, CEIL, FLOOR, ABS</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ <code>LIMIT</code> xem N hàng đầu, <code>OFFSET</code> phân trang</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ Thứ tự thực thi: FROM → WHERE → SELECT → ORDER BY → LIMIT</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>☑ <code>CURRENT_DATE</code>, <code>AGE()</code>, <code>EXTRACT()</code>, <code>TO_CHAR()</code></p></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 37: SO SÁNH EXCEL ↔ POSTGRESQL ════════════════ -->
+<div class="slide">
+    <h2>📊 Excel ↔ PostgreSQL — Tuần 4</h2>
+    <div class="slide-content">
+        <table>
+            <thead>
+                <tr><th>Thao tác Excel</th><th>SQL tương đương</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Mở sheet, nhìn toàn bộ dữ liệu</td><td><code>SELECT * FROM bang;</code></td></tr>
+                <tr><td>Chỉ để lại 3 cột cần thiết</td><td><code>SELECT cot1, cot2, cot3 FROM bang;</code></td></tr>
+                <tr><td>Đổi tên header cột</td><td><code>SELECT cot AS "Tên mới"</code></td></tr>
+                <tr><td>Công thức <code>=B2*0.9</code></td><td><code>luong * 0.9</code> trong SELECT</td></tr>
+                <tr><td><code>=ROUND(A1,2)</code></td><td><code>ROUND(cot, 2)</code></td></tr>
+                <tr><td><code>=UPPER(A1)</code></td><td><code>UPPER(cot)</code></td></tr>
+                <tr><td><code>=LEFT(A1,3)</code></td><td><code>LEFT(cot, 3)</code></td></tr>
+                <tr><td><code>=LEN(A1)</code></td><td><code>LENGTH(cot)</code></td></tr>
+                <tr><td><code>=A2 &amp; " " &amp; B2</code></td><td><code>cot1 || ' ' || cot2</code></td></tr>
+                <tr><td><code>=TODAY()</code></td><td><code>CURRENT_DATE</code></td></tr>
+                <tr><td><code>=YEAR(A1)</code></td><td><code>EXTRACT(YEAR FROM cot)</code></td></tr>
+                <tr><td><code>=TEXT(A1,"DD/MM/YYYY")</code></td><td><code>TO_CHAR(cot, 'DD/MM/YYYY')</code></td></tr>
+                <tr><td>Remove Duplicates</td><td><code>SELECT DISTINCT cot</code></td></tr>
+                <tr><td>Xem 10 hàng đầu</td><td><code>SELECT ... LIMIT 10</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ════════════════ SLIDE 38: CLOSING ════════════════ -->
+<div class="slide title-slide">
+    <div class="week-badge" style="border-color:var(--success);color:var(--success);">TIẾP THEO</div>
+    <h1>Tuần 5: Lọc &amp; Sắp Xếp</h1>
+    <p class="subtitle">WHERE · AND / OR / NOT · BETWEEN · IN · LIKE · ORDER BY · NULL trong WHERE</p>
+    <div style="margin-top:40px;display:flex;gap:32px;justify-content:center;flex-wrap:wrap;">
+        <div class="card" style="text-align:center;min-width:160px;background:rgba(30,41,59,0.8);">
+            <p style="font-size:1.8rem;margin-bottom:4px;">🔍</p>
+            <p><strong>WHERE</strong></p>
+            <p class="text-dim" style="font-size:0.9rem;">Lọc dữ liệu<br>như Filter Excel</p>
+        </div>
+        <div class="card" style="text-align:center;min-width:160px;background:rgba(30,41,59,0.8);">
+            <p style="font-size:1.8rem;margin-bottom:4px;">↕️</p>
+            <p><strong>ORDER BY</strong></p>
+            <p class="text-dim" style="font-size:0.9rem;">Sắp xếp tăng/giảm<br>như Sort Excel</p>
+        </div>
+        <div class="card" style="text-align:center;min-width:160px;background:rgba(30,41,59,0.8);">
+            <p style="font-size:1.8rem;margin-bottom:4px;">❓</p>
+            <p><strong>NULL trong WHERE</strong></p>
+            <p class="text-dim" style="font-size:0.9rem;">Lọc giá trị<br>rỗng/trống</p>
+        </div>
+    </div>
+    <p style="margin-top:32px;color:var(--text-dim);font-size:0.9rem;">
+        Với SELECT từ tuần này, bạn đã sẵn sàng viết câu truy vấn hoàn chỉnh hơn từ tuần sau! 🚀
+    </p>
+</div>
+
+</div><!-- end .slide-deck -->
+
+<!-- ▸ Navigation Bar ◂ -->
+<div class="nav-bar">
+    <span class="page-info" id="pageInfo">1 / 31</span>
+    <div class="controls">
+        <button onclick="prevSlide()">← Trước</button>
+        <button onclick="openTOC()">☰ Mục lục</button>
+        <button onclick="nextSlide()">Tiếp →</button>
+    </div>
+</div>
+
+<script>
+    const slides  = document.querySelectorAll('.slide');
+    const total   = slides.length;
+    let   current = 0;
+
+    function goSlide(n) {
+        slides[current].classList.remove('active');
+        current = Math.max(0, Math.min(n, total - 1));
+        slides[current].classList.add('active');
+        updateUI();
+        closeTOC();
+    }
+
+    function nextSlide() { goSlide(current + 1); }
+    function prevSlide() { goSlide(current - 1); }
+
+    function updateUI() {
+        document.getElementById('pageInfo').textContent = `${current + 1} / ${total}`;
+        document.getElementById('progressBar').style.width = `${((current + 1) / total) * 100}%`;
+        // Highlight current TOC item
+        document.querySelectorAll('.toc-panel a').forEach((a, i) => {
+            a.classList.remove('current');
+        });
+    }
+
+    function openTOC()  { document.getElementById('tocOverlay').classList.add('open'); }
+    function closeTOC() { document.getElementById('tocOverlay').classList.remove('open'); }
+
+    document.addEventListener('keydown', e => {
+        switch(e.key) {
+            case 'ArrowRight': case ' ': e.preventDefault(); nextSlide(); break;
+            case 'ArrowLeft':            e.preventDefault(); prevSlide(); break;
+            case 'Home':                 e.preventDefault(); goSlide(0); break;
+            case 'End':                  e.preventDefault(); goSlide(total - 1); break;
+            case 'm': case 'M':
+                document.getElementById('tocOverlay').classList.contains('open')
+                    ? closeTOC() : openTOC();
+                break;
+            case 'Escape': closeTOC(); break;
+        }
+    });
+
+    // Touch / swipe support
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend',   e => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 50) dx < 0 ? nextSlide() : prevSlide();
+    }, { passive: true });
+
+    // Init
+    updateUI();
+</script>
+</body>
+</html>

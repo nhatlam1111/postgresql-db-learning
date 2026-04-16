@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuần 1: Tại Sao Cần Cơ Sở Dữ Liệu? — PostgreSQL</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --primary:       #336791;
+            --primary-light: #4a8db7;
+            --primary-dark:  #264d6e;
+            --accent:        #f9a825;
+            --accent-light:  #fdd835;
+            --bg:            #0f172a;
+            --bg-card:       #1e293b;
+            --bg-code:       #0d1117;
+            --text:          #e2e8f0;
+            --text-dim:      #94a3b8;
+            --text-bright:   #f8fafc;
+            --success:       #22c55e;
+            --danger:        #ef4444;
+            --warning:       #f59e0b;
+            --info:          #3b82f6;
+            --excel-green:   #217346;
+            --pg-blue:       #336791;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .slide-deck { width: 100vw; height: 100vh; position: relative; }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            padding: 56px 80px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .slide.active { display: flex; opacity: 1; }
+
+        h1 { font-size: 2.7rem; font-weight: 800; color: var(--text-bright); margin-bottom: 12px; line-height: 1.2; }
+        h2 { font-size: 1.95rem; font-weight: 700; color: var(--accent); margin-bottom: 20px; line-height: 1.3; }
+        h3 { font-size: 1.25rem; font-weight: 600; color: var(--primary-light); margin-bottom: 12px; }
+        p, li { font-size: 1.08rem; line-height: 1.7; color: var(--text); }
+        ul, ol { padding-left: 24px; margin-bottom: 14px; }
+        li { margin-bottom: 7px; }
+
+        .subtitle { font-size: 1.25rem; color: var(--text-dim); margin-bottom: 28px; font-weight: 400; }
+
+        strong { color: var(--accent-light); font-weight: 600; }
+        em { color: var(--primary-light); font-style: normal; font-weight: 500; }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: var(--bg-code);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.93em;
+            color: #7dd3fc;
+        }
+
+        pre {
+            background: var(--bg-code);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin: 10px 0;
+            color: #c9d1d9;
+        }
+        pre .keyword { color: #ff7b72; font-weight: 500; }
+        pre .string  { color: #a5d6ff; }
+        pre .comment { color: #8b949e; font-style: italic; }
+        pre .type    { color: #7ee787; }
+        pre .number  { color: #79c0ff; }
+        pre .func    { color: #d2a8ff; }
+
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.95rem; }
+        th { background: var(--primary-dark); color: var(--accent-light); padding: 10px 14px; text-align: left; font-weight: 600; font-size: 0.9rem; }
+        td { padding: 8px 14px; border-bottom: 1px solid #334155; color: var(--text); }
+        tr:nth-child(even) td { background: rgba(30,41,59,0.5); }
+        tr:hover td { background: rgba(51,103,145,0.15); }
+
+        .card { background: var(--bg-card); border-radius: 14px; padding: 18px 22px; border: 1px solid #334155; margin: 8px 0; }
+        .card.excel   { border-left: 4px solid var(--excel-green); }
+        .card.pg      { border-left: 4px solid var(--pg-blue); }
+        .card.warning { border-left: 4px solid var(--danger); background: rgba(239,68,68,0.07); }
+        .card.tip     { border-left: 4px solid var(--success); background: rgba(34,197,94,0.07); }
+        .card.info    { border-left: 4px solid var(--info); background: rgba(59,130,246,0.07); }
+
+        .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 10px 0; }
+        .compare > div { background: var(--bg-card); border-radius: 12px; padding: 18px 20px; border: 1px solid #334155; }
+        .compare > div:first-child { border-top: 3px solid var(--excel-green); }
+        .compare > div:last-child  { border-top: 3px solid var(--pg-blue); }
+
+        .columns-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 8px 0; }
+        .columns-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 8px 0; }
+
+        .badge { display: inline-block; padding: 3px 12px; border-radius: 100px; font-size: 0.77rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge.excel   { background: var(--excel-green); color: #fff; }
+        .badge.pg      { background: var(--pg-blue); color: #fff; }
+        .badge.danger  { background: var(--danger); color: #fff; }
+        .badge.success { background: var(--success); color: #000; }
+
+        .diagram { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
+        .diagram .box { background: var(--bg-card); border: 2px solid var(--primary-light); border-radius: 10px; padding: 12px 18px; text-align: center; min-width: 110px; }
+        .diagram .arrow { color: var(--accent); font-size: 1.4rem; font-weight: 700; }
+
+        .highlight { background: linear-gradient(120deg, rgba(249,168,37,0.2), rgba(249,168,37,0.1)); padding: 2px 8px; border-radius: 4px; }
+        .text-danger  { color: var(--danger); }
+        .text-success { color: var(--success); }
+        .text-warning { color: var(--warning); }
+        .text-info    { color: var(--info); }
+        .text-dim     { color: var(--text-dim); }
+        .text-accent  { color: var(--accent); }
+        .text-bright  { color: var(--text-bright); }
+
+        .title-slide {
+            text-align: center; justify-content: center; align-items: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #0f172a 100%);
+        }
+        .title-slide h1 {
+            font-size: 3.4rem;
+            background: linear-gradient(135deg, var(--accent), var(--primary-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 16px;
+        }
+        .title-slide .subtitle { font-size: 1.45rem; color: var(--text-dim); }
+        .title-slide .week-badge {
+            display: inline-block; padding: 8px 24px;
+            border: 2px solid var(--accent); border-radius: 100px;
+            color: var(--accent); font-weight: 600; font-size: 1.1rem; margin-bottom: 22px;
+        }
+
+        .section-slide { text-align: center; background: linear-gradient(135deg, var(--primary-dark), var(--bg)); }
+        .section-slide h1 { font-size: 2.9rem; color: var(--text-bright); }
+        .section-slide .section-num { font-size: 5rem; font-weight: 800; color: var(--accent); opacity: 0.3; margin-bottom: -10px; }
+
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; height: 48px;
+            background: rgba(15,23,42,0.95); border-top: 1px solid #334155;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 32px; z-index: 100; backdrop-filter: blur(8px);
+        }
+        .nav-bar .page-info { color: var(--text-dim); font-size: 0.9rem; font-weight: 500; }
+        .nav-bar .controls  { display: flex; gap: 8px; }
+        .nav-bar button {
+            background: var(--primary-dark); color: var(--text);
+            border: 1px solid #475569; padding: 6px 16px; border-radius: 6px;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            font-size: 0.85rem; font-weight: 500; transition: all 0.2s;
+        }
+        .nav-bar button:hover { background: var(--primary-light); color: #fff; }
+
+        .progress-bar {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--primary-light));
+            transition: width 0.3s ease; z-index: 100;
+        }
+
+        .toc-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 200; display: none; backdrop-filter: blur(4px);
+        }
+        .toc-overlay.open { display: block; }
+        .toc-panel {
+            position: fixed; left: 0; top: 0; bottom: 0; width: 380px;
+            background: var(--bg-card); border-right: 1px solid #334155;
+            z-index: 201; padding: 24px; overflow-y: auto;
+            transform: translateX(-100%); transition: transform 0.3s ease;
+        }
+        .toc-overlay.open .toc-panel { transform: translateX(0); }
+        .toc-panel h3 { color: var(--accent); margin-bottom: 16px; font-size: 1.2rem; }
+        .toc-panel a {
+            display: block; color: var(--text-dim); text-decoration: none;
+            padding: 7px 12px; border-radius: 6px; font-size: 0.87rem;
+            margin-bottom: 2px; transition: all 0.2s;
+        }
+        .toc-panel a:hover, .toc-panel a.current { background: rgba(51,103,145,0.2); color: var(--text-bright); }
+        .toc-panel a.section-header { color: var(--accent-light); font-weight: 600; margin-top: 10px; font-size: 0.92rem; }
+
+        .slide-content {
+            max-height: calc(100vh - 140px); overflow-y: auto; padding-right: 8px;
+        }
+        .slide-content::-webkit-scrollbar { width: 5px; }
+        .slide-content::-webkit-scrollbar-track { background: transparent; }
+        .slide-content::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+        /* story card */
+        .story-card {
+            background: linear-gradient(135deg, #1e293b, #162032);
+            border-radius: 16px; padding: 24px 28px;
+            border: 1px solid #334155; border-left: 4px solid var(--accent);
+            margin: 10px 0;
+        }
+
+        /* two-col excel vs db */
+        .xl-db { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; margin: 10px 0; }
+        .xl-db .vs { color: var(--accent); font-weight: 800; font-size: 1.5rem; text-align: center; }
+
+        @media (max-width: 900px) {
+            .slide { padding: 40px 32px; }
+            h1 { font-size: 2rem; } h2 { font-size: 1.5rem; }
+            .compare, .columns-2 { grid-template-columns: 1fr; }
+            .columns-3 { grid-template-columns: 1fr; }
+            .title-slide h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- ▸ TOC ◂ -->
+<div class="toc-overlay" id="tocOverlay" onclick="closeTOC()">
+    <div class="toc-panel" onclick="event.stopPropagation()">
+        <h3>📑 Mục Lục</h3>
+        <a href="#" class="section-header" onclick="goSlide(0);return false;">Trang bìa</a>
+        <a href="#" onclick="goSlide(1);return false;">Mục tiêu tuần 1</a>
+
+        <a href="#" class="section-header" onclick="goSlide(2);return false;">Câu chuyện mở đầu</a>
+        <a href="#" onclick="goSlide(2);return false;">Câu chuyện của Linh</a>
+        <a href="#" onclick="goSlide(3);return false;">5 vấn đề Excel gặp phải</a>
+
+        <a href="#" class="section-header" onclick="goSlide(4);return false;">Hai Thế Giới, Một Logic</a>
+        <a href="#" onclick="goSlide(4);return false;">Bức tranh tổng thể</a>
+        <a href="#" onclick="goSlide(5);return false;">Database = Workbook</a>
+        <a href="#" onclick="goSlide(6);return false;">Table = Sheet</a>
+        <a href="#" onclick="goSlide(7);return false;">Column = Cột &amp; Row = Hàng</a>
+        <a href="#" onclick="goSlide(8);return false;">Data Type = Data Validation</a>
+        <a href="#" onclick="goSlide(9);return false;">WHERE = Filter &amp; ORDER BY = Sort</a>
+        <a href="#" onclick="goSlide(10);return false;">JOIN = VLOOKUP</a>
+        <a href="#" onclick="goSlide(11);return false;">GROUP BY = Pivot Table</a>
+        <a href="#" onclick="goSlide(12);return false;">Bảng tổng hợp Excel ↔ SQL</a>
+
+        <a href="#" class="section-header" onclick="goSlide(13);return false;">Khi Nào Nên Dùng Database?</a>
+        <a href="#" onclick="goSlide(13);return false;">Dấu hiệu 1: Dữ liệu quá lớn</a>
+        <a href="#" onclick="goSlide(14);return false;">Dấu hiệu 2: Nhiều người cùng dùng</a>
+        <a href="#" onclick="goSlide(15);return false;">Dấu hiệu 3: Cần tính chính xác</a>
+        <a href="#" onclick="goSlide(16);return false;">Dấu hiệu 4 &amp; 5: Bảo mật, tự động hóa</a>
+        <a href="#" onclick="goSlide(17);return false;">Excel hay Database?</a>
+
+        <a href="#" class="section-header" onclick="goSlide(18);return false;">PostgreSQL &amp; DBeaver</a>
+        <a href="#" onclick="goSlide(18);return false;">PostgreSQL là gì?</a>
+        <a href="#" onclick="goSlide(19);return false;">DBeaver — giao diện đồ họa</a>
+
+        <a href="#" class="section-header" onclick="goSlide(20);return false;">SQL — Ngôn Ngữ Giao Tiếp</a>
+        <a href="#" onclick="goSlide(20);return false;">SQL là gì?</a>
+        <a href="#" onclick="goSlide(21);return false;">Quy tắc cơ bản SQL</a>
+        <a href="#" onclick="goSlide(22);return false;">Đọc SQL như tiếng Anh</a>
+        <a href="#" onclick="goSlide(23);return false;">Thử thách đọc SQL</a>
+
+        <a href="#" class="section-header" onclick="goSlide(24);return false;">Tổng Kết</a>
+        <a href="#" onclick="goSlide(24);return false;">Từ vựng đã học</a>
+        <a href="#" onclick="goSlide(25);return false;">Checklist &amp; Tiếp theo</a>
+    </div>
+</div>
+
+<div class="slide-deck" id="deck">
+
+<!-- ══════════ SLIDE 0: TITLE ══════════ -->
+<div class="slide title-slide active">
+    <div class="week-badge">TUẦN 1</div>
+    <h1>Tại Sao Cần Cơ Sở Dữ Liệu?</h1>
+    <p class="subtitle">Database · Table · SQL · PostgreSQL · Excel ↔ Database</p>
+    <p style="margin-top:28px;color:var(--text-dim);font-size:0.95rem;">
+        ⏱ Thời lượng: 3–4 giờ &nbsp;|&nbsp; Yêu cầu: Không cần cài phần mềm gì — chỉ cần đọc và suy ngẫm
+    </p>
+    <p style="margin-top:20px;color:var(--text-dim);font-size:0.85rem;">
+        Nhấn <kbd style="background:#334155;padding:2px 8px;border-radius:4px;">→</kbd> hoặc
+        <kbd style="background:#334155;padding:2px 8px;border-radius:4px;">Space</kbd> để tiếp tục &nbsp;·&nbsp;
+        <kbd style="background:#334155;padding:2px 8px;border-radius:4px;">M</kbd> để mở mục lục
+    </p>
+</div>
+
+<!-- ══════════ SLIDE 1: MỤC TIÊU ══════════ -->
+<div class="slide">
+    <h2>🎯 Mục Tiêu Tuần 1</h2>
+    <p style="margin-bottom:20px;">Sau khi hoàn thành tuần này, bạn sẽ có thể:</p>
+    <div class="columns-2">
+        <div>
+            <div class="card" style="margin-bottom:10px;"><p>✅ Giải thích cơ sở dữ liệu là gì và khác Excel như thế nào</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>✅ Định nghĩa <strong>8 thuật ngữ nền tảng</strong>: database, table, column, row, field, data type, SQL, PostgreSQL</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>✅ Đọc và hiểu câu SQL đơn giản như đọc tiếng Anh</p></div>
+        </div>
+        <div>
+            <div class="card" style="margin-bottom:10px;"><p>✅ Nhận biết khi nào nên dùng Excel, khi nào nên dùng database</p></div>
+            <div class="card" style="margin-bottom:10px;"><p>✅ Biết PostgreSQL là gì và DBeaver dùng để làm gì</p></div>
+            <div class="card excel" style="margin-bottom:10px;"><p>📊 <strong>Phương pháp:</strong> Mọi khái niệm mới đều được so sánh với Excel mà bạn đã quen.</p></div>
+        </div>
+    </div>
+    <div class="card tip">
+        <p>💡 <strong>Tin tốt:</strong> Bạn đã có nền tảng rất vững — Excel và database có cùng một <em>logic phân tích dữ liệu</em>. Bạn chỉ cần học thêm <em>ngôn ngữ</em> mới mà thôi!</p>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 2: CÂU CHUYỆN LINH ══════════ -->
+<div class="slide">
+    <h2>📖 Câu Chuyện Của Linh</h2>
+    <div class="story-card">
+        <p style="font-size:1.05rem;">Linh làm phân tích dữ liệu tại công ty phân phối hàng tiêu dùng. Năm đầu: 80 nhân viên, 200 khách hàng → quản lý tốt trong Excel với file <code>quan_ly.xlsx</code>.</p>
+    </div>
+    <div class="diagram" style="margin:18px 0;">
+        <div class="box" style="border-color:var(--success);">
+            <p style="font-size:0.85rem;font-weight:700;color:var(--success);">Năm 1</p>
+            <p style="font-size:0.9rem;">80 NV · 200 KH</p>
+            <p style="font-size:0.85rem;color:var(--text-dim);">Excel: ổn 👍</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="box" style="border-color:var(--warning);">
+            <p style="font-size:0.85rem;font-weight:700;color:var(--warning);">Năm 2</p>
+            <p style="font-size:0.9rem;">300 NV · 5.000 KH</p>
+            <p style="font-size:0.85rem;color:var(--text-dim);">Excel: chậm ⚠️</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="box" style="border-color:var(--danger);">
+            <p style="font-size:0.85rem;font-weight:700;color:var(--danger);">Năm 3</p>
+            <p style="font-size:0.9rem;">1.100 NV · 30.000 KH</p>
+            <p style="font-size:0.85rem;color:var(--danger);">Excel: vỡ trận ❌</p>
+        </div>
+    </div>
+    <div class="card info">
+        <p>💡 <em>"Linh cảm thấy mình đang dùng một cái <strong>xe đạp để chuyên chở hàng container</strong>."</em></p>
+        <p style="margin-top:8px;color:var(--text-dim);">Điều Linh cần không phải là Excel tốt hơn — mà là một <strong>công cụ khác hoàn toàn</strong>.</p>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 3: 5 VẤN ĐỀ EXCEL ══════════ -->
+<div class="slide">
+    <h2>⚠️ 5 Vấn Đề Linh Gặp Với Excel</h2>
+    <div class="slide-content">
+        <div class="columns-2">
+            <div>
+                <div class="card warning" style="margin-bottom:10px;">
+                    <h3>1. File quá nặng</h3>
+                    <p>File 150MB, mở mất 3 phút, đôi khi treo máy.</p>
+                </div>
+                <div class="card warning" style="margin-bottom:10px;">
+                    <h3>2. Nhiều phiên bản mâu thuẫn</h3>
+                    <p>4 người cùng cập nhật → không ai biết đâu là phiên bản mới nhất.</p>
+                </div>
+                <div class="card warning" style="margin-bottom:10px;">
+                    <h3>3. Dữ liệu thiếu nhất quán</h3>
+                    <p>Cùng là Hà Nội nhưng: <code>"Ha Noi"</code>, <code>"HÀ NỘI"</code>, <code>"hà nội"</code> → báo cáo bị sai.</p>
+                </div>
+            </div>
+            <div>
+                <div class="card warning" style="margin-bottom:10px;">
+                    <h3>4. Không thể tự động hóa</h3>
+                    <p>Mỗi tuần phải tay tạo lại báo cáo từ đầu dù quy trình không đổi.</p>
+                </div>
+                <div class="card warning" style="margin-bottom:10px;">
+                    <h3>5. Không có phân quyền</h3>
+                    <p>File lương — ai có file là ai xem được. Không thể ẩn riêng từng phần.</p>
+                </div>
+                <div class="card tip" style="margin-bottom:10px;">
+                    <p>💡 Tất cả 5 vấn đề này đều được <strong>Database giải quyết triệt để</strong>. Chúng ta sẽ khám phá từng cái.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 4: SECTION — BỨC TRANH TỔNG THỂ ══════════ -->
+<div class="slide section-slide">
+    <div class="section-num">📊</div>
+    <h1>Hai Thế Giới, Một Logic</h1>
+    <p class="subtitle">Excel và Database — cùng ý tưởng, khác công cụ</p>
+</div>
+
+<!-- ══════════ SLIDE 5: BỨC TRANH TỔNG THỂ ══════════ -->
+<div class="slide">
+    <h2>Bức Tranh Tổng Thể — Workbook = Database</h2>
+    <div class="compare">
+        <div>
+            <h3>📊 File Excel</h3>
+            <p style="font-family:'Fira Code',monospace;font-size:0.85rem;color:var(--text-dim);margin-bottom:10px;">quan_ly_cong_ty.xlsx</p>
+            <ul style="list-style:none;padding-left:0;">
+                <li style="margin-bottom:6px;">📄 Sheet: <strong>Nhân viên</strong></li>
+                <li style="margin-bottom:6px;">📄 Sheet: <strong>Phòng ban</strong></li>
+                <li style="margin-bottom:6px;">📄 Sheet: <strong>Lương tháng 1</strong></li>
+                <li style="margin-bottom:6px;">📄 Sheet: <strong>Lương tháng 2</strong></li>
+                <li style="margin-bottom:6px;">📄 Sheet: <strong>Lương tháng 3</strong></li>
+                <li style="margin-bottom:6px;">📄 Sheet: <strong>Khách hàng</strong></li>
+                <li style="margin-bottom:6px;">📄 Sheet: <strong>Đơn hàng</strong></li>
+            </ul>
+        </div>
+        <div>
+            <h3>🐘 PostgreSQL Database</h3>
+            <p style="font-family:'Fira Code',monospace;font-size:0.85rem;color:var(--text-dim);margin-bottom:10px;">quan_ly_cong_ty</p>
+            <ul style="list-style:none;padding-left:0;">
+                <li style="margin-bottom:6px;">📋 Table: <strong>nhan_vien</strong></li>
+                <li style="margin-bottom:6px;">📋 Table: <strong>phong_ban</strong></li>
+                <li style="margin-bottom:6px;">📋 Table: <strong style="color:var(--success);">bang_luong</strong> <span style="color:var(--text-dim);font-size:0.85rem;">(gộp cả 3 tháng!)</span></li>
+                <li style="margin-bottom:6px;color:var(--text-dim);padding-left:20px;font-size:0.9rem;">↳ thêm cột "thang" thay vì tạo sheet mới</li>
+                <li style="margin-bottom:6px;">📋 Table: <strong>khach_hang</strong></li>
+                <li style="margin-bottom:6px;">📋 Table: <strong>don_hang</strong></li>
+            </ul>
+        </div>
+    </div>
+    <div class="card info" style="margin-top:10px;">
+        <p>💡 <strong>Nhận xét quan trọng:</strong> 3 sheet "Lương tháng 1/2/3" được <em>gộp thành 1 bảng</em> trong database — thay vì tạo sheet mới mỗi tháng, chỉ cần thêm dữ liệu vào cùng bảng với thêm cột "tháng".</p>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 6: DATABASE = WORKBOOK ══════════ -->
+<div class="slide">
+    <h2>Khái Niệm 1: Database = Workbook</h2>
+    <div class="diagram" style="margin:20px 0;">
+        <div class="box" style="border-color:var(--excel-green);min-width:200px;">
+            <p style="color:var(--excel-green);font-weight:700;margin-bottom:6px;">📊 Excel</p>
+            <p style="font-family:'Fira Code',monospace;font-size:0.9rem;">quan_ly_nhan_su.xlsx</p>
+            <p style="color:var(--text-dim);font-size:0.85rem;margin-top:4px;">Workbook / File .xlsx</p>
+        </div>
+        <div class="arrow">↔</div>
+        <div class="box" style="border-color:var(--pg-blue);min-width:200px;">
+            <p style="color:var(--primary-light);font-weight:700;margin-bottom:6px;">🐘 PostgreSQL</p>
+            <p style="font-family:'Fira Code',monospace;font-size:0.9rem;">quan_ly_nhan_su</p>
+            <p style="color:var(--text-dim);font-size:0.85rem;margin-top:4px;"><strong>Database</strong> (Cơ sở dữ liệu)</p>
+        </div>
+    </div>
+    <div class="columns-2" style="margin-top:16px;">
+        <div class="card excel">
+            <h3>Giống nhau</h3>
+            <ul>
+                <li>Đều là <strong>nơi chứa toàn bộ dữ liệu</strong> của một dự án/hệ thống</li>
+                <li>Đều có thể chứa <strong>nhiều bảng/sheet</strong></li>
+                <li>Đều có tên để nhận biết</li>
+            </ul>
+        </div>
+        <div class="card pg">
+            <h3>Khác nhau</h3>
+            <ul>
+                <li>Database không phải file lưu trên máy bình thường</li>
+                <li>Được quản lý bởi <strong>phần mềm chuyên dụng</strong> (PostgreSQL)</li>
+                <li>Luôn sẵn sàng cho <strong>nhiều người cùng lúc</strong></li>
+                <li>Không bao giờ "treo" vì quá nặng</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 7: TABLE = SHEET ══════════ -->
+<div class="slide">
+    <h2>Khái Niệm 2: Table = Sheet</h2>
+    <p style="margin-bottom:14px;">Mỗi <strong>Table</strong> trong database tương đương với một <strong>Sheet</strong> trong Excel:</p>
+    <div class="compare">
+        <div>
+            <h3>📊 Sheet "Nhân viên" (Excel)</h3>
+            <pre style="font-size:0.82rem;">  A    │      B       │      C
+──────┼──────────────┼───────────
+  1   │ Trần Thị Mai │ Kế toán
+  2   │ Nguyễn Văn An│ Kinh doanh
+  3   │ Lê Thị Bình  │ Nhân sự</pre>
+        </div>
+        <div>
+            <h3>🐘 Table "nhan_vien" (PostgreSQL)</h3>
+            <pre style="font-size:0.82rem;"> id  │    ho_ten    │  phong_ban
+─────┼──────────────┼───────────
+  1  │ Trần Thị Mai │ Kế toán
+  2  │ Nguyễn Văn An│ Kinh doanh
+  3  │ Lê Thị Bình  │ Nhân sự</pre>
+        </div>
+    </div>
+    <div class="columns-2" style="margin-top:12px;">
+        <div class="card excel">
+            <h3>Sheet trong Excel</h3>
+            <ul>
+                <li>Có thể chứa bất cứ thứ gì — công thức, biểu đồ, text tự do</li>
+                <li>Cột dùng chữ cái A, B, C...</li>
+            </ul>
+        </div>
+        <div class="card pg">
+            <h3>Table trong Database</h3>
+            <ul>
+                <li>Chỉ chứa dữ liệu <strong>có cấu trúc nghiêm ngặt</strong></li>
+                <li>Mỗi cột <strong>bắt buộc có tên</strong> rõ ràng và kiểu dữ liệu</li>
+                <li>Mỗi table = 1 <em>chủ thể</em>: nhân viên, sản phẩm, đơn hàng...</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 8: COLUMN + ROW ══════════ -->
+<div class="slide">
+    <h2>Khái Niệm 3 &amp; 4: Column = Cột, Row = Hàng</h2>
+    <div class="columns-2">
+        <div>
+            <div class="card excel" style="margin-bottom:12px;">
+                <h3>📊 Column = Cột (A, B, C...)</h3>
+                <p>Trong Database: cột <strong>bắt buộc có tên</strong> thay vì A, B, C:</p>
+                <ul style="margin-top:8px;font-family:'Fira Code',monospace;font-size:0.9rem;">
+                    <li><code>ho_ten</code> → chứa họ tên</li>
+                    <li><code>luong</code> → chứa mức lương</li>
+                    <li><code>ngay_sinh</code> → chứa ngày sinh</li>
+                    <li><code>email</code> → chứa email</li>
+                </ul>
+            </div>
+        </div>
+        <div>
+            <div class="card excel">
+                <h3>📊 Row / Record = Hàng</h3>
+                <p>Mỗi <strong>Row</strong> là một bản ghi hoàn chỉnh về <em>một đối tượng</em>:</p>
+                <pre style="font-size:0.78rem;margin-top:8px;"> id │    ho_ten     │  luong
+────┼───────────────┼────────────
+  1 │ Trần Thị Mai  │ 15,000,000 ← ROW 1
+  2 │ Nguyễn Văn An │ 20,000,000 ← ROW 2
+  5 │ Hoàng Thị Dung│ (trống)   ← ROW 5</pre>
+            </div>
+        </div>
+    </div>
+    <div class="card warning" style="margin-top:10px;">
+        <p>💡 <strong>NULL:</strong> Giá trị "không có gì" trong database gọi là <em>NULL</em> (như ô trống trong Excel). Đây là khái niệm quan trọng sẽ gặp rất nhiều về sau!</p>
+    </div>
+    <div class="card info" style="margin-top:8px;">
+        <p>🔍 <strong>Field = Ô (Cell):</strong> Giao điểm của 1 Column và 1 Row — giống hệt một cell trong Excel (ít dùng từ này trong thực tế).</p>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 9: DATA TYPE = DATA VALIDATION ══════════ -->
+<div class="slide">
+    <h2>Khái Niệm 6: Data Type = Data Validation</h2>
+    <div class="card excel" style="margin-bottom:14px;">
+        <p>📊 Trong Excel, bạn dùng <strong>Data Validation</strong> để quy định ô chỉ nhận số nguyên hoặc ngày tháng. Database nâng điều này thành <strong>bắt buộc</strong> và gọi là <em>Data Type</em>.</p>
+    </div>
+    <table>
+        <thead>
+            <tr><th>Bạn muốn cột chứa...</th><th>Excel (Data Validation)</th><th>Database (Data Type)</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Số nguyên (1, 2, 100...)</td><td>Validation: Whole number</td><td><code style="color:#7ee787;">INTEGER</code></td></tr>
+            <tr><td>Số thập phân (99.99)</td><td>Validation: Decimal</td><td><code style="color:#7ee787;">NUMERIC(10,2)</code></td></tr>
+            <tr><td>Chữ (tên, địa chỉ...)</td><td>Validation: Text length</td><td><code style="color:#7ee787;">VARCHAR(100)</code></td></tr>
+            <tr><td>Ngày tháng</td><td>Validation: Date</td><td><code style="color:#7ee787;">DATE</code></td></tr>
+            <tr><td>Ngày + Giờ</td><td>*(không có sẵn)*</td><td><code style="color:#7ee787;">TIMESTAMP</code></td></tr>
+            <tr><td>Đúng / Sai</td><td>Validation: List (Có/Không)</td><td><code style="color:#7ee787;">BOOLEAN</code></td></tr>
+        </tbody>
+    </table>
+    <div class="card warning" style="margin-top:10px;">
+        <p>⚠️ <strong>Sự khác biệt lớn:</strong> Data Validation Excel có thể bị bỏ qua (copy-paste bỏ qua validation). Data Type trong database là <strong>không thể vi phạm</strong> — cố nhập chữ vào cột số → database từ chối ngay lập tức!</p>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 10: WHERE + ORDER BY ══════════ -->
+<div class="slide">
+    <h2>Khái Niệm 7 &amp; 8: WHERE = Filter, ORDER BY = Sort</h2>
+    <div class="compare">
+        <div>
+            <h3>🔍 Filter (Excel) = WHERE (SQL)</h3>
+            <pre style="font-size:0.82rem;"><span class="comment">-- Filter "Phòng ban" = "IT"</span>
+<span class="keyword">SELECT</span> *
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> phong_ban = <span class="string">'IT'</span>;
+
+<span class="comment">-- Kết quả:</span>
+<span class="comment">--  id │  ho_ten     │ phong_ban</span>
+<span class="comment">--   4 │ Phạm M. Châu│ IT</span></pre>
+        </div>
+        <div>
+            <h3>↕️ Sort (Excel) = ORDER BY (SQL)</h3>
+            <pre style="font-size:0.82rem;"><span class="comment">-- Sort "Lương" → Lớn đến Nhỏ</span>
+<span class="keyword">SELECT</span> *
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">ORDER BY</span> luong <span class="keyword">DESC</span>;
+
+<span class="comment">-- DESC = Giảm dần (Descending)</span>
+<span class="comment">-- ASC  = Tăng dần  (Ascending)</span></pre>
+        </div>
+    </div>
+    <div class="card excel" style="margin-top:12px;">
+        <table style="margin:0;">
+            <thead><tr><th>Thao tác Excel</th><th>SQL tương đương</th></tr></thead>
+            <tbody>
+                <tr><td>Filter → "Phòng ban" = "IT"</td><td><code>WHERE phong_ban = 'IT'</code></td></tr>
+                <tr><td>Filter → Lương &gt; 15 triệu</td><td><code>WHERE luong &gt; 15000000</code></td></tr>
+                <tr><td>Sort → Lương, Lớn → Nhỏ</td><td><code>ORDER BY luong DESC</code></td></tr>
+                <tr><td>Sort → Tên, A → Z</td><td><code>ORDER BY ho_ten ASC</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 11: JOIN = VLOOKUP ══════════ -->
+<div class="slide">
+    <h2>Khái Niệm 9: JOIN = VLOOKUP / INDEX-MATCH</h2>
+    <div class="compare">
+        <div>
+            <h3 class="text-danger">❌ Cách Excel — Dữ liệu lặp lại</h3>
+            <pre style="font-size:0.78rem;">┌──────────────┬──────────┬───────────────────┐
+│  Nhân viên   │ Phòng ban│  Trưởng phòng     │
+├──────────────┼──────────┼───────────────────┤
+│ Trần Thị Mai │ Kế toán  │ Nguyễn Văn Khoa   │ ← lặp
+│ Hoàng Thị D  │ Kế toán  │ Nguyễn Văn Khoa   │ ← lặp
+│ Lý Thị C     │ Kế toán  │ Nguyễn Văn Khoa   │ ← lặp
+│ Phạm Minh C  │ IT       │ Trần Thị Hương    │ ← lặp</pre>
+            <p class="text-danger" style="margin-top:8px;font-size:0.9rem;">→ Đổi trưởng phòng Kế toán: phải tìm sửa <strong>50 ô</strong>!</p>
+        </div>
+        <div>
+            <h3 class="text-success">✅ Cách Database — Tách bảng + JOIN</h3>
+            <pre style="font-size:0.78rem;">Bảng nhan_vien:     Bảng phong_ban:
+ id │ ho_ten  │pb_id   id │ ten_pb  │ truong_phong
+────┼─────────┼─────  ────┼─────────┼─────────────
+  1 │ T.T.Mai │  1  ──▶ 1 │ Kế toán │ NV Khoa
+  5 │ H.T.D   │  1  ──┘ 2 │ IT      │ T.T Hương
+  4 │ P.M.C   │  2  ───▶
+</pre>
+            <p class="text-success" style="margin-top:8px;font-size:0.9rem;">→ Đổi trưởng phòng: chỉ sửa <strong>1 ô</strong> trong bảng phong_ban!</p>
+        </div>
+    </div>
+    <div class="card info" style="margin-top:10px;">
+        <p>💡 <strong>JOIN</strong> = kết nối 2 bảng qua cột ID chung — giống VLOOKUP trong Excel nhưng mạnh hơn nhiều. Sẽ học chi tiết ở <em>Tuần 7</em>.</p>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 12: GROUP BY + AGGREGATE ══════════ -->
+<div class="slide">
+    <h2>Khái Niệm 10 &amp; 11: GROUP BY = Pivot Table</h2>
+    <div class="compare">
+        <div>
+            <h3>📊 Pivot Table (Excel)</h3>
+            <p style="font-size:0.9rem;margin-bottom:10px;">Row Labels: Phòng ban<br>Values: COUNT, AVERAGE of Lương</p>
+            <pre style="font-size:0.82rem;"> phong_ban  │ count │    avg
+────────────┼───────┼────────────
+ Kế toán    │   2   │ 14,000,000
+ Kinh doanh │   2   │ 21,000,000
+ Nhân sự    │   1   │ 18,000,000
+ IT         │   1   │ 25,000,000</pre>
+        </div>
+        <div>
+            <h3>🐘 GROUP BY (SQL)</h3>
+            <pre style="font-size:0.88rem;"><span class="keyword">SELECT</span>
+    phong_ban,
+    <span class="func">COUNT</span>(*),
+    <span class="func">AVG</span>(luong)
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban;</pre>
+            <div class="card tip" style="margin-top:10px;">
+                <p>💡 Kết quả giống hệt! Bạn đã quen với Pivot Table rồi → GROUP BY sẽ rất dễ học!</p>
+            </div>
+        </div>
+    </div>
+    <table style="margin-top:12px;font-size:0.88rem;">
+        <thead><tr><th>Hàm Excel</th><th>Hàm SQL tương đương</th><th>Ý nghĩa</th></tr></thead>
+        <tbody>
+            <tr><td><code>=COUNTA()</code></td><td><code>COUNT(*)</code></td><td>Đếm số hàng</td></tr>
+            <tr><td><code>=SUM()</code></td><td><code>SUM(luong)</code></td><td>Tính tổng</td></tr>
+            <tr><td><code>=AVERAGE()</code></td><td><code>AVG(luong)</code></td><td>Tính trung bình</td></tr>
+            <tr><td><code>=MIN()</code></td><td><code>MIN(luong)</code></td><td>Giá trị nhỏ nhất</td></tr>
+            <tr><td><code>=MAX()</code></td><td><code>MAX(luong)</code></td><td>Giá trị lớn nhất</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ══════════ SLIDE 13: BẢNG TỔNG HỢP ══════════ -->
+<div class="slide">
+    <h2>📊 Bảng Tổng Hợp: Excel ↔ Database</h2>
+    <div class="slide-content">
+        <table>
+            <thead><tr><th>Bạn muốn làm gì?</th><th>Trong Excel</th><th>Trong SQL</th></tr></thead>
+            <tbody>
+                <tr><td>Mở dữ liệu</td><td>Mở file .xlsx</td><td><code>SELECT * FROM ten_bang</code></td></tr>
+                <tr><td>Lọc dữ liệu</td><td>Filter</td><td><code>WHERE</code></td></tr>
+                <tr><td>Sắp xếp</td><td>Sort</td><td><code>ORDER BY</code></td></tr>
+                <tr><td>Loại bỏ trùng</td><td>Remove Duplicates</td><td><code>DISTINCT</code></td></tr>
+                <tr><td>Tính tổng</td><td><code>=SUM()</code></td><td><code>SUM()</code></td></tr>
+                <tr><td>Đếm</td><td><code>=COUNTA()</code></td><td><code>COUNT(*)</code></td></tr>
+                <tr><td>Trung bình</td><td><code>=AVERAGE()</code></td><td><code>AVG()</code></td></tr>
+                <tr><td>Pivot Table</td><td>Pivot Table</td><td><code>GROUP BY</code></td></tr>
+                <tr><td>Tra cứu liên bảng</td><td>VLOOKUP / INDEX-MATCH</td><td><code>JOIN</code></td></tr>
+                <tr><td>Công thức IF</td><td><code>=IF()</code> / <code>=IFS()</code></td><td><code>CASE WHEN</code></td></tr>
+                <tr><td>Nối chuỗi</td><td><code>=CONCATENATE()</code> / <code>&amp;</code></td><td><code>||</code></td></tr>
+                <tr><td>Xử lý ô trống</td><td><code>=IFERROR()</code></td><td><code>COALESCE()</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 14: SECTION — KHI NÀO ══════════ -->
+<div class="slide section-slide">
+    <div class="section-num">🚦</div>
+    <h1>Khi Nào Nên Chuyển Sang Database?</h1>
+    <p class="subtitle">5 dấu hiệu Excel đã đến giới hạn của nó</p>
+</div>
+
+<!-- ══════════ SLIDE 15: DẤU HIỆU 1 — DỮ LIỆU LỚN ══════════ -->
+<div class="slide">
+    <h2>Dấu Hiệu 1: Dữ Liệu Quá Lớn</h2>
+    <p style="margin-bottom:16px;"><strong>Tình huống:</strong> Bộ phận bán hàng cần phân tích lịch sử 3 năm — khoảng <strong>2 triệu dòng giao dịch</strong>.</p>
+    <div class="compare">
+        <div>
+            <h3 class="text-danger">❌ Với Excel</h3>
+            <ul>
+                <li>File .xlsx giới hạn <strong>1.048.576 hàng</strong> — không đủ chứa!</li>
+                <li>Dù chứa được: file nặng vài GB, mở mất 5–10 phút</li>
+                <li>Công thức tính toán cực kỳ chậm</li>
+                <li>Dễ treo máy, mất dữ liệu khi crash</li>
+            </ul>
+        </div>
+        <div>
+            <h3 class="text-success">✅ Với Database</h3>
+            <ul>
+                <li><strong>Không có giới hạn số hàng</strong> — hàng triệu, hàng tỷ bản ghi</li>
+                <li>Truy vấn được tối ưu hóa: lọc 2 triệu hàng trong <strong>&lt; 1 giây</strong></li>
+                <li>Dữ liệu lưu an toàn trên server, không mất khi máy treo</li>
+            </ul>
+        </div>
+    </div>
+    <div class="card info" style="margin-top:12px;">
+        <p>💡 <strong>Ngưỡng thực tế:</strong> Khi dữ liệu vượt quá <strong>50.000–100.000 hàng</strong> và cần truy vấn thường xuyên, database bắt đầu có ưu thế rõ rệt.</p>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 16: DẤU HIỆU 2 — NHIỀU NGƯỜI ══════════ -->
+<div class="slide">
+    <h2>Dấu Hiệu 2: Nhiều Người Cùng Làm Việc</h2>
+    <p style="margin-bottom:14px;"><strong>Tình huống:</strong> Team 5 người cùng cập nhật danh sách khách hàng trong ngày.</p>
+    <div class="compare">
+        <div>
+            <h3 class="text-danger">❌ Với Excel</h3>
+            <pre style="font-size:0.82rem;"><span class="comment">9:00  - An mở file, thêm 20 khách</span>
+<span class="comment">        → lưu thành "khach_hang_v2.xlsx"</span>
+<span class="comment">9:30  - Bình (không biết An sửa)</span>
+<span class="comment">        mở file gốc, sửa 15 địa chỉ</span>
+<span class="comment">        → lưu đè lên file gốc</span>
+<span class="comment">10:00 - Ai đúng? File nào mới nhất?</span>
+<span class="comment">→ Dữ liệu mất, mâu thuẫn, không</span>
+<span class="comment">  ai tin tưởng file nào!</span></pre>
+        </div>
+        <div>
+            <h3 class="text-success">✅ Với Database</h3>
+            <pre style="font-size:0.82rem;"><span class="comment">9:00  - An kết nối, thêm 20 khách</span>
+<span class="comment">        (lưu ngay lập tức)</span>
+<span class="comment">9:30  - Bình kết nối, thấy ngay</span>
+<span class="comment">        20 khách An vừa thêm,</span>
+<span class="comment">        sửa 15 địa chỉ (lưu ngay)</span>
+<span class="comment">10:00 - Cả team cùng nhìn vào</span>
+<span class="comment">        1 nguồn dữ liệu duy nhất</span>
+<span class="comment">→ Không bao giờ có xung đột!</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 17: DẤU HIỆU 3 — TÍNH CHÍNH XÁC ══════════ -->
+<div class="slide">
+    <h2>Dấu Hiệu 3: Cần Đảm Bảo Tính Chính Xác</h2>
+    <p style="margin-bottom:14px;"><strong>Tình huống:</strong> Báo cáo giới tính nhân viên bị sai vì dữ liệu không nhất quán.</p>
+    <div class="compare">
+        <div>
+            <h3 class="text-danger">❌ Với Excel</h3>
+            <p style="margin-bottom:8px;">Cột "Giới tính" chứa hỗn hợp:</p>
+            <ul style="font-family:'Fira Code',monospace;font-size:0.88rem;">
+                <li><code>"Nam"</code>, <code>"Nữ"</code> ← đúng format</li>
+                <li><code>"nam"</code>, <code>"nữ"</code> ← chữ thường</li>
+                <li><code>"NAM"</code>, <code>"NỮ"</code> ← chữ hoa</li>
+                <li><code>"M"</code>, <code>"F"</code> ← tiếng Anh</li>
+                <li><code>"1"</code>, <code>"0"</code> ← dùng số</li>
+            </ul>
+            <p class="text-danger" style="margin-top:8px;"><code>=COUNTIF(A:A,"Nữ")</code> → kết quả <strong>SAI!</strong></p>
+        </div>
+        <div>
+            <h3 class="text-success">✅ Với Database</h3>
+            <pre style="font-size:0.85rem;"><span class="comment">-- Khai báo ràng buộc khi tạo bảng:</span>
+gioi_tinh <span class="type">VARCHAR(3)</span>
+    <span class="keyword">CHECK</span> (gioi_tinh
+        <span class="keyword">IN</span> (<span class="string">'Nam'</span>, <span class="string">'Nữ'</span>))</pre>
+            <div class="card tip" style="margin-top:10px;">
+                <p class="text-success">✅ Khi ai cố nhập giá trị khác → database <strong>từ chối ngay lập tức</strong>!</p>
+                <p style="margin-top:6px;">Không bao giờ có <code>"nam"</code>, <code>"NAM"</code>, <code>"M"</code> lẫn lộn.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 18: DẤU HIỆU 4 & 5 ══════════ -->
+<div class="slide">
+    <h2>Dấu Hiệu 4 &amp; 5: Bảo Mật &amp; Tự Động Hóa</h2>
+    <div class="columns-2">
+        <div>
+            <h3>🔐 Dấu hiệu 4: Cần Bảo Mật Theo Cấp Độ</h3>
+            <div class="card warning" style="margin-bottom:10px;">
+                <p>❌ <strong>Excel:</strong> Ai có file là ai xem được tất cả. Password protect dễ bị bỏ qua khi copy.</p>
+            </div>
+            <div class="card tip">
+                <p>✅ <strong>Database:</strong></p>
+                <ul style="margin-top:6px;font-size:0.9rem;">
+                    <li><code>ke_toan_truong</code> → xem + sửa tất cả</li>
+                    <li><code>quan_ly_IT</code> → chỉ xem nhân viên IT</li>
+                    <li><code>nhan_vien</code> → không xem bảng lương</li>
+                </ul>
+            </div>
+        </div>
+        <div>
+            <h3>⚙️ Dấu hiệu 5: Cần Tự Động Hóa</h3>
+            <div class="card warning" style="margin-bottom:10px;">
+                <p>❌ <strong>Excel:</strong> Mỗi tuần phải tay tạo báo cáo — export CSV → import → Pivot → format → gửi email. Mất <strong>4 tiếng/tuần</strong>.</p>
+            </div>
+            <div class="card tip">
+                <p>✅ <strong>Database:</strong> Dữ liệu cập nhật tự động, báo cáo là 1 câu SQL lưu sẵn, chạy tự động mỗi sáng thứ Hai.</p>
+                <p style="margin-top:8px;"><strong>Từ 4 tiếng/tuần → 0 tiếng!</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 19: EXCEL HAY DATABASE ══════════ -->
+<div class="slide">
+    <h2>Tóm Tắt: Excel hay Database?</h2>
+    <div class="compare">
+        <div>
+            <h3>📊 Nên dùng EXCEL khi:</h3>
+            <ul>
+                <li>✓ Dữ liệu nhỏ <strong>(&lt; 50.000 hàng)</strong></li>
+                <li>✓ 1–2 người dùng</li>
+                <li>✓ Phân tích ad-hoc nhanh</li>
+                <li>✓ Làm báo cáo trực quan, biểu đồ</li>
+                <li>✓ Dữ liệu cá nhân</li>
+                <li>✓ Prototype, thử nghiệm nhanh</li>
+            </ul>
+        </div>
+        <div>
+            <h3>🐘 Nên dùng DATABASE khi:</h3>
+            <ul>
+                <li>✓ Dữ liệu lớn <strong>(&gt; 100.000 hàng)</strong></li>
+                <li>✓ Nhiều người dùng cùng lúc</li>
+                <li>✓ Cần dữ liệu luôn nhất quán</li>
+                <li>✓ Cần phân quyền chi tiết</li>
+                <li>✓ Cần tự động hóa, kết nối app</li>
+                <li>✓ Hệ thống dài hạn, sản xuất</li>
+            </ul>
+        </div>
+    </div>
+    <div class="card tip" style="margin-top:16px;">
+        <p>💡 <strong>Sự thật thú vị:</strong> Nhiều doanh nghiệp dùng <em>cả hai</em> — database lưu trữ và xử lý dữ liệu, Excel kết nối vào database để làm báo cáo trực quan. <strong>Kỹ năng Excel của bạn sẽ vẫn cực kỳ có giá trị!</strong></p>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 20: SECTION — POSTGRESQL ══════════ -->
+<div class="slide section-slide">
+    <div class="section-num">🐘</div>
+    <h1>PostgreSQL — Công Cụ Chúng Ta Học</h1>
+    <p class="subtitle">Miễn phí · Mạnh mẽ · Được dùng bởi Apple, Instagram, Spotify</p>
+</div>
+
+<!-- ══════════ SLIDE 21: POSTGRESQL LÀ GÌ ══════════ -->
+<div class="slide">
+    <h2>PostgreSQL Là Gì?</h2>
+    <div class="diagram" style="margin:20px 0;">
+        <div class="box" style="border-color:var(--excel-green);min-width:180px;">
+            <p style="font-weight:700;font-size:1rem;margin-bottom:4px;">Microsoft Excel</p>
+            <p style="color:var(--text-dim);font-size:0.85rem;">Phần mềm xử lý<br><strong>BẢNG TÍNH</strong></p>
+        </div>
+        <div class="arrow">↔</div>
+        <div class="box" style="border-color:var(--pg-blue);min-width:180px;">
+            <p style="font-weight:700;font-size:1rem;margin-bottom:4px;">PostgreSQL</p>
+            <p style="color:var(--text-dim);font-size:0.85rem;">Phần mềm xử lý<br><strong>CƠ SỞ DỮ LIỆU</strong></p>
+        </div>
+    </div>
+    <div class="columns-2" style="margin-top:12px;">
+        <div>
+            <h3>Tại Sao Chọn PostgreSQL?</h3>
+            <table style="font-size:0.88rem;">
+                <tbody>
+                    <tr><td>💰 Giá</td><td><strong>Hoàn toàn miễn phí</strong>, mã nguồn mở</td></tr>
+                    <tr><td>🌍 Phổ biến</td><td>Top 4 database được dùng nhiều nhất TG</td></tr>
+                    <tr><td>💪 Độ mạnh</td><td>Xử lý được bài toán doanh nghiệp phức tạp</td></tr>
+                    <tr><td>📚 Học tập</td><td>SQL học ở đây dùng được cho hầu hết DB khác</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <h3>Ai Đang Dùng PostgreSQL?</h3>
+            <div class="card" style="padding:16px 20px;">
+                <ul style="list-style:none;padding-left:0;">
+                    <li style="margin-bottom:8px;">🍎 <strong>Apple</strong> — lưu trữ dữ liệu iTunes</li>
+                    <li style="margin-bottom:8px;">📸 <strong>Instagram</strong> — hàng tỷ bức ảnh</li>
+                    <li style="margin-bottom:8px;">🎵 <strong>Spotify</strong> — danh sách bài hát, playlist</li>
+                    <li style="margin-bottom:8px;">🚗 <strong>Grab, Shopee</strong> — siêu ứng dụng ĐNA</li>
+                    <li>🏢 Hàng triệu startup và doanh nghiệp vừa nhỏ</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 22: DBEAVER ══════════ -->
+<div class="slide">
+    <h2>DBeaver — "Giao Diện Excel" Của PostgreSQL</h2>
+    <div class="card excel" style="margin-bottom:14px;">
+        <p>📊 Khi học Excel, bạn không phải gõ lệnh — bạn click, kéo thả, dùng menu. <strong>DBeaver</strong> làm điều tương tự cho PostgreSQL — giao diện đồ họa <em>miễn phí</em>, chạy trên Windows/Mac/Linux.</p>
+    </div>
+    <div class="columns-2">
+        <div>
+            <div class="card" style="font-family:'Fira Code',monospace;font-size:0.82rem;">
+                <p style="color:var(--accent-light);margin-bottom:10px;">Giao diện DBeaver:</p>
+                <p>┌──────────────┬──────────────────┐</p>
+                <p>│ Database     │ SQL Editor       │</p>
+                <p>│ Navigator    │                  │</p>
+                <p>│              │ SELECT *         │</p>
+                <p>│ > PostgreSQL │ FROM nhan_vien;  │</p>
+                <p>│   > hoc_sql  │                  │</p>
+                <p>│     > Tables │ ─────────────    │</p>
+                <p>│       nhan_v │ id │ ho_ten │ ... │</p>
+                <p>│       san_ph │  1 │ T.T.Mai│ ... │</p>
+                <p>└──────────────┴──────────────────┘</p>
+            </div>
+        </div>
+        <div>
+            <div class="card pg" style="margin-bottom:10px;">
+                <h3>Bên trái (Database Navigator)</h3>
+                <p>Cây kết nối database — giống Windows Explorer. Mở rộng để xem bảng, cột, dữ liệu.</p>
+            </div>
+            <div class="card pg" style="margin-bottom:10px;">
+                <h3>Bên phải (SQL Editor)</h3>
+                <p>Viết SQL ở trên → <kbd style="background:#334155;padding:2px 8px;border-radius:4px;">Ctrl+Enter</kbd> để chạy → kết quả hiện ở dưới.</p>
+            </div>
+            <div class="card tip">
+                <p>💡 Tuần sau sẽ cài đặt PostgreSQL + DBeaver và gõ câu SQL đầu tiên!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 23: SECTION — SQL ══════════ -->
+<div class="slide section-slide">
+    <div class="section-num">💬</div>
+    <h1>SQL — Ngôn Ngữ Giao Tiếp Với Database</h1>
+    <p class="subtitle">Structured Query Language — Gần với tiếng Anh hơn bất kỳ ngôn ngữ máy tính nào</p>
+</div>
+
+<!-- ══════════ SLIDE 24: SQL LÀ GÌ ══════════ -->
+<div class="slide">
+    <h2>SQL Là Gì?</h2>
+    <div class="card info" style="margin-bottom:16px;">
+        <p><strong>SQL</strong> = <em>Structured Query Language</em> — Ngôn ngữ Truy vấn Có Cấu trúc.</p>
+        <p style="margin-top:8px;">Đây là "ngôn ngữ" bạn dùng để nói chuyện với database — giống như công thức Excel là cách bạn "nói chuyện" với Excel.</p>
+    </div>
+    <div class="compare">
+        <div>
+            <h3>Python (lập trình phức tạp)</h3>
+            <pre style="font-size:0.82rem;"><span class="keyword">for</span> row <span class="keyword">in</span> cursor.execute(
+    <span class="string">"SELECT * FROM employees"</span>
+):
+    <span class="keyword">if</span> row[<span class="string">'salary'</span>] > <span class="number">15000000</span>:
+        print(row[<span class="string">'name'</span>])</pre>
+            <p class="text-danger" style="margin-top:8px;font-size:0.9rem;">Cần biết lập trình!</p>
+        </div>
+        <div>
+            <h3>SQL (truy vấn đơn giản)</h3>
+            <pre style="font-size:0.88rem;"><span class="keyword">SELECT</span> ho_ten
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> luong > <span class="number">15000000</span>;</pre>
+            <p class="text-success" style="margin-top:8px;font-size:0.9rem;">Đọc gần như tiếng Anh tự nhiên! ✅</p>
+        </div>
+    </div>
+    <div class="card tip" style="margin-top:12px;">
+        <p>💡 <strong>SQL KHÔNG phải ngôn ngữ lập trình phức tạp</strong> như Python hay Java. SQL gần với tiếng Anh thông thường hơn bất kỳ ngôn ngữ máy tính nào khác.</p>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 25: QUY TẮC CƠ BẢN ══════════ -->
+<div class="slide">
+    <h2>Quy Tắc Cơ Bản Của SQL</h2>
+    <div class="columns-2">
+        <div>
+            <div class="card" style="margin-bottom:12px;">
+                <h3>1. Kết thúc bằng dấu chấm phẩy <code>;</code></h3>
+                <pre style="font-size:0.85rem;"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> nhan_vien;  <span class="comment">← đúng</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> nhan_vien   <span class="comment">← thiếu ;</span></pre>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+                <h3>2. Không phân biệt HOA / thường</h3>
+                <pre style="font-size:0.85rem;"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> nhan_vien;
+<span class="comment">select * from nhan_vien;</span>
+<span class="comment">Select * From Nhan_Vien;</span>
+<span class="comment">-- Ba câu trên giống hệt nhau!</span></pre>
+            </div>
+        </div>
+        <div>
+            <div class="card" style="margin-bottom:12px;">
+                <h3>3. Quy ước: Keyword viết HOA</h3>
+                <pre style="font-size:0.85rem;"><span class="keyword">SELECT</span> ho_ten
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> luong > <span class="number">15000000</span>;
+<span class="comment">-- SELECT, FROM, WHERE → HOA (keyword)</span>
+<span class="comment">-- ho_ten, nhan_vien  → thường (tên bảng)</span></pre>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+                <h3>4. Comment bắt đầu bằng <code>--</code></h3>
+                <pre style="font-size:0.85rem;"><span class="comment">-- Đây là ghi chú, SQL bỏ qua</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> nhan_vien;
+<span class="comment">-- Ghi chú cuối dòng cũng được</span></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 26: ĐỌC SQL NHƯ TIẾNG ANH ══════════ -->
+<div class="slide">
+    <h2>Đọc SQL Như Tiếng Anh</h2>
+    <div class="slide-content">
+        <p style="margin-bottom:14px;">Điều thú vị nhất về SQL — hãy đọc như tiếng Anh tự nhiên:</p>
+        <table>
+            <thead>
+                <tr><th>Câu SQL</th><th>Đọc bằng tiếng Anh</th><th>Ý nghĩa tiếng Việt</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>SELECT * FROM nhan_vien</code></td>
+                    <td><em>Select all from employees</em></td>
+                    <td>Lấy tất cả từ bảng nhân viên</td>
+                </tr>
+                <tr>
+                    <td><code>SELECT ho_ten, luong FROM nhan_vien</code></td>
+                    <td><em>Select name, salary from employees</em></td>
+                    <td>Lấy tên và lương từ bảng nhân viên</td>
+                </tr>
+                <tr>
+                    <td><code>SELECT * FROM nhan_vien WHERE phong_ban = 'IT'</code></td>
+                    <td><em>Select all from employees where department is IT</em></td>
+                    <td>Lấy tất cả nhân viên phòng IT</td>
+                </tr>
+                <tr>
+                    <td><code>SELECT * FROM nhan_vien WHERE luong > 15000000</code></td>
+                    <td><em>Select all where salary exceeds 15M</em></td>
+                    <td>Nhân viên có lương trên 15 triệu</td>
+                </tr>
+                <tr>
+                    <td><code>SELECT ho_ten FROM nhan_vien ORDER BY luong DESC</code></td>
+                    <td><em>Select name, order by salary descending</em></td>
+                    <td>Tên nhân viên, sắp theo lương giảm dần</td>
+                </tr>
+                <tr>
+                    <td><code>SELECT COUNT(*) FROM nhan_vien</code></td>
+                    <td><em>Count all from employees</em></td>
+                    <td>Đếm tổng số nhân viên</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 27: THỬ THÁCH ══════════ -->
+<div class="slide">
+    <h2>🎯 Thử Thách: Đoán Trước Khi Đọc Đáp Án</h2>
+    <p style="margin-bottom:14px;">Với bảng <code>nhan_vien</code> có cột: <code>id, ho_ten, phong_ban, luong, ngay_sinh, email</code></p>
+    <div class="columns-2">
+        <div>
+            <div class="card" style="margin-bottom:12px;">
+                <h3>Câu 1 — bạn đoán gì?</h3>
+                <pre><span class="keyword">SELECT DISTINCT</span> phong_ban
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+                <h3>Câu 2 — bạn đoán gì?</h3>
+                <pre><span class="keyword">SELECT</span> ho_ten, luong
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> phong_ban = <span class="string">'Kế toán'</span>
+<span class="keyword">ORDER BY</span> luong <span class="keyword">DESC</span>;</pre>
+            </div>
+            <div class="card">
+                <h3>Câu 3 — bạn đoán gì?</h3>
+                <pre><span class="keyword">SELECT</span> <span class="func">COUNT</span>(*) <span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> luong > <span class="number">18000000</span>;</pre>
+            </div>
+        </div>
+        <div>
+            <div class="card tip" style="margin-bottom:12px;">
+                <h3>✅ Đáp án — Câu 1</h3>
+                <p>Liệt kê tất cả phòng ban <strong>không trùng lặp</strong>.</p>
+                <p style="margin-top:6px;font-family:'Fira Code',monospace;color:var(--success);">Kết quả: Kế toán, Kinh doanh, Nhân sự, IT</p>
+            </div>
+            <div class="card tip" style="margin-bottom:12px;">
+                <h3>✅ Đáp án — Câu 2</h3>
+                <p>Tên và lương nhân viên phòng Kế toán, <strong>sắp từ cao đến thấp</strong>.</p>
+                <p style="margin-top:6px;font-family:'Fira Code',monospace;font-size:0.85rem;color:var(--success);">Trần Thị Mai (15tr), Hoàng Thị Dung (13tr)</p>
+            </div>
+            <div class="card tip">
+                <h3>✅ Đáp án — Câu 3</h3>
+                <p>Đếm số nhân viên có <strong>lương trên 18 triệu</strong>.</p>
+                <p style="margin-top:6px;font-family:'Fira Code',monospace;color:var(--success);">Kết quả: 3</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 28: TỪ VỰNG ══════════ -->
+<div class="slide">
+    <h2>📚 Từ Vựng Đã Học — Tuần 1</h2>
+    <div class="slide-content">
+        <table>
+            <thead>
+                <tr><th>Thuật ngữ</th><th>Định nghĩa ngắn</th><th>Tương đương Excel</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Database</strong></td><td>Nơi chứa toàn bộ dữ liệu</td><td>Workbook (.xlsx file)</td></tr>
+                <tr><td><strong>Table</strong></td><td>Một tập dữ liệu có cấu trúc</td><td>Sheet (trang tính)</td></tr>
+                <tr><td><strong>Column</strong></td><td>Một loại thông tin</td><td>Cột (A, B, C...)</td></tr>
+                <tr><td><strong>Row / Record</strong></td><td>Một mục dữ liệu</td><td>Hàng (1, 2, 3...)</td></tr>
+                <tr><td><strong>Field</strong></td><td>Một giá trị cụ thể</td><td>Ô (Cell)</td></tr>
+                <tr><td><strong>Data Type</strong></td><td>Quy định loại giá trị cho cột</td><td>Data Validation</td></tr>
+                <tr><td><strong>NULL</strong></td><td>Không có giá trị (ô trống)</td><td>Ô trống</td></tr>
+                <tr><td><strong>SQL</strong></td><td>Ngôn ngữ giao tiếp với DB</td><td>Công thức Excel</td></tr>
+                <tr><td><strong>PostgreSQL</strong></td><td>Phần mềm quản lý database</td><td>Microsoft Excel (engine)</td></tr>
+                <tr><td><strong>DBeaver</strong></td><td>Giao diện đồ họa để dùng PostgreSQL</td><td>Giao diện Excel</td></tr>
+                <tr><td><strong>Query</strong></td><td>Câu lệnh SQL</td><td>Công thức</td></tr>
+                <tr><td><strong>Primary Key</strong></td><td>Mã định danh duy nhất cho mỗi hàng</td><td>Cột STT không trùng</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ══════════ SLIDE 29: CLOSING ══════════ -->
+<div class="slide title-slide">
+    <div class="week-badge" style="border-color:var(--success);color:var(--success);">TIẾP THEO</div>
+    <h1>Tuần 2: Cài Đặt &amp; Kết Nối</h1>
+    <p class="subtitle">PostgreSQL · DBeaver · Câu SQL đầu tiên · Tạo database đầu tiên</p>
+    <div style="margin-top:32px;display:flex;gap:28px;justify-content:center;flex-wrap:wrap;">
+        <div class="card" style="text-align:center;min-width:160px;background:rgba(30,41,59,0.8);">
+            <p style="font-size:1.8rem;margin-bottom:4px;">🔧</p>
+            <p><strong>Cài đặt</strong></p>
+            <p class="text-dim" style="font-size:0.9rem;">PostgreSQL<br>+ DBeaver</p>
+        </div>
+        <div class="card" style="text-align:center;min-width:160px;background:rgba(30,41,59,0.8);">
+            <p style="font-size:1.8rem;margin-bottom:4px;">🔌</p>
+            <p><strong>Kết nối</strong></p>
+            <p class="text-dim" style="font-size:0.9rem;">DBeaver ↔<br>PostgreSQL</p>
+        </div>
+        <div class="card" style="text-align:center;min-width:160px;background:rgba(30,41,59,0.8);">
+            <p style="font-size:1.8rem;margin-bottom:4px;">⌨️</p>
+            <p><strong>Câu SQL đầu tiên</strong></p>
+            <p class="text-dim" style="font-size:0.9rem;">Gõ và nhìn<br>kết quả thật!</p>
+        </div>
+    </div>
+    <p style="margin-top:28px;color:var(--text-dim);font-size:0.9rem;">
+        Đảm bảo máy có ít nhất <strong>4GB RAM</strong> và <strong>2GB dung lượng trống</strong> trước khi bắt đầu Tuần 2!
+    </p>
+    <div style="margin-top:20px;">
+        <div class="badge success">Checklist Tuần 1</div>
+        <p style="margin-top:10px;color:var(--text-dim);font-size:0.88rem;">
+            ☑ Giải thích được database khác Excel như thế nào &nbsp;·&nbsp;
+            ☑ Biết 8 thuật ngữ nền tảng &nbsp;·&nbsp;
+            ☑ Đọc được câu SELECT...FROM...WHERE &nbsp;·&nbsp;
+            ☑ Biết khi nào nên dùng Excel, khi nào dùng database
+        </p>
+    </div>
+</div>
+
+</div><!-- end .slide-deck -->
+
+<!-- ▸ Navigation Bar ◂ -->
+<div class="nav-bar">
+    <span class="page-info" id="pageInfo">1 / 26</span>
+    <div class="controls">
+        <button onclick="prevSlide()">← Trước</button>
+        <button onclick="openTOC()">☰ Mục lục</button>
+        <button onclick="nextSlide()">Tiếp →</button>
+    </div>
+</div>
+
+<script>
+    const slides  = document.querySelectorAll('.slide');
+    const total   = slides.length;
+    let   current = 0;
+
+    function goSlide(n) {
+        slides[current].classList.remove('active');
+        current = Math.max(0, Math.min(n, total - 1));
+        slides[current].classList.add('active');
+        updateUI();
+        closeTOC();
+    }
+    function nextSlide() { goSlide(current + 1); }
+    function prevSlide() { goSlide(current - 1); }
+
+    function updateUI() {
+        document.getElementById('pageInfo').textContent = `${current + 1} / ${total}`;
+        document.getElementById('progressBar').style.width = `${((current + 1) / total) * 100}%`;
+    }
+
+    function openTOC()  { document.getElementById('tocOverlay').classList.add('open'); }
+    function closeTOC() { document.getElementById('tocOverlay').classList.remove('open'); }
+
+    document.addEventListener('keydown', e => {
+        switch(e.key) {
+            case 'ArrowRight': case ' ': e.preventDefault(); nextSlide(); break;
+            case 'ArrowLeft':            e.preventDefault(); prevSlide(); break;
+            case 'Home':                 e.preventDefault(); goSlide(0); break;
+            case 'End':                  e.preventDefault(); goSlide(total - 1); break;
+            case 'm': case 'M':
+                document.getElementById('tocOverlay').classList.contains('open')
+                    ? closeTOC() : openTOC();
+                break;
+            case 'Escape': closeTOC(); break;
+        }
+    });
+
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend',   e => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 50) dx < 0 ? nextSlide() : prevSlide();
+    }, { passive: true });
+
+    updateUI();
+</script>
+</body>
+</html>
