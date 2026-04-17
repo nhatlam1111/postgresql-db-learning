@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuần 9: Quản Lý Dữ Liệu — UPDATE, DELETE, Transaction, VIEW — PostgreSQL</title>
+    <link rel="stylesheet" href="slides.css">
+    <style>
+        /* Safety pattern steps */
+        .safety-flow { display: flex; align-items: center; gap: 6px; margin: 12px 0; flex-wrap: wrap; }
+        .safety-step { background: var(--bg-card); border: 2px solid #334155; border-radius: 12px; padding: 12px 16px; text-align: center; min-width: 120px; flex: 1; }
+        .safety-step.danger { border-color: var(--danger); }
+        .safety-step.safe { border-color: var(--success); }
+        .safety-step .num { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+        .safety-step.safe .num { color: var(--success); }
+        .safety-step.danger .num { color: var(--danger); }
+        .safety-arrow { color: var(--accent); font-size: 1.5rem; font-weight: 700; }
+        /* Transaction diagram */
+        .tx-flow { display: flex; flex-direction: column; gap: 0; margin: 12px 0; }
+        .tx-row { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-left: 3px solid var(--primary-light); position: relative; }
+        .tx-row::before { content: ''; position: absolute; left: -3px; width: 3px; height: 100%; }
+        .tx-row.begin { border-left-color: var(--info); background: rgba(56,189,248,0.05); border-radius: 10px 10px 0 0; }
+        .tx-row.action { border-left-color: var(--accent); background: rgba(249,168,37,0.05); }
+        .tx-row.commit { border-left-color: var(--success); background: rgba(16,185,129,0.05); border-radius: 0 0 10px 10px; }
+        .tx-row.rollback { border-left-color: var(--danger); background: rgba(248,113,113,0.05); border-radius: 0 0 10px 10px; }
+        .tx-row .tx-label { font-family: 'Fira Code', monospace; font-size: 0.88rem; min-width: 180px; font-weight: 600; }
+        .tx-row.begin .tx-label { color: var(--info); }
+        .tx-row.action .tx-label { color: var(--accent); }
+        .tx-row.commit .tx-label { color: var(--success); }
+        .tx-row.rollback .tx-label { color: var(--danger); }
+        .tx-row .tx-desc { color: var(--text-dim); font-size: 0.85rem; }
+        /* Before/After comparison */
+        .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 10px 0; }
+        .ba-box { background: var(--bg-card); border-radius: 10px; padding: 14px 16px; border: 1px solid #334155; }
+        .ba-box.before { border-top: 3px solid var(--text-dim); }
+        .ba-box.after { border-top: 3px solid var(--success); }
+        .ba-box .label { font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; }
+        .ba-box.before .label { color: var(--text-dim); }
+        .ba-box.after .label { color: var(--success); }
+        /* Danger emphasis */
+        .danger-big { font-size: 1.3rem; color: var(--danger); font-weight: 800; text-align: center; margin: 12px 0; }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- TOC Overlay -->
+<div class="toc-overlay" id="tocOverlay" onclick="closeTOC()">
+    <div class="toc-panel" onclick="event.stopPropagation()">
+        <h3>📑 Mục Lục</h3>
+        <a href="#" class="section-header" onclick="goSlide(0)">Trang bìa</a>
+        <a href="#" onclick="goSlide(1)">Mục tiêu tuần 9</a>
+
+        <a href="#" class="section-header" onclick="goSlide(2)">9.1 UPDATE</a>
+        <a href="#" onclick="goSlide(3)">Cú pháp UPDATE</a>
+        <a href="#" onclick="goSlide(4)">UPDATE nâng cao</a>
+
+        <a href="#" class="section-header" onclick="goSlide(5)">9.2 DELETE</a>
+        <a href="#" onclick="goSlide(6)">DELETE cú pháp</a>
+
+        <a href="#" class="section-header" onclick="goSlide(7)">9.3 Mẫu An Toàn</a>
+        <a href="#" onclick="goSlide(8)">SELECT trước — UPDATE/DELETE sau</a>
+
+        <a href="#" class="section-header" onclick="goSlide(9)">9.4 TRUNCATE vs DELETE</a>
+
+        <a href="#" class="section-header" onclick="goSlide(10)">9.5 Transaction</a>
+        <a href="#" onclick="goSlide(11)">Ví dụ chuyển tiền</a>
+        <a href="#" onclick="goSlide(12)">BEGIN / COMMIT / ROLLBACK</a>
+
+        <a href="#" class="section-header" onclick="goSlide(13)">9.6 SAVEPOINT</a>
+
+        <a href="#" class="section-header" onclick="goSlide(14)">9.7 VIEW</a>
+        <a href="#" onclick="goSlide(15)">Tạo & sử dụng VIEW</a>
+        <a href="#" onclick="goSlide(16)">Khi nào dùng VIEW</a>
+
+        <a href="#" class="section-header" onclick="goSlide(17)">9.8 ALTER TABLE</a>
+
+        <a href="#" class="section-header" onclick="goSlide(18)">9.9 Import CSV</a>
+        <a href="#" onclick="goSlide(19)">DBeaver & COPY</a>
+
+        <a href="#" class="section-header" onclick="goSlide(20)">Tổng Kết</a>
+        <a href="#" onclick="goSlide(21)">Bảng tra cứu nhanh</a>
+        <a href="#" onclick="goSlide(22)">Checklist an toàn</a>
+        <a href="#" onclick="goSlide(23)">Cầu nối tuần 10</a>
+    </div>
+</div>
+
+<div class="slide-deck" id="deck">
+
+    <!-- ═══ SLIDE 0: Title ═══ -->
+    <div class="slide title-slide active">
+        <div class="week-badge">TUẦN 9</div>
+        <h1>Quản Lý Dữ Liệu</h1>
+        <p class="subtitle">UPDATE · DELETE · Transaction · VIEW · ALTER TABLE · Import CSV</p>
+        <p style="color:var(--text-dim); font-size:0.95rem;">⏱ Thời lượng: 4–5 giờ &nbsp;|&nbsp; Yêu cầu: Đã học SELECT, WHERE, JOIN</p>
+        <p style="color:var(--danger); font-size:0.9rem; margin-top:18px;">⚠️ Tuần này bạn sẽ <strong>thay đổi dữ liệu thật</strong> — hãy cẩn thận!</p>
+        <p style="color:var(--text-dim); font-size:0.85rem; margin-top:12px;">
+            <span class="kbd">←</span> <span class="kbd">→</span> <span class="kbd">Space</span> chuyển slide · <span class="kbd">M</span> mục lục
+        </p>
+    </div>
+
+    <!-- ═══ SLIDE 1: Mục tiêu ═══ -->
+    <div class="slide">
+        <h2>🎯 Mục Tiêu Tuần 9</h2>
+        <div class="slide-content">
+            <p style="font-size:1.05rem; margin-bottom:16px;">Từ <em>chỉ đọc</em> sang <strong>sửa, xóa, bảo vệ</strong> dữ liệu — như chuyển từ xem Excel sang sửa Excel.</p>
+            <div class="columns-2">
+                <div class="card excel">
+                    <h3>📊 Excel — Bạn đã biết</h3>
+                    <ul>
+                        <li>Sửa ô bất kỳ (Edit Cell)</li>
+                        <li>Delete Row / Clear All</li>
+                        <li>Ctrl+Z để Undo</li>
+                        <li>Named Range để đặt tên</li>
+                        <li>Import file CSV</li>
+                    </ul>
+                </div>
+                <div class="card pg">
+                    <h3>🐘 SQL — Bạn sắp học</h3>
+                    <ul>
+                        <li><code>UPDATE</code> — sửa dữ liệu</li>
+                        <li><code>DELETE</code> / <code>TRUNCATE</code> — xóa</li>
+                        <li><code>Transaction</code> — Undo/Redo</li>
+                        <li><code>VIEW</code> — đặt tên truy vấn</li>
+                        <li><code>COPY</code> — nhập CSV</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 2: Section 9.1 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">9.1</div>
+        <h1>UPDATE — Sửa Dữ Liệu</h1>
+        <p class="subtitle">Thay đổi giá trị trong các hàng hiện có — như sửa ô trong Excel</p>
+    </div>
+
+    <!-- ═══ SLIDE 3: UPDATE cú pháp ═══ -->
+    <div class="slide">
+        <h2>📝 Cú Pháp UPDATE</h2>
+        <div class="slide-content">
+            <pre>
+<span class="keyword">UPDATE</span> ten_bang
+<span class="keyword">SET</span>    cot1 <span class="op">=</span> gia_tri_moi,
+       cot2 <span class="op">=</span> gia_tri_moi
+<span class="keyword">WHERE</span>  dieu_kien;   <span class="comment">← QUAN TRỌNG — không có WHERE → SỬA TẤT CẢ!</span></pre>
+
+            <div class="card warning">
+                <p class="danger-big">⚠️ UPDATE KHÔNG CÓ WHERE = SỬA TOÀN BỘ BẢNG!</p>
+                <p style="text-align:center; font-size:0.9rem;">Không thể Ctrl+Z trong database! Dữ liệu mất là mất vĩnh viễn.</p>
+            </div>
+
+            <pre>
+<span class="comment">-- Ví dụ: Tăng lương 10% cho phòng IT</span>
+<span class="keyword">UPDATE</span> nhan_vien
+<span class="keyword">SET</span>    luong <span class="op">=</span> luong <span class="op">*</span> <span class="number">1.10</span>
+<span class="keyword">WHERE</span>  phong_ban <span class="op">=</span> <span class="string">'IT'</span>;</pre>
+
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> UPDATE giống chọn một vùng ô → sửa → Enter. Nhưng SQL sửa <strong>hàng loạt</strong> theo điều kiện WHERE.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 4: UPDATE nâng cao ═══ -->
+    <div class="slide">
+        <h2>🔧 UPDATE Nâng Cao — CASE WHEN & Subquery</h2>
+        <div class="slide-content">
+            <pre>
+<span class="comment">-- UPDATE với CASE WHEN: tăng lương theo mức khác nhau</span>
+<span class="keyword">UPDATE</span> nhan_vien
+<span class="keyword">SET</span> luong <span class="op">=</span> <span class="keyword">CASE</span>
+    <span class="keyword">WHEN</span> luong <span class="op">&lt;</span> <span class="number">15000000</span> <span class="keyword">THEN</span> luong <span class="op">*</span> <span class="number">1.15</span>    <span class="comment">-- +15%</span>
+    <span class="keyword">WHEN</span> luong <span class="op">&lt;</span> <span class="number">25000000</span> <span class="keyword">THEN</span> luong <span class="op">*</span> <span class="number">1.10</span>    <span class="comment">-- +10%</span>
+    <span class="keyword">ELSE</span>                        luong <span class="op">*</span> <span class="number">1.05</span>    <span class="comment">-- +5%</span>
+<span class="keyword">END</span>;</pre>
+            <pre>
+<span class="comment">-- UPDATE từ bảng khác (subquery)</span>
+<span class="keyword">UPDATE</span> san_pham
+<span class="keyword">SET</span> trang_thai <span class="op">=</span> <span class="string">'ban_chay'</span>
+<span class="keyword">WHERE</span> id <span class="keyword">IN</span> (
+    <span class="keyword">SELECT</span> san_pham_id
+    <span class="keyword">FROM</span> chi_tiet_don_hang
+    <span class="keyword">GROUP BY</span> san_pham_id
+    <span class="keyword">HAVING</span> <span class="func">SUM</span>(so_luong) <span class="op">&gt;</span> <span class="number">50</span>
+);</pre>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 5: Section 9.2 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">9.2</div>
+        <h1>DELETE — Xóa Dữ Liệu</h1>
+        <p class="subtitle">Xóa hàng theo điều kiện — CẨN THẬN NHẤT trong SQL</p>
+    </div>
+
+    <!-- ═══ SLIDE 6: DELETE cú pháp ═══ -->
+    <div class="slide">
+        <h2>📝 Cú Pháp DELETE</h2>
+        <div class="slide-content">
+            <pre>
+<span class="keyword">DELETE FROM</span> ten_bang
+<span class="keyword">WHERE</span> dieu_kien;  <span class="comment">← KHÔNG CÓ WHERE → XÓA TOÀN BỘ!</span></pre>
+            <div class="card warning">
+                <p class="danger-big">⚠️ DELETE KHÔNG CÓ WHERE = XÓA TOÀN BỘ DỮ LIỆU!</p>
+                <p style="text-align:center;">Khác với Excel — <strong>KHÔNG có thùng rác hay Ctrl+Z!</strong></p>
+            </div>
+            <pre>
+<span class="comment">-- Ví dụ: Xóa đơn hàng đã hủy</span>
+<span class="keyword">DELETE FROM</span> don_hang
+<span class="keyword">WHERE</span> trang_thai <span class="op">=</span> <span class="string">'da_huy'</span>;</pre>
+            <div class="card info">
+                <p>🔗 <strong>Thứ tự xóa quan trọng:</strong> Khi bảng có Foreign Key, phải xóa <strong>bảng con trước</strong>, bảng cha sau:</p>
+                <p style="font-family:'Fira Code',monospace; font-size:0.85rem; margin-top:6px;">
+                    <span style="color:var(--danger);">1.</span> DELETE FROM chi_tiet_don_hang WHERE don_hang_id = 5;<br>
+                    <span style="color:var(--danger);">2.</span> DELETE FROM don_hang WHERE id = 5; <span style="color:var(--text-dim);">← sau khi xóa con</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 7: Section 9.3 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">9.3</div>
+        <h1>Mẫu An Toàn</h1>
+        <p class="subtitle">Quy trình bắt buộc trước khi UPDATE hoặc DELETE</p>
+    </div>
+
+    <!-- ═══ SLIDE 8: Safety pattern ═══ -->
+    <div class="slide">
+        <h2>🛡️ Luôn SELECT Trước — Rồi Mới Sửa/Xóa</h2>
+        <div class="slide-content">
+            <div class="safety-flow">
+                <div class="safety-step safe"><div class="num">1</div><p style="font-size:0.85rem;">SELECT ... WHERE dk</p><p style="font-size:0.78rem;color:var(--text-dim);">Xem trước hàng bị ảnh hưởng</p></div>
+                <div class="safety-arrow">→</div>
+                <div class="safety-step safe"><div class="num">2</div><p style="font-size:0.85rem;">Kiểm tra kết quả</p><p style="font-size:0.78rem;color:var(--text-dim);">Đúng số lượng? Đúng dữ liệu?</p></div>
+                <div class="safety-arrow">→</div>
+                <div class="safety-step danger"><div class="num">3</div><p style="font-size:0.85rem;">UPDATE / DELETE</p><p style="font-size:0.78rem;color:var(--text-dim);">Dùng CÙNG WHERE</p></div>
+            </div>
+            <pre>
+<span class="comment">-- Bước 1: Xem trước — những hàng nào bị ảnh hưởng?</span>
+<span class="keyword">SELECT</span> <span class="op">*</span> <span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> phong_ban <span class="op">=</span> <span class="string">'IT'</span> <span class="keyword">AND</span> luong <span class="op">&lt;</span> <span class="number">15000000</span>;
+<span class="comment">-- → Thấy 3 hàng — đúng rồi!</span>
+
+<span class="comment">-- Bước 2: Giữ nguyên WHERE → thay SELECT thành UPDATE</span>
+<span class="keyword">UPDATE</span> nhan_vien
+<span class="keyword">SET</span>    luong <span class="op">=</span> luong <span class="op">*</span> <span class="number">1.15</span>
+<span class="keyword">WHERE</span> phong_ban <span class="op">=</span> <span class="string">'IT'</span> <span class="keyword">AND</span> luong <span class="op">&lt;</span> <span class="number">15000000</span>;</pre>
+            <div class="card tip">
+                <p>💡 <strong>Quy tắc vàng:</strong> Copy-paste điều kiện WHERE từ SELECT sang UPDATE/DELETE — <strong>KHÔNG gõ lại!</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 9: Section 9.4 ═══ -->
+    <div class="slide">
+        <h2>💣 TRUNCATE vs DELETE — Hai Cách Xóa Khác Nhau</h2>
+        <div class="slide-content">
+            <table>
+                <tr><th>Đặc điểm</th><th>DELETE</th><th>TRUNCATE</th></tr>
+                <tr><td>Cú pháp</td><td><code>DELETE FROM bang WHERE dk</code></td><td><code>TRUNCATE TABLE bang</code></td></tr>
+                <tr><td>Lọc hàng</td><td>✅ Có WHERE</td><td>❌ Không — xóa TẤT CẢ</td></tr>
+                <tr><td>Tốc độ</td><td>Chậm (xóa từng hàng)</td><td>⚡ Nhanh (xóa cả khối)</td></tr>
+                <tr><td>Transaction</td><td>✅ Có thể ROLLBACK</td><td>✅ Có thể ROLLBACK (PostgreSQL)</td></tr>
+                <tr><td>Reset Auto ID</td><td>❌ Không</td><td>✅ Reset SERIAL về 1</td></tr>
+                <tr><td>Trigger</td><td>✅ Chạy trigger</td><td>❌ Bỏ qua trigger</td></tr>
+            </table>
+            <div class="card warning">
+                <p>⚠️ <strong>CẢNH BÁO:</strong> TRUNCATE không cần WHERE — nó xóa <strong>MỌI THỨ</strong> trong bảng ngay lập tức. Chỉ dùng khi thật sự muốn reset bảng.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 10: Section 9.5 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">9.5</div>
+        <h1>Transaction — Undo Cho Database</h1>
+        <p class="subtitle">Gom nhiều thao tác thành MỘT — hoặc hoàn tất, hoặc hủy hết</p>
+    </div>
+
+    <!-- ═══ SLIDE 11: Ví dụ chuyển tiền ═══ -->
+    <div class="slide">
+        <h2>🏦 Ví Dụ: Chuyển Tiền Giữa Tài Khoản</h2>
+        <div class="slide-content">
+            <p style="margin-bottom:10px;">Chuyển 1 triệu từ tài khoản A sang B. Có <strong>2 thao tác</strong>:</p>
+            <div class="ba-grid">
+                <div class="ba-box before">
+                    <div class="label">❓ Không có Transaction</div>
+                    <p style="font-size:0.88rem;">1. Trừ tiền A ← thành công<br>2. Cộng tiền B ← <strong style="color:var(--danger);">LỖI MẠNG!</strong></p>
+                    <p style="font-size:0.85rem; color:var(--danger); margin-top:6px;">→ Mất 1 triệu! A bị trừ nhưng B không nhận.</p>
+                </div>
+                <div class="ba-box after">
+                    <div class="label">✅ Có Transaction</div>
+                    <p style="font-size:0.88rem;">BEGIN → Trừ A → Cộng B<br>Nếu lỗi → <strong style="color:var(--info);">ROLLBACK</strong> → về ban đầu</p>
+                    <p style="font-size:0.85rem; color:var(--success); margin-top:6px;">→ An toàn! Hoặc cả hai thành công, hoặc không gì thay đổi.</p>
+                </div>
+            </div>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> Transaction giống Ctrl+Z nhưng cho <strong>nhiều thao tác cùng lúc</strong> — undo hết hoặc giữ hết.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 12: BEGIN COMMIT ROLLBACK ═══ -->
+    <div class="slide">
+        <h2>📝 BEGIN / COMMIT / ROLLBACK</h2>
+        <div class="slide-content">
+            <div class="tx-flow">
+                <div class="tx-row begin"><span class="tx-label">BEGIN;</span><span class="tx-desc">Bắt đầu transaction — từ đây mọi thay đổi là "tạm"</span></div>
+                <div class="tx-row action"><span class="tx-label">UPDATE tai_khoan SET so_du = so_du - 1000000 WHERE id = 1;</span></div>
+                <div class="tx-row action"><span class="tx-label">UPDATE tai_khoan SET so_du = so_du + 1000000 WHERE id = 2;</span></div>
+                <div class="tx-row commit"><span class="tx-label">COMMIT;</span><span class="tx-desc">✅ Mọi thay đổi được LƯU vĩnh viễn</span></div>
+            </div>
+            <p style="text-align:center; color:var(--text-dim); font-size:0.88rem; margin: 8px 0;">— hoặc nếu có lỗi —</p>
+            <div class="tx-flow">
+                <div class="tx-row begin"><span class="tx-label">BEGIN;</span></div>
+                <div class="tx-row action"><span class="tx-label">UPDATE ... (trừ tiền A)</span></div>
+                <div class="tx-row action"><span class="tx-label">UPDATE ... (cộng tiền B) — LỖI!</span></div>
+                <div class="tx-row rollback"><span class="tx-label">ROLLBACK;</span><span class="tx-desc">❌ HỦY TẤT CẢ — quay về trạng thái trước BEGIN</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 13: SAVEPOINT ═══ -->
+    <div class="slide">
+        <h2>📌 SAVEPOINT — Điểm Lưu Trong Transaction</h2>
+        <div class="slide-content">
+            <p>Đặt "checkpoint" bên trong transaction — rollback một phần thay vì toàn bộ:</p>
+            <pre>
+<span class="keyword">BEGIN</span>;
+
+<span class="keyword">UPDATE</span> nhan_vien <span class="keyword">SET</span> luong <span class="op">=</span> luong <span class="op">*</span> <span class="number">1.1</span> <span class="keyword">WHERE</span> phong_ban <span class="op">=</span> <span class="string">'IT'</span>;
+<span class="keyword">SAVEPOINT</span> sau_tang_luong;    <span class="comment">← checkpoint!</span>
+
+<span class="keyword">DELETE FROM</span> nhan_vien <span class="keyword">WHERE</span> tinh_trang <span class="op">=</span> <span class="string">'nghi_viec'</span>;
+<span class="comment">-- Hmm, xóa nhầm! Quay lại checkpoint:</span>
+
+<span class="keyword">ROLLBACK TO</span> sau_tang_luong;  <span class="comment">← chỉ hủy DELETE, giữ UPDATE</span>
+
+<span class="keyword">COMMIT</span>;  <span class="comment">← lưu: tăng lương OK, xóa bị hủy</span></pre>
+            <div class="card tip">
+                <p>💡 Hãy dùng SAVEPOINT khi transaction có nhiều bước — nếu sai một bước, không cần hủy hết từ đầu.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 14: Section 9.7 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">9.7</div>
+        <h1>VIEW — Truy Vấn Có Tên</h1>
+        <p class="subtitle">Lưu câu SELECT phức tạp thành "bảng ảo" dùng lại nhiều lần</p>
+    </div>
+
+    <!-- ═══ SLIDE 15: VIEW ═══ -->
+    <div class="slide">
+        <h2>📝 Tạo & Sử Dụng VIEW</h2>
+        <div class="slide-content">
+            <pre>
+<span class="comment">-- Tạo VIEW — lưu câu query phức tạp</span>
+<span class="keyword">CREATE VIEW</span> v_bao_cao_khach <span class="keyword">AS</span>
+<span class="keyword">SELECT</span>
+    kh.ho_ten, kh.dien_thoai,
+    <span class="func">COUNT</span>(dh.id)          <span class="keyword">AS</span> so_don_hang,
+    <span class="func">COALESCE</span>(<span class="func">SUM</span>(dh.tong_tien), <span class="number">0</span>) <span class="keyword">AS</span> tong_chi_tieu
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">LEFT JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
+<span class="keyword">GROUP BY</span> kh.id, kh.ho_ten, kh.dien_thoai;
+
+<span class="comment">-- Dùng VIEW như một bảng bình thường!</span>
+<span class="keyword">SELECT</span> <span class="op">*</span> <span class="keyword">FROM</span> v_bao_cao_khach
+<span class="keyword">WHERE</span> tong_chi_tieu <span class="op">&gt;</span> <span class="number">10000000</span>
+<span class="keyword">ORDER BY</span> tong_chi_tieu <span class="keyword">DESC</span>;</pre>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> VIEW giống <strong>Named Range</strong> hoặc <strong>Pivot Table đã lưu</strong> — đặt tên cho một phép tính, dùng lại bất cứ lúc nào.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 16: Khi nào dùng VIEW ═══ -->
+    <div class="slide">
+        <h2>🤔 Khi Nào Dùng VIEW?</h2>
+        <div class="slide-content">
+            <div class="columns-2">
+                <div class="card" style="border-left:4px solid var(--success);">
+                    <h3>✅ Nên dùng VIEW</h3>
+                    <ul>
+                        <li>Báo cáo chạy lặp lại nhiều lần</li>
+                        <li>Query dài 10+ dòng, dùng ở nhiều nơi</li>
+                        <li>Ẩn logic phức tạp cho người dùng khác</li>
+                        <li>Giới hạn cột nhạy cảm (lương, CMND)</li>
+                    </ul>
+                </div>
+                <div class="card" style="border-left:4px solid var(--text-dim);">
+                    <h3>⏭️ Không cần VIEW</h3>
+                    <ul>
+                        <li>Query chỉ dùng 1 lần</li>
+                        <li>Query đơn giản 2-3 dòng</li>
+                        <li>Cần kết quả tức thì, không dùng lại</li>
+                    </ul>
+                </div>
+            </div>
+            <pre>
+<span class="comment">-- Quản lý VIEW</span>
+<span class="keyword">DROP VIEW IF EXISTS</span> v_bao_cao_khach;       <span class="comment">-- Xóa VIEW</span>
+<span class="keyword">CREATE OR REPLACE VIEW</span> v_ten <span class="keyword">AS</span> ...;      <span class="comment">-- Sửa VIEW</span></pre>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 17: Section 9.8 ═══ -->
+    <div class="slide">
+        <h2>🔧 ALTER TABLE — Sửa Cấu Trúc Bảng</h2>
+        <div class="slide-content">
+            <p>Khi cần thay đổi "thiết kế" bảng — thêm/xóa/sửa cột:</p>
+            <pre>
+<span class="comment">-- Thêm cột mới</span>
+<span class="keyword">ALTER TABLE</span> nhan_vien
+<span class="keyword">ADD COLUMN</span> email <span class="type">VARCHAR</span>(<span class="number">100</span>);
+
+<span class="comment">-- Đổi kiểu dữ liệu</span>
+<span class="keyword">ALTER TABLE</span> nhan_vien
+<span class="keyword">ALTER COLUMN</span> dien_thoai <span class="keyword">TYPE</span> <span class="type">VARCHAR</span>(<span class="number">15</span>);
+
+<span class="comment">-- Đặt giá trị mặc định</span>
+<span class="keyword">ALTER TABLE</span> nhan_vien
+<span class="keyword">ALTER COLUMN</span> tinh_trang <span class="keyword">SET DEFAULT</span> <span class="string">'dang_lam'</span>;
+
+<span class="comment">-- Xóa cột (CẨN THẬN — mất dữ liệu!)</span>
+<span class="keyword">ALTER TABLE</span> nhan_vien
+<span class="keyword">DROP COLUMN</span> ghi_chu;</pre>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> ALTER TABLE giống <strong>Insert Column / Delete Column</strong> + <strong>Format Cells</strong> — thay đổi cấu trúc bảng.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 18: Section 9.9 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">9.9</div>
+        <h1>Import CSV</h1>
+        <p class="subtitle">Đưa dữ liệu từ Excel/CSV vào PostgreSQL</p>
+    </div>
+
+    <!-- ═══ SLIDE 19: CSV Import ═══ -->
+    <div class="slide">
+        <h2>📥 Nhập Dữ Liệu Từ CSV</h2>
+        <div class="slide-content">
+            <div class="columns-2">
+                <div class="card" style="border-top:3px solid var(--info);">
+                    <h3>🖱️ Cách 1: DBeaver (GUI)</h3>
+                    <div class="step-list">
+                        <div class="step-item"><div class="step-num">1</div><div class="step-content"><p>Click phải bảng → Import Data</p></div></div>
+                        <div class="step-item"><div class="step-num">2</div><div class="step-content"><p>Chọn file CSV</p></div></div>
+                        <div class="step-item"><div class="step-num">3</div><div class="step-content"><p>Map cột → Preview → Import</p></div></div>
+                    </div>
+                </div>
+                <div class="card" style="border-top:3px solid var(--accent);">
+                    <h3>⌨️ Cách 2: Lệnh COPY (SQL)</h3>
+<pre style="font-size:0.8rem;">
+<span class="comment">-- Copy từ file CSV</span>
+<span class="keyword">COPY</span> nhan_vien(ho_ten, luong, phong_ban)
+<span class="keyword">FROM</span> <span class="string">'/path/to/file.csv'</span>
+<span class="keyword">WITH</span> (
+    <span class="type">FORMAT</span> csv,
+    <span class="type">HEADER</span> <span class="keyword">true</span>,
+    <span class="type">DELIMITER</span> <span class="string">','</span>,
+    <span class="type">ENCODING</span> <span class="string">'UTF8'</span>
+);</pre>
+                </div>
+            </div>
+            <div class="card tip">
+                <p>💡 <strong>Mẹo:</strong> Lưu file Excel thành CSV (UTF-8) trước khi import. Kiểm tra encoding nếu tiếng Việt bị lỗi font.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 20: Section Tổng kết ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">✓</div>
+        <h1>Tổng Kết Tuần 9</h1>
+        <p class="subtitle">Quản lý dữ liệu — sửa, xóa, bảo vệ, tổ chức</p>
+    </div>
+
+    <!-- ═══ SLIDE 21: Bảng tra cứu ═══ -->
+    <div class="slide">
+        <h2>📋 Bảng Tra Cứu Nhanh</h2>
+        <div class="slide-content">
+            <table style="font-size:0.83rem;">
+                <tr><th>Thao tác</th><th>SQL</th><th>Cảnh báo</th></tr>
+                <tr><td>Sửa dữ liệu</td><td><code>UPDATE bang SET cot = val WHERE dk</code></td><td style="color:var(--danger);">⚠️ Phải có WHERE</td></tr>
+                <tr><td>Xóa hàng</td><td><code>DELETE FROM bang WHERE dk</code></td><td style="color:var(--danger);">⚠️ Phải có WHERE</td></tr>
+                <tr><td>Xóa toàn bộ</td><td><code>TRUNCATE TABLE bang</code></td><td style="color:var(--danger);">⚠️ Reset cả ID</td></tr>
+                <tr><td>Bắt đầu giao dịch</td><td><code>BEGIN;</code></td><td>Kết thúc bằng COMMIT/ROLLBACK</td></tr>
+                <tr><td>Lưu giao dịch</td><td><code>COMMIT;</code></td><td>Không thể ROLLBACK sau đó</td></tr>
+                <tr><td>Hủy giao dịch</td><td><code>ROLLBACK;</code></td><td>Quay về trước BEGIN</td></tr>
+                <tr><td>Tạo VIEW</td><td><code>CREATE VIEW v_ten AS SELECT ...</code></td><td>Tiền tố v_ cho dễ nhận biết</td></tr>
+                <tr><td>Thêm cột</td><td><code>ALTER TABLE bang ADD COLUMN cot TYPE</code></td><td>—</td></tr>
+                <tr><td>Import CSV</td><td><code>COPY bang FROM 'file' WITH (...)</code></td><td>Kiểm tra encoding UTF8</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 22: Checklist an toàn ═══ -->
+    <div class="slide">
+        <h2>🛡️ Checklist An Toàn Khi Thay Đổi Dữ Liệu</h2>
+        <div class="slide-content">
+            <div class="step-list">
+                <div class="step-item"><div class="step-num" style="background:var(--danger);">1</div><div class="step-content"><h4>LUÔN chạy SELECT trước UPDATE/DELETE</h4><p>Xem trước hàng bị ảnh hưởng</p></div></div>
+                <div class="step-item"><div class="step-num" style="background:var(--danger);">2</div><div class="step-content"><h4>LUÔN có WHERE trong UPDATE/DELETE</h4><p>Không WHERE = sửa/xóa TOÀN BỘ</p></div></div>
+                <div class="step-item"><div class="step-num" style="background:var(--info);">3</div><div class="step-content"><h4>Dùng BEGIN/COMMIT cho thao tác quan trọng</h4><p>ROLLBACK nếu thấy sai</p></div></div>
+                <div class="step-item"><div class="step-num" style="background:var(--accent);">4</div><div class="step-content"><h4>Kiểm tra số hàng bị ảnh hưởng</h4><p>PostgreSQL báo "UPDATE 3" — đúng con số mong đợi?</p></div></div>
+                <div class="step-item"><div class="step-num" style="background:var(--success);">5</div><div class="step-content"><h4>Backup trước khi sửa hàng loạt</h4><p>Ít nhất SELECT ... INTO backup_table</p></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 23: Closing ═══ -->
+    <div class="slide title-slide">
+        <div class="week-badge" style="border-color:var(--success);color:var(--success);">TIẾP THEO</div>
+        <h1>Tuần 10: Dự Án Tổng Hợp</h1>
+        <p class="subtitle">Hệ thống quản lý quán cà phê — áp dụng tất cả đã học!</p>
+        <p style="color:var(--text-dim); margin-top: 20px;">Xây dựng database thực tế từ đầu đến cuối 🚀</p>
+    </div>
+
+</div>
+
+<!-- Nav bar -->
+<div class="nav-bar">
+    <div><button onclick="toggleTOC()">☰ Mục Lục</button></div>
+    <div class="page-info">
+        <span id="slideNum">1</span> / <span id="totalSlides">24</span>
+    </div>
+    <div class="controls">
+        <button onclick="prevSlide()" title="← Trước">◀ Trước</button>
+        <button onclick="nextSlide()" title="→ Tiếp">Tiếp ▶</button>
+    </div>
+</div>
+
+<script>
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    let current = 0;
+    document.getElementById('totalSlides').textContent = totalSlides;
+
+    function showSlide(n) {
+        slides[current].classList.remove('active');
+        current = Math.max(0, Math.min(n, totalSlides - 1));
+        slides[current].classList.add('active');
+        document.getElementById('slideNum').textContent = current + 1;
+        document.getElementById('progressBar').style.width =
+            ((current + 1) / totalSlides * 100) + '%';
+    }
+    function nextSlide() { showSlide(current + 1); }
+    function prevSlide() { showSlide(current - 1); }
+    function goSlide(n) { showSlide(n); closeTOC(); }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); nextSlide(); }
+        else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevSlide(); }
+        else if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+        else if (e.key === 'End') { e.preventDefault(); showSlide(totalSlides - 1); }
+        else if (e.key === 'm' || e.key === 'M') { toggleTOC(); }
+        else if (e.key === 'Escape') { closeTOC(); }
+    });
+
+    function toggleTOC() { document.getElementById('tocOverlay').classList.toggle('open'); }
+    function closeTOC() { document.getElementById('tocOverlay').classList.remove('open'); }
+    showSlide(0);
+</script>
+</body>
+</html>

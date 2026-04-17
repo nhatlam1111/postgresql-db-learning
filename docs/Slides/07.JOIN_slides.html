@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuần 7: Kết Nối Nhiều Bảng — JOIN — PostgreSQL</title>
+    <link rel="stylesheet" href="slides.css">
+    <style>
+        /* JOIN type visual boxes */
+        .join-visual { display: flex; gap: 0; align-items: center; justify-content: center; margin: 16px 0; }
+        .join-circle { width: 140px; height: 100px; border-radius: 50%; border: 3px solid; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+        .join-circle.left { border-color: var(--info); color: var(--info); margin-right: -30px; z-index: 1; }
+        .join-circle.right { border-color: var(--success); color: var(--success); margin-left: -30px; }
+        .join-circle.active-fill { background: rgba(249,168,37,0.15); border-color: var(--accent); color: var(--accent); }
+        .join-circle.dim { opacity: 0.3; }
+        .join-overlap { position: relative; z-index: 2; background: rgba(249,168,37,0.25); border-radius: 50%; width: 50px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 -25px; font-size: 0.75rem; color: var(--accent); font-weight: 700; }
+        /* Relationship arrows */
+        .rel-diagram { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 12px 0; font-family: 'Fira Code', monospace; font-size: 0.85rem; flex-wrap: wrap; }
+        .rel-box { background: var(--bg-card); border: 2px solid var(--primary-light); border-radius: 10px; padding: 10px 16px; text-align: center; min-width: 130px; }
+        .rel-box .tbl-name { color: var(--accent); font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+        .rel-box .col-list { color: var(--text-dim); font-size: 0.78rem; }
+        .rel-box .col-pk { color: var(--warning); font-weight: 600; }
+        .rel-box .col-fk { color: var(--info); font-weight: 600; }
+        .rel-arrow { color: var(--accent); font-size: 1.2rem; }
+        /* Error comparison */
+        .err-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 10px 0; }
+        .err-box { background: var(--bg-card); border-radius: 10px; padding: 14px 16px; border: 1px solid #334155; }
+        .err-box.bad { border-left: 4px solid var(--danger); }
+        .err-box.good { border-left: 4px solid var(--success); }
+        .err-box .label { font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; }
+        .err-box.bad .label { color: var(--danger); }
+        .err-box.good .label { color: var(--success); }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- TOC Overlay -->
+<div class="toc-overlay" id="tocOverlay" onclick="closeTOC()">
+    <div class="toc-panel" onclick="event.stopPropagation()">
+        <h3>📑 Mục Lục</h3>
+        <a href="#" class="section-header" onclick="goSlide(0)">Trang bìa</a>
+        <a href="#" onclick="goSlide(1)">Mục tiêu tuần 7</a>
+
+        <a href="#" class="section-header" onclick="goSlide(2)">7.1 Vấn Đề Dữ Liệu Lặp</a>
+        <a href="#" onclick="goSlide(3)">Hậu quả dữ liệu lặp</a>
+
+        <a href="#" class="section-header" onclick="goSlide(4)">7.2 Tách Bảng & Liên Kết</a>
+        <a href="#" onclick="goSlide(5)">Primary Key & Foreign Key</a>
+
+        <a href="#" class="section-header" onclick="goSlide(6)">7.3 INNER JOIN</a>
+        <a href="#" onclick="goSlide(7)">Cú pháp INNER JOIN</a>
+        <a href="#" onclick="goSlide(8)">Ví dụ INNER JOIN</a>
+        <a href="#" onclick="goSlide(9)">Table Alias</a>
+
+        <a href="#" class="section-header" onclick="goSlide(10)">7.4 LEFT JOIN</a>
+        <a href="#" onclick="goSlide(11)">Ví dụ LEFT JOIN</a>
+        <a href="#" onclick="goSlide(12)">Tìm hàng "mồ côi"</a>
+
+        <a href="#" class="section-header" onclick="goSlide(13)">7.5 RIGHT & FULL JOIN</a>
+        <a href="#" onclick="goSlide(14)">FULL JOIN</a>
+
+        <a href="#" class="section-header" onclick="goSlide(15)">7.6 Tổng Hợp 4 Loại JOIN</a>
+        <a href="#" onclick="goSlide(16)">Chọn JOIN nào?</a>
+
+        <a href="#" class="section-header" onclick="goSlide(17)">7.7 JOIN Nhiều Bảng</a>
+        <a href="#" onclick="goSlide(18)">Ví dụ JOIN 4 bảng</a>
+
+        <a href="#" class="section-header" onclick="goSlide(19)">7.8 JOIN + GROUP BY</a>
+        <a href="#" onclick="goSlide(20)">Top khách hàng</a>
+        <a href="#" onclick="goSlide(21)">Sản phẩm bán chạy</a>
+        <a href="#" onclick="goSlide(22)">ON vs WHERE trong LEFT JOIN</a>
+
+        <a href="#" class="section-header" onclick="goSlide(23)">7.9 Lỗi Hay Gặp</a>
+        <a href="#" onclick="goSlide(24)">Lỗi Cartesian Product</a>
+        <a href="#" onclick="goSlide(25)">Lỗi Ambiguous Column</a>
+        <a href="#" onclick="goSlide(26)">Lỗi NULL + LEFT JOIN</a>
+        <a href="#" onclick="goSlide(27)">Lỗi JOIN sai cột</a>
+
+        <a href="#" class="section-header" onclick="goSlide(28)">7.10 Thứ Tự Thực Thi</a>
+
+        <a href="#" class="section-header" onclick="goSlide(29)">Tổng Kết</a>
+        <a href="#" onclick="goSlide(30)">Bảng tra cứu nhanh</a>
+        <a href="#" onclick="goSlide(31)">Checklist</a>
+        <a href="#" onclick="goSlide(32)">Cầu nối tuần 8</a>
+    </div>
+</div>
+
+<div class="slide-deck" id="deck">
+
+    <!-- ═══ SLIDE 0: Title ═══ -->
+    <div class="slide title-slide active">
+        <div class="week-badge">TUẦN 7</div>
+        <h1>Kết Nối Nhiều Bảng — JOIN</h1>
+        <p class="subtitle">INNER JOIN · LEFT JOIN · RIGHT JOIN · FULL JOIN · Multi-table JOIN</p>
+        <p style="color:var(--text-dim); font-size:0.95rem;">⏱ Thời lượng: 4–5 giờ &nbsp;|&nbsp; Yêu cầu: Đã học SELECT, WHERE, GROUP BY</p>
+        <p style="color:var(--text-dim); font-size:0.85rem; margin-top:18px;">
+            Phím tắt: <span class="kbd">←</span> <span class="kbd">→</span> <span class="kbd">Space</span> chuyển slide · <span class="kbd">M</span> mục lục
+        </p>
+    </div>
+
+    <!-- ═══ SLIDE 1: Mục tiêu ═══ -->
+    <div class="slide">
+        <h2>🎯 Mục Tiêu Tuần 7</h2>
+        <div class="slide-content">
+            <p style="font-size:1.1rem; margin-bottom: 18px;">Sau tuần này, bạn có thể <strong>kết nối dữ liệu từ nhiều bảng</strong> — tương đương VLOOKUP/INDEX-MATCH trong Excel, nhưng mạnh hơn nhiều.</p>
+            <div class="columns-2">
+                <div class="card excel">
+                    <h3>📊 Excel — Bạn đã biết</h3>
+                    <ul>
+                        <li>VLOOKUP tra cứu dữ liệu</li>
+                        <li>INDEX-MATCH linh hoạt hơn</li>
+                        <li>Copy-paste giữa các sheet</li>
+                    </ul>
+                </div>
+                <div class="card pg">
+                    <h3>🐘 SQL — Bạn sắp học</h3>
+                    <ul>
+                        <li><code>INNER JOIN</code> — lấy hàng khớp cả hai</li>
+                        <li><code>LEFT JOIN</code> — lấy tất cả từ bảng trái</li>
+                        <li><code>JOIN</code> nhiều bảng cùng lúc</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 2: Section 7.1 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">7.1</div>
+        <h1>Vấn Đề Dữ Liệu Lặp Trong Excel</h1>
+        <p class="subtitle">Tại sao nhét mọi thứ vào một bảng lại gây rắc rối?</p>
+    </div>
+
+    <!-- ═══ SLIDE 3: Dữ liệu lặp ═══ -->
+    <div class="slide">
+        <h2>📋 Bảng Excel Bị Lặp Dữ Liệu</h2>
+        <div class="slide-content">
+            <div class="ui-diagram" style="font-size:0.78rem;">Bảng đơn hàng Excel — tất cả trong một sheet:
+┌──────┬──────────────────┬────────────┬──────────────────┬───────────────┬──────────┐
+│ DH#  │ Tên KH           │ SĐT KH     │ Địa chỉ KH       │ Ngày đặt      │ Tiền     │
+├──────┼──────────────────┼────────────┼──────────────────┼───────────────┼──────────┤
+│ DH01 │ <span class="ui-active">Trần Thị Mai</span>     │ 0901123456 │ 10 Nguyễn Huệ   │ 2024-01-05    │ 500,000  │
+│ DH02 │ Nguyễn Văn An    │ 0912234567 │ 25 Lê Lợi       │ 2024-01-12    │ 300,000  │
+│ DH03 │ <span class="ui-active">Trần Thị Mai</span>     │ 0901123456 │ 10 Nguyễn Huệ   │ 2024-01-20    │ 800,000  │  ← lặp!
+│ DH04 │ <span class="ui-active">Trần Thị Mai</span>     │ 0901123456 │ 10 Nguyễn Huệ   │ 2024-02-03    │ 150,000  │  ← lặp!
+│ DH05 │ Nguyễn Văn An    │ 0912234567 │ 25 Lê Lợi       │ 2024-02-10    │ 620,000  │  ← lặp!
+└──────┴──────────────────┴────────────┴──────────────────┴───────────────┴──────────┘</div>
+            <div class="card warning">
+                <p>⚠️ <strong>Hậu quả của dữ liệu lặp:</strong></p>
+                <ul>
+                    <li><strong>Sai dữ liệu:</strong> SĐT ghi khác nhau ở hai hàng</li>
+                    <li><strong>Sửa sót:</strong> Đổi địa chỉ nhưng chỉ sửa 2/3 hàng</li>
+                    <li><strong>File nặng:</strong> Thông tin dư thừa khắp nơi</li>
+                    <li><strong>Khó phân tích:</strong> Đếm khách riêng biệt phải xử lý thêm</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 4: Section 7.2 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">7.2</div>
+        <h1>Giải Pháp: Tách Bảng & Liên Kết</h1>
+        <p class="subtitle">Mỗi thông tin chỉ lưu MỘT lần — dùng mã số để nối lại</p>
+    </div>
+
+    <!-- ═══ SLIDE 5: PK & FK ═══ -->
+    <div class="slide">
+        <h2>🔑 Primary Key & Foreign Key</h2>
+        <div class="slide-content">
+            <p>Database tách dữ liệu lặp thành <strong>2 bảng riêng</strong>, nối bằng mã số:</p>
+            <div class="rel-diagram">
+                <div class="rel-box">
+                    <div class="tbl-name">khach_hang</div>
+                    <div class="col-list">
+                        <span class="col-pk">id ← PK</span><br>
+                        ho_ten<br>dien_thoai
+                    </div>
+                </div>
+                <div class="rel-arrow">1 ──────&lt; N</div>
+                <div class="rel-box">
+                    <div class="tbl-name">don_hang</div>
+                    <div class="col-list">
+                        id<br>
+                        <span class="col-fk">khach_hang_id ← FK</span><br>
+                        ngay_dat, tong_tien
+                    </div>
+                </div>
+            </div>
+            <div class="columns-2" style="margin-top:14px;">
+                <div class="card info">
+                    <p>🔑 <strong>Primary Key (Khóa chính)</strong></p>
+                    <p style="font-size:0.9rem;">Cột định danh <strong>duy nhất</strong> cho mỗi hàng. Không NULL, không trùng.</p>
+                </div>
+                <div class="card info">
+                    <p>🔗 <strong>Foreign Key (Khóa ngoại)</strong></p>
+                    <p style="font-size:0.9rem;">Cột tham chiếu đến PK bảng khác — là <strong>"cầu nối"</strong> giữa hai bảng.</p>
+                </div>
+            </div>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> PK giống cột <strong>Mã KH</strong> duy nhất. FK giống cột tra cứu trong VLOOKUP.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 6: Section 7.3 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">7.3</div>
+        <h1>INNER JOIN</h1>
+        <p class="subtitle">Lấy dữ liệu có ở CẢ HAI bảng — như VLOOKUP chỉ lấy hàng khớp</p>
+    </div>
+
+    <!-- ═══ SLIDE 7: INNER JOIN cú pháp ═══ -->
+    <div class="slide">
+        <h2>📝 Cú Pháp INNER JOIN</h2>
+        <div class="slide-content">
+            <div class="join-visual">
+                <div class="join-circle left dim">A</div>
+                <div class="join-overlap">A∩B</div>
+                <div class="join-circle right dim">B</div>
+            </div>
+            <p style="text-align:center; font-size:0.9rem; color:var(--text-dim); margin-bottom:12px;">Chỉ lấy phần <strong style="color:var(--accent);">giao nhau</strong> — hàng có khớp ở cả hai bảng</p>
+            <pre>
+<span class="keyword">SELECT</span>  bang1.cot, bang2.cot
+<span class="keyword">FROM</span>    bang1
+<span class="keyword">INNER JOIN</span> bang2
+    <span class="keyword">ON</span> bang1.khoa_ngoai <span class="op">=</span> bang2.khoa_chinh;
+
+<span class="comment">-- Có thể viết ngắn (bỏ INNER):</span>
+<span class="keyword">JOIN</span> bang2 <span class="keyword">ON</span> bang1.col <span class="op">=</span> bang2.col</pre>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> VLOOKUP chỉ trả kết quả khi tìm thấy — INNER JOIN hoạt động giống vậy.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 8: INNER JOIN ví dụ ═══ -->
+    <div class="slide">
+        <h2>💻 Ví Dụ: Đơn Hàng + Tên Khách</h2>
+        <div class="slide-content">
+            <pre>
+<span class="comment">-- Hiển thị đơn hàng kèm thông tin khách hàng</span>
+<span class="keyword">SELECT</span>
+    dh.ma_don_hang,
+    kh.ho_ten           <span class="keyword">AS</span> ten_khach,
+    kh.dien_thoai,
+    dh.ngay_dat,
+    dh.tong_tien
+<span class="keyword">FROM</span> don_hang dh
+<span class="keyword">INNER JOIN</span> khach_hang kh <span class="keyword">ON</span> dh.khach_hang_id <span class="op">=</span> kh.id
+<span class="keyword">ORDER BY</span> dh.ngay_dat <span class="keyword">DESC</span>;</pre>
+            <div class="ui-diagram" style="font-size:0.78rem;">Kết quả:
+┌─────────────┬──────────────────┬────────────┬────────────┬───────────┐
+│ ma_don_hang │ ten_khach        │ dien_thoai │ ngay_dat   │ tong_tien │
+├─────────────┼──────────────────┼────────────┼────────────┼───────────┤
+│ DH012       │ Nguyễn Văn An    │ 0912234567 │ 2024-04-18 │  11000000 │
+│ DH011       │ Trần Thị Mai     │ 0901123456 │ 2024-04-10 │  28000000 │
+└─────────────┴──────────────────┴────────────┴────────────┴───────────┘</div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 9: Table Alias ═══ -->
+    <div class="slide">
+        <h2>✍️ Table Alias — Viết Gọn Tên Bảng</h2>
+        <div class="slide-content">
+            <div class="compare">
+                <div>
+                    <h3>❌ Không alias (dài)</h3>
+<pre>
+<span class="keyword">FROM</span> don_hang
+<span class="keyword">JOIN</span> khach_hang
+  <span class="keyword">ON</span> don_hang.khach_hang_id
+    <span class="op">=</span> khach_hang.id
+<span class="keyword">SELECT</span> don_hang.ma_don,
+  khach_hang.ho_ten</pre>
+                </div>
+                <div>
+                    <h3>✅ Có alias (ngắn gọn)</h3>
+<pre>
+<span class="keyword">FROM</span> don_hang <span class="func">dh</span>
+<span class="keyword">JOIN</span> khach_hang <span class="func">kh</span>
+  <span class="keyword">ON</span> <span class="func">dh</span>.khach_hang_id
+    <span class="op">=</span> <span class="func">kh</span>.id
+<span class="keyword">SELECT</span> <span class="func">dh</span>.ma_don,
+  <span class="func">kh</span>.ho_ten</pre>
+                </div>
+            </div>
+            <div class="card tip">
+                <p>💡 <strong>Quy ước:</strong> Dùng 2-3 chữ cái đầu — <code>don_hang</code> → <code>dh</code>, <code>khach_hang</code> → <code>kh</code>, <code>nhan_vien</code> → <code>nv</code></p>
+            </div>
+            <div class="card warning">
+                <p>⚠️ <strong>Bắt buộc viết <code>bang.cot</code></strong> khi JOIN — vì nhiều bảng có cùng tên cột (ví dụ <code>id</code>). Nếu không → lỗi <em>"ambiguous"</em>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 10: Section 7.4 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">7.4</div>
+        <h1>LEFT JOIN</h1>
+        <p class="subtitle">Lấy TẤT CẢ từ bảng trái — dù không khớp cũng giữ lại</p>
+    </div>
+
+    <!-- ═══ SLIDE 11: LEFT JOIN ví dụ ═══ -->
+    <div class="slide">
+        <h2>📝 LEFT JOIN — Lấy Tất Cả Từ Bảng Trái</h2>
+        <div class="slide-content">
+            <div class="join-visual">
+                <div class="join-circle left active-fill">A</div>
+                <div class="join-overlap">A∩B</div>
+                <div class="join-circle right dim">B</div>
+            </div>
+            <p style="text-align:center; font-size:0.9rem; color:var(--text-dim); margin-bottom:10px;">Lấy <strong style="color:var(--accent);">toàn bộ A</strong> + phần khớp của B. Không khớp → <code>NULL</code></p>
+            <pre>
+<span class="keyword">SELECT</span> kh.ho_ten, dh.ma_don_hang, dh.tong_tien
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">LEFT JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id;</pre>
+            <div class="ui-diagram" style="font-size:0.78rem;">Kết quả:
+┌──────────────────┬─────────────┬───────────┐
+│ ho_ten           │ ma_don_hang │ tong_tien │
+├──────────────────┼─────────────┼───────────┤
+│ Trần Thị Mai     │ DH001       │   500000  │
+│ Trần Thị Mai     │ DH003       │   800000  │
+│ Nguyễn Văn An    │ DH002       │   300000  │
+│ <span class="ui-active">Lê Thị Bình</span>      │ <span class="ui-result">NULL</span>        │   <span class="ui-result">NULL</span>    │  ← chưa có đơn!
+└──────────────────┴─────────────┴───────────┘</div>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> LEFT JOIN giống <code>=IFERROR(VLOOKUP(...), "Không tìm thấy")</code> — hàng không khớp vẫn hiện, nhưng với NULL.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 12: LEFT JOIN IS NULL ═══ -->
+    <div class="slide">
+        <h2>🔍 Tìm Hàng "Mồ Côi" — LEFT JOIN + IS NULL</h2>
+        <div class="slide-content">
+            <p>Thủ thuật hay: tìm những hàng ở bảng trái <strong>không có</strong> ở bảng phải:</p>
+            <pre>
+<span class="comment">-- Tìm khách hàng CHƯA CÓ đơn hàng nào</span>
+<span class="keyword">SELECT</span> kh.ho_ten, kh.dien_thoai
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">LEFT JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
+<span class="keyword">WHERE</span> dh.id <span class="keyword">IS NULL</span>;
+<span class="comment">-- Nếu không khớp → tất cả cột bảng phải = NULL (kể cả dh.id)</span></pre>
+            <div class="diagram">
+                <div class="box">khach_hang (tất cả)</div>
+                <div class="arrow">LEFT JOIN</div>
+                <div class="box">don_hang</div>
+                <div class="arrow">WHERE dh.id IS NULL</div>
+                <div class="box success-box">Khách chưa mua</div>
+            </div>
+            <div class="card tip">
+                <p>💡 Đây là pattern <strong>cực kỳ phổ biến</strong> — dùng để tìm khách chưa mua, sản phẩm chưa bán, nhân viên chưa có đơn...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 13: Section 7.5 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">7.5</div>
+        <h1>RIGHT JOIN & FULL JOIN</h1>
+        <p class="subtitle">Hai loại JOIN bổ sung — ít dùng hơn nhưng cần biết</p>
+    </div>
+
+    <!-- ═══ SLIDE 14: RIGHT + FULL JOIN ═══ -->
+    <div class="slide">
+        <h2>↔️ RIGHT JOIN & FULL JOIN</h2>
+        <div class="slide-content">
+            <div class="columns-2">
+                <div class="card">
+                    <h3>RIGHT JOIN</h3>
+                    <div class="join-visual" style="margin:8px 0;">
+                        <div class="join-circle left dim" style="width:100px;height:70px;font-size:0.75rem;">A</div>
+                        <div class="join-overlap" style="width:35px;height:55px;font-size:0.65rem;">∩</div>
+                        <div class="join-circle right active-fill" style="width:100px;height:70px;font-size:0.75rem;">B</div>
+                    </div>
+                    <p style="font-size:0.88rem;">Ngược LEFT JOIN — lấy tất cả bảng <strong>phải</strong>.</p>
+                    <p style="font-size:0.82rem; color:var(--text-dim);">Ít dùng — viết lại thành LEFT JOIN bằng cách đổi thứ tự bảng.</p>
+                </div>
+                <div class="card">
+                    <h3>FULL JOIN</h3>
+                    <div class="join-visual" style="margin:8px 0;">
+                        <div class="join-circle left active-fill" style="width:100px;height:70px;font-size:0.75rem;">A</div>
+                        <div class="join-overlap" style="width:35px;height:55px;font-size:0.65rem;">∩</div>
+                        <div class="join-circle right active-fill" style="width:100px;height:70px;font-size:0.75rem;">B</div>
+                    </div>
+                    <p style="font-size:0.88rem;">Lấy <strong>tất cả từ cả hai</strong> — NULL nếu không khớp.</p>
+                    <p style="font-size:0.82rem; color:var(--text-dim);">Dùng khi cần bức tranh toàn cảnh.</p>
+                </div>
+            </div>
+<pre>
+<span class="comment">-- RIGHT JOIN (ít dùng)</span>
+<span class="keyword">SELECT</span> kh.ho_ten, dh.ma_don_hang
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">RIGHT JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id;
+
+<span class="comment">-- FULL JOIN — tất cả từ cả hai</span>
+<span class="keyword">SELECT</span> kh.ho_ten, dh.ma_don_hang
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">FULL JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id;</pre>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 15: Section 7.6 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">7.6</div>
+        <h1>Tổng Hợp 4 Loại JOIN</h1>
+        <p class="subtitle">Bức tranh toàn cảnh — khi nào dùng loại nào?</p>
+    </div>
+
+    <!-- ═══ SLIDE 16: Tổng hợp ═══ -->
+    <div class="slide">
+        <h2>🗺️ Bản Đồ 4 Loại JOIN</h2>
+        <div class="slide-content">
+            <table>
+                <tr><th>Loại JOIN</th><th>Lấy gì?</th><th>NULL khi?</th><th>Khi nào dùng?</th></tr>
+                <tr>
+                    <td><strong class="text-accent">INNER JOIN</strong></td>
+                    <td>Hàng khớp ở <strong>cả hai</strong></td>
+                    <td>Không có NULL</td>
+                    <td>Cần dữ liệu đầy đủ</td>
+                </tr>
+                <tr>
+                    <td><strong class="text-info">LEFT JOIN</strong></td>
+                    <td><strong>Tất cả</strong> bảng trái + khớp bảng phải</td>
+                    <td>Cột bảng phải = NULL</td>
+                    <td>Giữ tất cả bảng chính</td>
+                </tr>
+                <tr>
+                    <td><strong class="text-dim">RIGHT JOIN</strong></td>
+                    <td>Khớp bảng trái + <strong>tất cả</strong> bảng phải</td>
+                    <td>Cột bảng trái = NULL</td>
+                    <td>Dùng LEFT thay thế</td>
+                </tr>
+                <tr>
+                    <td><strong class="text-success">FULL JOIN</strong></td>
+                    <td><strong>Tất cả</strong> từ cả hai</td>
+                    <td>Cả hai phía</td>
+                    <td>Bức tranh toàn cảnh</td>
+                </tr>
+            </table>
+            <div class="card tip">
+                <p>💡 <strong>Thực tế:</strong> 90% trường hợp bạn chỉ cần <strong>INNER JOIN</strong> và <strong>LEFT JOIN</strong>. Thành thạo hai loại này là đủ cho hầu hết công việc.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 17: Section 7.7 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">7.7</div>
+        <h1>JOIN Nhiều Bảng</h1>
+        <p class="subtitle">Kết nối 3, 4 bảng cùng lúc — VLOOKUP lồng nhau phiên bản SQL</p>
+    </div>
+
+    <!-- ═══ SLIDE 18: JOIN nhiều bảng ═══ -->
+    <div class="slide">
+        <h2>🔗 Ví Dụ: JOIN 4 Bảng</h2>
+        <div class="slide-content">
+            <div class="rel-diagram" style="font-size:0.8rem;">
+                <div class="rel-box"><div class="tbl-name">khach_hang</div><div class="col-list"><span class="col-pk">id</span></div></div>
+                <div class="rel-arrow">──&lt;</div>
+                <div class="rel-box"><div class="tbl-name">don_hang</div><div class="col-list"><span class="col-fk">khach_hang_id</span><br><span class="col-pk">id</span></div></div>
+                <div class="rel-arrow">──&lt;</div>
+                <div class="rel-box"><div class="tbl-name">chi_tiet_don_hang</div><div class="col-list"><span class="col-fk">don_hang_id</span><br><span class="col-fk">san_pham_id</span></div></div>
+                <div class="rel-arrow">&gt;──</div>
+                <div class="rel-box"><div class="tbl-name">san_pham</div><div class="col-list"><span class="col-pk">id</span></div></div>
+            </div>
+            <pre style="font-size:0.82rem;">
+<span class="keyword">SELECT</span>
+    kh.ho_ten, dh.ma_don_hang, sp.ten_san_pham,
+    ct.so_luong, ct.don_gia,
+    ct.so_luong <span class="op">*</span> ct.don_gia <span class="keyword">AS</span> thanh_tien
+<span class="keyword">FROM</span> chi_tiet_don_hang ct
+<span class="keyword">JOIN</span> don_hang dh   <span class="keyword">ON</span> ct.don_hang_id <span class="op">=</span> dh.id
+<span class="keyword">JOIN</span> khach_hang kh <span class="keyword">ON</span> dh.khach_hang_id <span class="op">=</span> kh.id
+<span class="keyword">JOIN</span> san_pham sp   <span class="keyword">ON</span> ct.san_pham_id <span class="op">=</span> sp.id
+<span class="keyword">ORDER BY</span> dh.ngay_dat <span class="keyword">DESC</span>;</pre>
+            <div class="card tip">
+                <p>💡 <strong>Mẹo đọc:</strong> Đọc từ bảng trung tâm ra ngoài. <code>chi_tiet_don_hang</code> là trung tâm — nối ra 3 bảng xung quanh.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 19: Section 7.8 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">7.8</div>
+        <h1>JOIN + GROUP BY</h1>
+        <p class="subtitle">Combo mạnh nhất — tạo báo cáo từ nhiều bảng</p>
+    </div>
+
+    <!-- ═══ SLIDE 20: Top khách hàng ═══ -->
+    <div class="slide">
+        <h2>🏆 Ví Dụ: Top Khách Hàng</h2>
+        <div class="slide-content">
+            <pre>
+<span class="comment">-- Tổng chi tiêu của mỗi khách hàng</span>
+<span class="keyword">SELECT</span>
+    kh.ho_ten,
+    kh.dien_thoai,
+    <span class="func">COUNT</span>(dh.id)            <span class="keyword">AS</span> so_don_hang,
+    <span class="func">SUM</span>(dh.tong_tien)       <span class="keyword">AS</span> tong_chi_tieu
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">LEFT JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
+    <span class="keyword">AND</span> dh.trang_thai <span class="op">=</span> <span class="string">'hoan_thanh'</span>
+<span class="keyword">GROUP BY</span> kh.id, kh.ho_ten, kh.dien_thoai
+<span class="keyword">ORDER BY</span> tong_chi_tieu <span class="keyword">DESC NULLS LAST</span>;</pre>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> Giống tạo Pivot Table từ nhiều sheet — GROUP BY gom nhóm, SUM tính tổng, JOIN kết nối dữ liệu.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 21: Sản phẩm bán chạy ═══ -->
+    <div class="slide">
+        <h2>📦 Ví Dụ: Top Sản Phẩm Bán Chạy</h2>
+        <div class="slide-content">
+            <pre>
+<span class="comment">-- Top 5 sản phẩm bán chạy nhất (theo số lượng)</span>
+<span class="keyword">SELECT</span>
+    sp.ten_san_pham,
+    <span class="func">SUM</span>(ct.so_luong)                <span class="keyword">AS</span> tong_ban,
+    <span class="func">SUM</span>(ct.so_luong <span class="op">*</span> ct.don_gia)   <span class="keyword">AS</span> doanh_thu
+<span class="keyword">FROM</span> san_pham sp
+<span class="keyword">JOIN</span> chi_tiet_don_hang ct <span class="keyword">ON</span> sp.id <span class="op">=</span> ct.san_pham_id
+<span class="keyword">JOIN</span> don_hang dh          <span class="keyword">ON</span> ct.don_hang_id <span class="op">=</span> dh.id
+<span class="keyword">WHERE</span> dh.trang_thai <span class="op">=</span> <span class="string">'hoan_thanh'</span>
+<span class="keyword">GROUP BY</span> sp.id, sp.ten_san_pham
+<span class="keyword">ORDER BY</span> tong_ban <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> <span class="number">5</span>;</pre>
+            <div class="card tip">
+                <p>💡 <strong>Pattern:</strong> <code>JOIN</code> nhiều bảng → <code>WHERE</code> lọc → <code>GROUP BY</code> gom → <code>ORDER BY</code> + <code>LIMIT</code> lấy top. Đây là combo tạo báo cáo phổ biến nhất!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 22: ON vs WHERE ═══ -->
+    <div class="slide">
+        <h2>⚖️ Điều Kiện Trong ON vs WHERE</h2>
+        <div class="slide-content">
+            <p>Khi dùng LEFT JOIN, <strong>vị trí điều kiện</strong> ảnh hưởng kết quả:</p>
+            <div class="err-compare">
+                <div class="err-box good">
+                    <div class="label">✅ Điều kiện trong ON</div>
+<pre style="font-size:0.8rem;">
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">LEFT JOIN</span> don_hang dh
+  <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
+  <span class="keyword">AND</span> dh.trang_thai <span class="op">=</span> <span class="string">'hoan_thanh'</span>
+<span class="comment">-- Lọc TRƯỚC join</span>
+<span class="comment">-- Khách không đơn → vẫn hiện</span></pre>
+                </div>
+                <div class="err-box bad">
+                    <div class="label">❌ Điều kiện trong WHERE</div>
+<pre style="font-size:0.8rem;">
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">LEFT JOIN</span> don_hang dh
+  <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
+<span class="keyword">WHERE</span> dh.trang_thai <span class="op">=</span> <span class="string">'hoan_thanh'</span>
+<span class="comment">-- Lọc SAU join</span>
+<span class="comment">-- Khách không đơn → bị loại!</span></pre>
+                </div>
+            </div>
+            <div class="card warning">
+                <p>⚠️ <strong>CẢNH BÁO:</strong> WHERE trên cột bảng phải sẽ <strong>vô tình biến LEFT JOIN thành INNER JOIN</strong> — vì NULL bị loại bởi WHERE!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 23: Section 7.9 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">7.9</div>
+        <h1>Những Lỗi Hay Gặp</h1>
+        <p class="subtitle">4 lỗi phổ biến khi dùng JOIN — biết trước để tránh</p>
+    </div>
+
+    <!-- ═══ SLIDE 24: Lỗi 1 Cartesian ═══ -->
+    <div class="slide">
+        <h2>💥 Lỗi 1: Quên ON — Cartesian Product</h2>
+        <div class="slide-content">
+            <div class="err-compare">
+                <div class="err-box bad">
+                    <div class="label">❌ NGUY HIỂM — quên ON</div>
+<pre style="font-size:0.82rem;">
+<span class="keyword">SELECT</span> kh.ho_ten, dh.ma_don_hang
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">JOIN</span> don_hang dh;
+<span class="comment">-- 100 khách × 200 đơn = 20,000 hàng!</span></pre>
+                </div>
+                <div class="err-box good">
+                    <div class="label">✅ ĐÚNG — luôn có ON</div>
+<pre style="font-size:0.82rem;">
+<span class="keyword">SELECT</span> kh.ho_ten, dh.ma_don_hang
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">JOIN</span> don_hang dh
+  <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id;</pre>
+                </div>
+            </div>
+            <div class="card warning">
+                <p>⚠️ <strong>Dấu hiệu:</strong> Kết quả bất thường nhiều hàng → kiểm tra lại điều kiện ON ngay!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 25: Lỗi 2 Ambiguous ═══ -->
+    <div class="slide">
+        <h2>🔤 Lỗi 2: Tên Cột Mơ Hồ (Ambiguous)</h2>
+        <div class="slide-content">
+            <div class="err-compare">
+                <div class="err-box bad">
+                    <div class="label">❌ LỖI — cả hai bảng đều có "id"</div>
+<pre style="font-size:0.82rem;">
+<span class="keyword">SELECT</span> id, ho_ten, tong_tien
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">JOIN</span> don_hang dh
+  <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id;
+<span class="comment">-- ERROR: column "id" is ambiguous</span></pre>
+                </div>
+                <div class="err-box good">
+                    <div class="label">✅ ĐÚNG — chỉ rõ bảng</div>
+<pre style="font-size:0.82rem;">
+<span class="keyword">SELECT</span> <span class="func">kh</span>.id, <span class="func">kh</span>.ho_ten,
+       <span class="func">dh</span>.tong_tien
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">JOIN</span> don_hang dh
+  <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id;</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 26: Lỗi 3 NULL ═══ -->
+    <div class="slide">
+        <h2>🚫 Lỗi 3: WHERE Biến LEFT JOIN → INNER JOIN</h2>
+        <div class="slide-content">
+            <div class="err-compare">
+                <div class="err-box bad">
+                    <div class="label">❌ SAI — WHERE loại hàng NULL</div>
+<pre style="font-size:0.82rem;">
+<span class="keyword">SELECT</span> kh.ho_ten, dh.tong_tien
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">LEFT JOIN</span> don_hang dh
+  <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
+<span class="keyword">WHERE</span> dh.trang_thai <span class="op">=</span> <span class="string">'hoan_thanh'</span>;
+<span class="comment">-- NULL bị loại → mất khách chưa mua!</span></pre>
+                </div>
+                <div class="err-box good">
+                    <div class="label">✅ ĐÚNG — đặt trong ON</div>
+<pre style="font-size:0.82rem;">
+<span class="keyword">SELECT</span> kh.ho_ten, dh.tong_tien
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">LEFT JOIN</span> don_hang dh
+  <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
+  <span class="keyword">AND</span> dh.trang_thai <span class="op">=</span> <span class="string">'hoan_thanh'</span>;</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 27: Lỗi 4 sai cột ═══ -->
+    <div class="slide">
+        <h2>🎯 Lỗi 4: JOIN Sai Cột — Kết Quả Sai Âm Thầm</h2>
+        <div class="slide-content">
+            <div class="err-compare">
+                <div class="err-box bad">
+                    <div class="label">❌ SAI — JOIN nhầm cột</div>
+<pre style="font-size:0.82rem;">
+<span class="keyword">JOIN</span> don_hang dh
+  <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.id
+<span class="comment">-- JOIN id với id thay vì khach_hang_id</span>
+<span class="comment">-- Query chạy được nhưng KẾT QUẢ SAI!</span></pre>
+                </div>
+                <div class="err-box good">
+                    <div class="label">✅ ĐÚNG — FK → PK</div>
+<pre style="font-size:0.82rem;">
+<span class="keyword">JOIN</span> don_hang dh
+  <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
+<span class="comment">-- Nối khóa ngoại với khóa chính</span>
+<span class="comment">-- Logic đúng!</span></pre>
+                </div>
+            </div>
+            <div class="card warning">
+                <p>⚠️ <strong>CẢNH BÁO:</strong> Lỗi nguy hiểm nhất — query chạy không báo lỗi, kết quả <strong>trông hợp lý nhưng sai hoàn toàn</strong>. Luôn kiểm tra logic ON!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 28: Section 7.10 ═══ -->
+    <div class="slide">
+        <h2>⚙️ Thứ Tự Thực Thi Với JOIN</h2>
+        <div class="slide-content">
+            <p>JOIN được xử lý <strong>ngay sau FROM</strong>, trước tất cả mệnh đề khác:</p>
+            <div class="columns-2">
+                <div class="card">
+                    <h3>📝 Thứ tự VIẾT</h3>
+                    <ol>
+                        <li><code>SELECT</code></li>
+                        <li><code>FROM</code></li>
+                        <li><code>JOIN ... ON</code></li>
+                        <li><code>WHERE</code></li>
+                        <li><code>GROUP BY</code></li>
+                        <li><code>HAVING</code></li>
+                        <li><code>ORDER BY</code></li>
+                        <li><code>LIMIT</code></li>
+                    </ol>
+                </div>
+                <div class="card" style="border-left: 4px solid var(--accent);">
+                    <h3>⚙️ Thứ tự THỰC THI</h3>
+                    <ol>
+                        <li><strong class="text-accent">FROM</strong> bang</li>
+                        <li><strong class="text-accent">JOIN</strong> bang2 ON ...</li>
+                        <li><strong>WHERE</strong> dk</li>
+                        <li><strong>GROUP BY</strong> cot</li>
+                        <li><strong>HAVING</strong> dk</li>
+                        <li><strong>SELECT</strong> cot</li>
+                        <li><strong>ORDER BY</strong> cot</li>
+                        <li><strong>LIMIT</strong> n</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="card tip">
+                <p>💡 <strong>Hệ quả:</strong> Alias bảng (FROM/JOIN) dùng được ngay trong ON. Alias cột (SELECT) chỉ dùng trong ORDER BY.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 29: Section Tổng kết ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">✓</div>
+        <h1>Tổng Kết Tuần 7</h1>
+        <p class="subtitle">JOIN — Kỹ năng kết nối dữ liệu mạnh nhất của SQL</p>
+    </div>
+
+    <!-- ═══ SLIDE 30: Bảng tra cứu ═══ -->
+    <div class="slide">
+        <h2>📋 Bảng Tra Cứu Nhanh</h2>
+        <div class="slide-content">
+            <table>
+                <tr><th>Nhu cầu</th><th>SQL</th></tr>
+                <tr><td>Kết nối, chỉ hàng khớp</td><td><code>FROM a JOIN b ON a.id = b.a_id</code></td></tr>
+                <tr><td>Lấy tất cả bảng trái</td><td><code>FROM a LEFT JOIN b ON ...</code></td></tr>
+                <tr><td>Lấy tất cả bảng phải</td><td><code>FROM a RIGHT JOIN b ON ...</code></td></tr>
+                <tr><td>Lấy tất cả cả hai</td><td><code>FROM a FULL JOIN b ON ...</code></td></tr>
+                <tr><td>Tìm hàng mồ côi</td><td><code>LEFT JOIN ... WHERE b.id IS NULL</code></td></tr>
+                <tr><td>Viết gọn tên bảng</td><td><code>FROM don_hang dh</code> (alias)</td></tr>
+                <tr><td>Chỉ rõ bảng.cột</td><td><code>dh.ma_don_hang</code>, <code>kh.ho_ten</code></td></tr>
+                <tr><td>JOIN 3+ bảng</td><td>Nhiều lần <code>JOIN ... ON</code></td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 31: Checklist ═══ -->
+    <div class="slide">
+        <h2>✅ Checklist Tự Kiểm Tra</h2>
+        <div class="slide-content">
+            <div class="step-list">
+                <div class="step-item"><div class="step-num">□</div><div class="step-content"><h4>Giải thích tại sao cần tách dữ liệu thành nhiều bảng</h4></div></div>
+                <div class="step-item"><div class="step-num">□</div><div class="step-content"><h4>Phân biệt Primary Key và Foreign Key</h4></div></div>
+                <div class="step-item"><div class="step-num">□</div><div class="step-content"><h4>Viết INNER JOIN kết nối 2 bảng</h4></div></div>
+                <div class="step-item"><div class="step-num">□</div><div class="step-content"><h4>Dùng table alias viết gọn + bang.cot</h4></div></div>
+                <div class="step-item"><div class="step-num">□</div><div class="step-content"><h4>Viết LEFT JOIN và hiểu khác gì INNER JOIN</h4></div></div>
+                <div class="step-item"><div class="step-num">□</div><div class="step-content"><h4>Dùng LEFT JOIN + IS NULL tìm hàng mồ côi</h4></div></div>
+                <div class="step-item"><div class="step-num">□</div><div class="step-content"><h4>Kết nối 3+ bảng với nhiều JOIN</h4></div></div>
+                <div class="step-item"><div class="step-num">□</div><div class="step-content"><h4>Kết hợp JOIN + GROUP BY tạo báo cáo</h4></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 32: Closing ═══ -->
+    <div class="slide title-slide">
+        <div class="week-badge" style="border-color:var(--success);color:var(--success);">TIẾP THEO</div>
+        <h1>Tuần 8: Truy Vấn Nâng Cao</h1>
+        <p class="subtitle">Subquery · CASE WHEN · Hàm chuỗi & ngày tháng · COALESCE</p>
+        <p style="color:var(--text-dim); margin-top: 20px;">Từ "đọc dữ liệu" sang "phân tích dữ liệu" thực sự 🚀</p>
+    </div>
+
+</div>
+
+<!-- Nav bar -->
+<div class="nav-bar">
+    <div><button onclick="toggleTOC()">☰ Mục Lục</button></div>
+    <div class="page-info">
+        <span id="slideNum">1</span> / <span id="totalSlides">33</span>
+    </div>
+    <div class="controls">
+        <button onclick="prevSlide()" title="← Trước">◀ Trước</button>
+        <button onclick="nextSlide()" title="→ Tiếp">Tiếp ▶</button>
+    </div>
+</div>
+
+<script>
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    let current = 0;
+    document.getElementById('totalSlides').textContent = totalSlides;
+
+    function showSlide(n) {
+        slides[current].classList.remove('active');
+        current = Math.max(0, Math.min(n, totalSlides - 1));
+        slides[current].classList.add('active');
+        document.getElementById('slideNum').textContent = current + 1;
+        document.getElementById('progressBar').style.width =
+            ((current + 1) / totalSlides * 100) + '%';
+    }
+    function nextSlide() { showSlide(current + 1); }
+    function prevSlide() { showSlide(current - 1); }
+    function goSlide(n) { showSlide(n); closeTOC(); }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); nextSlide(); }
+        else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevSlide(); }
+        else if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+        else if (e.key === 'End') { e.preventDefault(); showSlide(totalSlides - 1); }
+        else if (e.key === 'm' || e.key === 'M') { toggleTOC(); }
+        else if (e.key === 'Escape') { closeTOC(); }
+    });
+
+    function toggleTOC() { document.getElementById('tocOverlay').classList.toggle('open'); }
+    function closeTOC() { document.getElementById('tocOverlay').classList.remove('open'); }
+    showSlide(0);
+</script>
+</body>
+</html>

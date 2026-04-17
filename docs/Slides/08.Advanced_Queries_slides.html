@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuần 8: Truy Vấn Nâng Cao — Subquery, CASE WHEN & Hàm — PostgreSQL</title>
+    <link rel="stylesheet" href="slides.css">
+    <style>
+        /* Subquery nesting visual */
+        .subq-visual { background: var(--bg-card); border: 2px solid var(--primary-light); border-radius: 14px; padding: 16px 20px; margin: 10px 0; }
+        .subq-inner { background: var(--bg-code); border: 2px dashed var(--accent); border-radius: 10px; padding: 12px 16px; margin: 8px 0; font-family: 'Fira Code', monospace; font-size: 0.85rem; color: #c9d1d9; }
+        .subq-label { font-size: 0.75rem; font-weight: 700; margin-bottom: 4px; }
+        .subq-label.outer { color: var(--primary-light); }
+        .subq-label.inner { color: var(--accent); }
+        /* CASE flow */
+        .case-flow { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
+        .case-row { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 8px; font-size: 0.9rem; }
+        .case-row.when { background: var(--bg-card); border: 1px solid #334155; }
+        .case-row.else { background: rgba(148,163,184,0.08); border: 1px solid #475569; }
+        .case-row .cond { color: var(--info); font-family: 'Fira Code', monospace; font-size: 0.82rem; min-width: 200px; }
+        .case-row .result { color: var(--success); font-weight: 600; margin-left: auto; }
+        .case-row .arrow { color: var(--accent); font-weight: 700; }
+        /* Function reference grid */
+        .func-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+        .func-card { background: var(--bg-card); border-radius: 10px; padding: 10px 14px; border: 1px solid #334155; }
+        .func-card .fn { font-family: 'Fira Code', monospace; color: #d2a8ff; font-weight: 600; font-size: 0.88rem; }
+        .func-card .xl { color: var(--excel-green); font-size: 0.78rem; font-weight: 600; }
+        .func-card .desc { color: var(--text-dim); font-size: 0.82rem; margin-top: 2px; }
+        /* Knowledge map */
+        .kmap { font-family: 'Fira Code', monospace; font-size: 0.82rem; line-height: 1.7; color: var(--text); white-space: pre-wrap; background: var(--bg-code); border-radius: 12px; padding: 16px 20px; border: 1px solid #30363d; margin: 10px 0; overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- TOC Overlay -->
+<div class="toc-overlay" id="tocOverlay" onclick="closeTOC()">
+    <div class="toc-panel" onclick="event.stopPropagation()">
+        <h3>📑 Mục Lục</h3>
+        <a href="#" class="section-header" onclick="goSlide(0)">Trang bìa</a>
+        <a href="#" onclick="goSlide(1)">Mục tiêu tuần 8</a>
+
+        <a href="#" class="section-header" onclick="goSlide(2)">8.1 Subquery cơ bản</a>
+        <a href="#" onclick="goSlide(3)">Ví dụ: Lương > trung bình</a>
+        <a href="#" onclick="goSlide(4)">Quy tắc cú pháp</a>
+
+        <a href="#" class="section-header" onclick="goSlide(5)">8.2 Subquery + IN / NOT IN</a>
+        <a href="#" onclick="goSlide(6)">⚠️ Bẫy NULL với NOT IN</a>
+
+        <a href="#" class="section-header" onclick="goSlide(7)">8.3 Subquery trong FROM</a>
+        <a href="#" onclick="goSlide(8)">Ví dụ: Phòng ban lương cao</a>
+
+        <a href="#" class="section-header" onclick="goSlide(9)">8.4 CASE WHEN</a>
+        <a href="#" onclick="goSlide(10)">Cú pháp CASE WHEN</a>
+        <a href="#" onclick="goSlide(11)">Ví dụ: Phân loại lương</a>
+
+        <a href="#" class="section-header" onclick="goSlide(12)">8.5 Simple CASE</a>
+
+        <a href="#" class="section-header" onclick="goSlide(13)">8.6 CASE WHEN + GROUP BY</a>
+        <a href="#" onclick="goSlide(14)">SUM(CASE WHEN) — Pivot ngang</a>
+
+        <a href="#" class="section-header" onclick="goSlide(15)">8.7 Hàm xử lý chuỗi</a>
+        <a href="#" onclick="goSlide(16)">Ví dụ chuỗi thực tế</a>
+
+        <a href="#" class="section-header" onclick="goSlide(17)">8.8 Hàm ngày tháng</a>
+        <a href="#" onclick="goSlide(18)">Ví dụ ngày tháng</a>
+        <a href="#" onclick="goSlide(19)">Thống kê theo tháng</a>
+
+        <a href="#" class="section-header" onclick="goSlide(20)">8.9 COALESCE</a>
+        <a href="#" onclick="goSlide(21)">Ứng dụng COALESCE</a>
+
+        <a href="#" class="section-header" onclick="goSlide(22)">Tổng Kết</a>
+        <a href="#" onclick="goSlide(23)">Bản đồ kiến thức</a>
+        <a href="#" onclick="goSlide(24)">So sánh Excel ↔ SQL</a>
+        <a href="#" onclick="goSlide(25)">Cầu nối tuần 9</a>
+    </div>
+</div>
+
+<div class="slide-deck" id="deck">
+
+    <!-- ═══ SLIDE 0: Title ═══ -->
+    <div class="slide title-slide active">
+        <div class="week-badge">TUẦN 8</div>
+        <h1>Truy Vấn Nâng Cao</h1>
+        <p class="subtitle">Subquery · CASE WHEN · Hàm Chuỗi · Hàm Ngày Tháng · COALESCE</p>
+        <p style="color:var(--text-dim); font-size:0.95rem;">⏱ Thời lượng: 4–5 giờ &nbsp;|&nbsp; Yêu cầu: Đã học JOIN, GROUP BY</p>
+        <p style="color:var(--text-dim); font-size:0.85rem; margin-top:18px;">
+            <span class="kbd">←</span> <span class="kbd">→</span> <span class="kbd">Space</span> chuyển slide · <span class="kbd">M</span> mục lục
+        </p>
+    </div>
+
+    <!-- ═══ SLIDE 1: Mục tiêu ═══ -->
+    <div class="slide">
+        <h2>🎯 Mục Tiêu Tuần 8</h2>
+        <div class="slide-content">
+            <p style="font-size:1.05rem; margin-bottom:16px;">Tuần này biến bạn từ <em>người đọc dữ liệu</em> thành <strong>người phân tích dữ liệu</strong>.</p>
+            <div class="columns-3">
+                <div class="card" style="border-top:3px solid var(--info);">
+                    <h3>🔍 Subquery</h3>
+                    <p style="font-size:0.88rem;">Truy vấn lồng nhau — hàm lồng hàm trong SQL</p>
+                </div>
+                <div class="card" style="border-top:3px solid var(--accent);">
+                    <h3>🔀 CASE WHEN</h3>
+                    <p style="font-size:0.88rem;">IF/IFS phiên bản SQL — phân loại dữ liệu</p>
+                </div>
+                <div class="card" style="border-top:3px solid var(--success);">
+                    <h3>🔧 Hàm xử lý</h3>
+                    <p style="font-size:0.88rem;">Chuỗi, ngày tháng, NULL — công cụ hàng ngày</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 2: Section 8.1 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">8.1</div>
+        <h1>Subquery — Truy Vấn Lồng Nhau</h1>
+        <p class="subtitle">Một câu SELECT nằm bên trong câu SELECT khác</p>
+    </div>
+
+    <!-- ═══ SLIDE 3: Subquery ví dụ ═══ -->
+    <div class="slide">
+        <h2>💡 Ví Dụ: Nhân Viên Lương Cao Hơn Trung Bình</h2>
+        <div class="slide-content">
+            <div class="subq-visual">
+                <div class="subq-label outer">Câu truy vấn ngoài (outer query):</div>
+                <p style="font-family:'Fira Code',monospace; font-size:0.88rem; margin-bottom:6px;">
+                    <span style="color:#ff7b72;">SELECT</span> ho_ten, luong <span style="color:#ff7b72;">FROM</span> nhan_vien <span style="color:#ff7b72;">WHERE</span> luong &gt;
+                </p>
+                <div class="subq-inner">
+                    <div class="subq-label inner">↳ Subquery (truy vấn con) — chạy TRƯỚC:</div>
+                    <span style="color:#ff7b72;">SELECT</span> <span style="color:#d2a8ff;">AVG</span>(luong) <span style="color:#ff7b72;">FROM</span> nhan_vien
+                    <span style="color:#8b949e;">→ Kết quả: 19,500,000</span>
+                </div>
+            </div>
+            <pre>
+<span class="comment">-- Viết gọn: lồng vào nhau</span>
+<span class="keyword">SELECT</span> ho_ten, luong
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> luong <span class="op">&gt;</span> (<span class="keyword">SELECT</span> <span class="func">AVG</span>(luong) <span class="keyword">FROM</span> nhan_vien);</pre>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> Giống hàm lồng <code>=AVERAGE(IF(...))</code> — tính giá trị bên trong trước, dùng kết quả cho công thức ngoài.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 4: Quy tắc ═══ -->
+    <div class="slide">
+        <h2>📝 Quy Tắc Cú Pháp Subquery</h2>
+        <div class="slide-content">
+            <pre>
+<span class="keyword">SELECT</span> cot1, cot2
+<span class="keyword">FROM</span> bang_ngoai
+<span class="keyword">WHERE</span> cot <span class="op">&gt;</span> (<span class="keyword">SELECT</span> <span class="func">ham_tong_hop</span>(cot) <span class="keyword">FROM</span> bang_trong);
+              <span class="comment">↑ subquery nằm trong dấu ngoặc đơn ()</span></pre>
+            <div class="step-list">
+                <div class="step-item"><div class="step-num">1</div><div class="step-content"><h4>Luôn nằm trong dấu ngoặc <code>()</code></h4></div></div>
+                <div class="step-item"><div class="step-num">2</div><div class="step-content"><h4>Dùng <code>=</code>, <code>&gt;</code>, <code>&lt;</code> → subquery phải trả về <strong>đúng 1 giá trị</strong> (scalar)</h4></div></div>
+                <div class="step-item"><div class="step-num">3</div><div class="step-content"><h4>Dùng <code>IN</code> → subquery có thể trả về <strong>nhiều giá trị</strong> (danh sách)</h4></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 5: Section 8.2 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">8.2</div>
+        <h1>Subquery + IN / NOT IN</h1>
+        <p class="subtitle">Lọc theo danh sách kết quả từ subquery</p>
+    </div>
+
+    <!-- ═══ SLIDE 6: IN + NOT IN ═══ -->
+    <div class="slide">
+        <h2>📋 IN & NOT IN — Lọc Theo Danh Sách</h2>
+        <div class="slide-content">
+            <div class="compare">
+                <div>
+                    <h3>✅ IN — "nằm trong danh sách"</h3>
+<pre style="font-size:0.82rem;">
+<span class="comment">-- Khách đã đặt hàng</span>
+<span class="keyword">SELECT</span> ho_ten
+<span class="keyword">FROM</span> khach_hang
+<span class="keyword">WHERE</span> id <span class="keyword">IN</span> (
+    <span class="keyword">SELECT DISTINCT</span> khach_hang_id
+    <span class="keyword">FROM</span> don_hang
+);</pre>
+                </div>
+                <div>
+                    <h3>🚫 NOT IN — "không nằm trong"</h3>
+<pre style="font-size:0.82rem;">
+<span class="comment">-- Khách CHƯA đặt hàng</span>
+<span class="keyword">SELECT</span> ho_ten
+<span class="keyword">FROM</span> khach_hang
+<span class="keyword">WHERE</span> id <span class="keyword">NOT IN</span> (
+    <span class="keyword">SELECT</span> khach_hang_id
+    <span class="keyword">FROM</span> don_hang
+    <span class="keyword">WHERE</span> khach_hang_id <span class="keyword">IS NOT NULL</span>
+);</pre>
+                </div>
+            </div>
+            <div class="card warning">
+                <p>⚠️ <strong>Bẫy NULL với NOT IN:</strong> Nếu subquery trả về bất kỳ giá trị NULL nào → NOT IN sẽ <strong>không trả kết quả nào cả!</strong></p>
+                <p style="font-size:0.88rem;">Giải pháp: Luôn thêm <code>WHERE cot IS NOT NULL</code> vào subquery khi dùng NOT IN.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 7: Section 8.3 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">8.3</div>
+        <h1>Subquery Trong FROM</h1>
+        <p class="subtitle">Tạo "bảng tạm" rồi truy vấn lên đó</p>
+    </div>
+
+    <!-- ═══ SLIDE 8: Subquery FROM ═══ -->
+    <div class="slide">
+        <h2>📦 Ví Dụ: Phòng Ban Lương Cao Hơn Trung Bình</h2>
+        <div class="slide-content">
+            <pre>
+<span class="keyword">SELECT</span> phong_ban, avg_luong
+<span class="keyword">FROM</span> (
+    <span class="comment">-- Subquery tạo "bảng tạm" gồm 2 cột</span>
+    <span class="keyword">SELECT</span> phong_ban, <span class="func">AVG</span>(luong) <span class="keyword">AS</span> avg_luong
+    <span class="keyword">FROM</span> nhan_vien
+    <span class="keyword">GROUP BY</span> phong_ban
+) <span class="keyword">AS</span> bang_luong_pb       <span class="comment">← bảng tạm PHẢI có alias</span>
+<span class="keyword">WHERE</span> avg_luong <span class="op">&gt;</span> (
+    <span class="keyword">SELECT</span> <span class="func">AVG</span>(luong) <span class="keyword">FROM</span> nhan_vien
+);</pre>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> Giống tính cột trung gian rồi dùng làm nguồn Pivot Table — bước 1 tính, bước 2 phân tích.</p>
+            </div>
+            <div class="card tip">
+                <p>💡 <strong>Quy tắc:</strong> Bảng tạm trong FROM <strong>bắt buộc</strong> có alias — viết <code>AS ten_bang</code> sau <code>)</code>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 9: Section 8.4 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">8.4</div>
+        <h1>CASE WHEN</h1>
+        <p class="subtitle">Câu lệnh IF của SQL — phân loại dữ liệu theo điều kiện</p>
+    </div>
+
+    <!-- ═══ SLIDE 10: CASE WHEN cú pháp ═══ -->
+    <div class="slide">
+        <h2>📝 Cú Pháp CASE WHEN</h2>
+        <div class="slide-content">
+            <div class="compare">
+                <div>
+                    <h3>📊 Excel</h3>
+                    <p style="font-family:'Fira Code',monospace; font-size:0.85rem; margin:8px 0;">
+                        =IFS(<br>
+                        &nbsp;&nbsp;B2&gt;20M, "Cao",<br>
+                        &nbsp;&nbsp;B2&gt;15M, "TB",<br>
+                        &nbsp;&nbsp;TRUE, "Thấp"<br>
+                        )
+                    </p>
+                </div>
+                <div>
+                    <h3>🐘 SQL</h3>
+<pre style="font-size:0.85rem;">
+<span class="keyword">CASE</span>
+  <span class="keyword">WHEN</span> luong <span class="op">&gt;</span> <span class="number">20000000</span> <span class="keyword">THEN</span> <span class="string">'Cao'</span>
+  <span class="keyword">WHEN</span> luong <span class="op">&gt;</span> <span class="number">15000000</span> <span class="keyword">THEN</span> <span class="string">'TB'</span>
+  <span class="keyword">ELSE</span> <span class="string">'Thấp'</span>
+<span class="keyword">END</span></pre>
+                </div>
+            </div>
+            <div class="case-flow">
+                <div class="case-row when"><span class="cond">WHEN luong &gt; 20M</span><span class="arrow">→</span><span class="result">'Cao'</span></div>
+                <div class="case-row when"><span class="cond">WHEN luong &gt; 15M</span><span class="arrow">→</span><span class="result">'Trung bình'</span></div>
+                <div class="case-row else"><span class="cond">ELSE (tất cả còn lại)</span><span class="arrow">→</span><span class="result">'Thấp'</span></div>
+            </div>
+            <div class="card tip">
+                <p>💡 SQL kiểm tra <strong>từ trên xuống dưới</strong> và dừng khi gặp điều kiện đúng đầu tiên — giống <code>IFS</code> trong Excel.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 11: CASE WHEN ví dụ ═══ -->
+    <div class="slide">
+        <h2>💻 Ví Dụ: Phân Loại Nhân Viên Theo Lương</h2>
+        <div class="slide-content">
+            <pre>
+<span class="keyword">SELECT</span>
+    ho_ten, luong,
+    <span class="keyword">CASE</span>
+        <span class="keyword">WHEN</span> luong <span class="op">&gt;=</span> <span class="number">25000000</span> <span class="keyword">THEN</span> <span class="string">'Cao'</span>
+        <span class="keyword">WHEN</span> luong <span class="op">&gt;=</span> <span class="number">18000000</span> <span class="keyword">THEN</span> <span class="string">'Trung bình'</span>
+        <span class="keyword">WHEN</span> luong <span class="op">&gt;=</span> <span class="number">12000000</span> <span class="keyword">THEN</span> <span class="string">'Thấp'</span>
+        <span class="keyword">ELSE</span>                        <span class="string">'Cần xem xét'</span>
+    <span class="keyword">END</span> <span class="keyword">AS</span> phan_loai_luong
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">ORDER BY</span> luong <span class="keyword">DESC</span>;</pre>
+            <div class="ui-diagram" style="font-size:0.78rem;">Kết quả:
+┌──────────────────┬──────────┬──────────────────┐
+│ ho_ten           │ luong    │ phan_loai_luong  │
+├──────────────────┼──────────┼──────────────────┤
+│ Phạm Minh Châu   │ 25000000 │ Cao              │
+│ Nguyễn Văn An    │ 22000000 │ Trung bình       │
+│ Trần Thị Mai     │ 15000000 │ Thấp             │
+│ Hoàng Thị Dung   │ 13000000 │ Thấp             │
+└──────────────────┴──────────┴──────────────────┘</div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 12: Section 8.5 Simple CASE ═══ -->
+    <div class="slide">
+        <h2>🔄 Simple CASE — So Sánh Bằng Một Giá Trị</h2>
+        <div class="slide-content">
+            <p>Khi chỉ cần so sánh <strong>bằng</strong> (=), có dạng ngắn gọn hơn:</p>
+            <div class="compare">
+                <div>
+                    <h3>Searched CASE (đầy đủ)</h3>
+<pre style="font-size:0.82rem;">
+<span class="keyword">CASE</span>
+  <span class="keyword">WHEN</span> phong_ban <span class="op">=</span> <span class="string">'IT'</span>     <span class="keyword">THEN</span> <span class="string">'Công nghệ'</span>
+  <span class="keyword">WHEN</span> phong_ban <span class="op">=</span> <span class="string">'Kế toán'</span> <span class="keyword">THEN</span> <span class="string">'Tài chính'</span>
+  <span class="keyword">ELSE</span> <span class="string">'Khác'</span>
+<span class="keyword">END</span></pre>
+                </div>
+                <div>
+                    <h3>Simple CASE (ngắn hơn)</h3>
+<pre style="font-size:0.82rem;">
+<span class="keyword">CASE</span> phong_ban
+  <span class="keyword">WHEN</span> <span class="string">'IT'</span>     <span class="keyword">THEN</span> <span class="string">'Công nghệ'</span>
+  <span class="keyword">WHEN</span> <span class="string">'Kế toán'</span> <span class="keyword">THEN</span> <span class="string">'Tài chính'</span>
+  <span class="keyword">ELSE</span> <span class="string">'Khác'</span>
+<span class="keyword">END</span></pre>
+                </div>
+            </div>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> Simple CASE giống <code>=SWITCH(F2, "IT","Công nghệ", "Kế toán","Tài chính", "Khác")</code></p>
+            </div>
+            <div class="card warning">
+                <p>⚠️ <strong>Hạn chế:</strong> Simple CASE chỉ so sánh <strong>bằng (=)</strong>. Cần <code>&gt;</code>, <code>&lt;</code>, <code>BETWEEN</code>, <code>LIKE</code> → phải dùng Searched CASE.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 13: Section 8.6 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">8.6</div>
+        <h1>CASE WHEN + GROUP BY</h1>
+        <p class="subtitle">Combo phân tích mạnh — Pivot Table phiên bản SQL</p>
+    </div>
+
+    <!-- ═══ SLIDE 14: SUM CASE WHEN ═══ -->
+    <div class="slide">
+        <h2>📊 SUM(CASE WHEN) — Pivot Ngang Trong SQL</h2>
+        <div class="slide-content">
+            <pre style="font-size:0.82rem;">
+<span class="comment">-- Đếm nhân viên mỗi phòng ban theo trạng thái</span>
+<span class="keyword">SELECT</span>
+    phong_ban,
+    <span class="func">COUNT</span>(<span class="op">*</span>)                                     <span class="keyword">AS</span> tong,
+    <span class="func">SUM</span>(<span class="keyword">CASE WHEN</span> tinh_trang <span class="op">=</span> <span class="string">'dang_lam'</span>  <span class="keyword">THEN</span> <span class="number">1</span> <span class="keyword">ELSE</span> <span class="number">0</span> <span class="keyword">END</span>) <span class="keyword">AS</span> dang_lam,
+    <span class="func">SUM</span>(<span class="keyword">CASE WHEN</span> tinh_trang <span class="op">=</span> <span class="string">'nghi_phep'</span> <span class="keyword">THEN</span> <span class="number">1</span> <span class="keyword">ELSE</span> <span class="number">0</span> <span class="keyword">END</span>) <span class="keyword">AS</span> nghi_phep,
+    <span class="func">SUM</span>(<span class="keyword">CASE WHEN</span> tinh_trang <span class="op">=</span> <span class="string">'nghi_viec'</span> <span class="keyword">THEN</span> <span class="number">1</span> <span class="keyword">ELSE</span> <span class="number">0</span> <span class="keyword">END</span>) <span class="keyword">AS</span> nghi_viec
+<span class="keyword">FROM</span> nhan_vien
+<span class="keyword">GROUP BY</span> phong_ban;</pre>
+            <div class="ui-diagram" style="font-size:0.78rem;">Kết quả (pivot ngang):
+┌────────────┬──────┬──────────┬───────────┬───────────┐
+│ phong_ban  │ tong │ dang_lam │ nghi_phep │ nghi_viec │
+├────────────┼──────┼──────────┼───────────┼───────────┤
+│ IT         │  3   │    3     │     0     │     0     │
+│ Kế toán    │  2   │    1     │     1     │     0     │
+│ Kinh doanh │  4   │    3     │     0     │     1     │
+└────────────┴──────┴──────────┴───────────┴───────────┘</div>
+            <div class="card tip">
+                <p>💡 <strong>Kỹ thuật <code>SUM(CASE WHEN ... THEN 1 ELSE 0 END)</code></strong> — cách tạo pivot ngang trong SQL. Rất hay dùng trong báo cáo!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 15: Section 8.7 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">8.7</div>
+        <h1>Hàm Xử Lý Chuỗi</h1>
+        <p class="subtitle">UPPER, LOWER, TRIM, SUBSTRING, CONCAT — làm sạch dữ liệu text</p>
+    </div>
+
+    <!-- ═══ SLIDE 16: String functions ═══ -->
+    <div class="slide">
+        <h2>🔤 Hàm Chuỗi Hay Dùng</h2>
+        <div class="slide-content">
+            <div class="func-grid">
+                <div class="func-card"><div class="fn">UPPER(cot)</div><div class="xl">Excel: =UPPER()</div><div class="desc">Viết hoa toàn bộ</div></div>
+                <div class="func-card"><div class="fn">LOWER(cot)</div><div class="xl">Excel: =LOWER()</div><div class="desc">Viết thường toàn bộ</div></div>
+                <div class="func-card"><div class="fn">TRIM(cot)</div><div class="xl">Excel: =TRIM()</div><div class="desc">Xóa khoảng trắng đầu/cuối</div></div>
+                <div class="func-card"><div class="fn">LENGTH(cot)</div><div class="xl">Excel: =LEN()</div><div class="desc">Đếm số ký tự</div></div>
+                <div class="func-card"><div class="fn">SUBSTRING(cot, start, len)</div><div class="xl">Excel: =MID()</div><div class="desc">Cắt chuỗi con</div></div>
+                <div class="func-card"><div class="fn">LEFT(cot, n) / RIGHT(cot, n)</div><div class="xl">Excel: =LEFT() =RIGHT()</div><div class="desc">Lấy n ký tự đầu/cuối</div></div>
+                <div class="func-card"><div class="fn">CONCAT(a, b) hoặc a || b</div><div class="xl">Excel: =A1 &amp; B1</div><div class="desc">Nối chuỗi</div></div>
+                <div class="func-card"><div class="fn">REPLACE(cot, old, new)</div><div class="xl">Excel: =SUBSTITUTE()</div><div class="desc">Thay thế chuỗi con</div></div>
+            </div>
+            <pre style="font-size:0.82rem;">
+<span class="comment">-- Tạo mã nhân viên: NV-001, NV-002...</span>
+<span class="keyword">SELECT</span> id, ho_ten,
+    <span class="string">'NV-'</span> <span class="op">||</span> <span class="func">LPAD</span>(id::<span class="type">TEXT</span>, <span class="number">3</span>, <span class="string">'0'</span>) <span class="keyword">AS</span> ma_nv
+<span class="keyword">FROM</span> nhan_vien;</pre>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 17: Section 8.8 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">8.8</div>
+        <h1>Hàm Xử Lý Ngày Tháng</h1>
+        <p class="subtitle">EXTRACT, AGE, DATE_TRUNC, TO_CHAR — công cụ báo cáo theo thời gian</p>
+    </div>
+
+    <!-- ═══ SLIDE 18: Date functions ═══ -->
+    <div class="slide">
+        <h2>📅 Hàm Ngày Tháng Hay Dùng</h2>
+        <div class="slide-content">
+            <div class="func-grid">
+                <div class="func-card"><div class="fn">CURRENT_DATE</div><div class="xl">Excel: =TODAY()</div><div class="desc">Ngày hôm nay</div></div>
+                <div class="func-card"><div class="fn">NOW()</div><div class="xl">Excel: =NOW()</div><div class="desc">Ngày + giờ hiện tại</div></div>
+                <div class="func-card"><div class="fn">EXTRACT(YEAR FROM cot)</div><div class="xl">Excel: =YEAR()</div><div class="desc">Lấy năm/tháng/ngày</div></div>
+                <div class="func-card"><div class="fn">AGE(date1, date2)</div><div class="xl">Excel: =DATEDIF()</div><div class="desc">Khoảng cách 2 ngày</div></div>
+                <div class="func-card"><div class="fn">DATE_TRUNC('month', cot)</div><div class="xl">(không có)</div><div class="desc">Cắt về đầu tháng/quý/năm</div></div>
+                <div class="func-card"><div class="fn">TO_CHAR(date, 'format')</div><div class="xl">Excel: =TEXT()</div><div class="desc">Định dạng ngày → chuỗi</div></div>
+            </div>
+            <pre style="font-size:0.82rem;">
+<span class="comment">-- Tính tuổi nhân viên</span>
+<span class="keyword">SELECT</span> ho_ten,
+    <span class="func">EXTRACT</span>(<span class="type">YEAR</span> <span class="keyword">FROM</span> <span class="func">AGE</span>(<span class="func">CURRENT_DATE</span>, ngay_sinh))::<span class="type">INTEGER</span> <span class="keyword">AS</span> tuoi
+<span class="keyword">FROM</span> nhan_vien <span class="keyword">ORDER BY</span> tuoi;</pre>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 19: Thống kê theo tháng ═══ -->
+    <div class="slide">
+        <h2>📈 Thống Kê Doanh Thu Theo Tháng</h2>
+        <div class="slide-content">
+            <pre>
+<span class="comment">-- Cách 1: EXTRACT — tách năm, tháng riêng</span>
+<span class="keyword">SELECT</span>
+    <span class="func">EXTRACT</span>(<span class="type">YEAR</span> <span class="keyword">FROM</span> ngay_dat)  <span class="keyword">AS</span> nam,
+    <span class="func">EXTRACT</span>(<span class="type">MONTH</span> <span class="keyword">FROM</span> ngay_dat) <span class="keyword">AS</span> thang,
+    <span class="func">COUNT</span>(<span class="op">*</span>)                     <span class="keyword">AS</span> so_don,
+    <span class="func">SUM</span>(tong_tien)               <span class="keyword">AS</span> doanh_thu
+<span class="keyword">FROM</span> don_hang
+<span class="keyword">GROUP BY</span> nam, thang <span class="keyword">ORDER BY</span> nam, thang;</pre>
+            <pre>
+<span class="comment">-- Cách 2: DATE_TRUNC — gọn hơn</span>
+<span class="keyword">SELECT</span>
+    <span class="func">DATE_TRUNC</span>(<span class="string">'month'</span>, ngay_dat) <span class="keyword">AS</span> dau_thang,
+    <span class="func">COUNT</span>(<span class="op">*</span>)                      <span class="keyword">AS</span> so_don,
+    <span class="func">SUM</span>(tong_tien)                <span class="keyword">AS</span> doanh_thu
+<span class="keyword">FROM</span> don_hang
+<span class="keyword">GROUP BY</span> <span class="func">DATE_TRUNC</span>(<span class="string">'month'</span>, ngay_dat)
+<span class="keyword">ORDER BY</span> dau_thang;</pre>
+            <div class="card tip">
+                <p>💡 <code>DATE_TRUNC('month', '2024-03-15')</code> → <code>'2024-03-01'</code> — cắt về ngày đầu tháng, rất tiện cho GROUP BY theo kỳ.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 20: Section 8.9 ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">8.9</div>
+        <h1>COALESCE — Xử Lý NULL</h1>
+        <p class="subtitle">Thay NULL bằng giá trị dự phòng — IFERROR phiên bản SQL</p>
+    </div>
+
+    <!-- ═══ SLIDE 21: COALESCE ═══ -->
+    <div class="slide">
+        <h2>🛡️ COALESCE — Lấy Giá Trị Đầu Tiên Không NULL</h2>
+        <div class="slide-content">
+            <pre>
+<span class="comment">-- Nếu email NULL → hiển thị 'Chưa có email'</span>
+<span class="keyword">SELECT</span> ho_ten,
+    <span class="func">COALESCE</span>(email, <span class="string">'Chưa có email'</span>) <span class="keyword">AS</span> email_hien_thi
+<span class="keyword">FROM</span> nhan_vien;</pre>
+            <div class="columns-2">
+                <div class="card">
+                    <h3>Tránh NULL trong phép tính</h3>
+<pre style="font-size:0.82rem;">
+<span class="keyword">SELECT</span> kh.ho_ten,
+    <span class="func">COALESCE</span>(<span class="func">SUM</span>(dh.tong_tien), <span class="number">0</span>) <span class="keyword">AS</span> tong
+<span class="keyword">FROM</span> khach_hang kh
+<span class="keyword">LEFT JOIN</span> don_hang dh <span class="keyword">ON</span> ...
+<span class="keyword">GROUP BY</span> kh.id, kh.ho_ten;</pre>
+                </div>
+                <div class="card">
+                    <h3>Ưu tiên giá trị</h3>
+<pre style="font-size:0.82rem;">
+<span class="comment">-- nickname trước, nếu NULL → ho_ten</span>
+<span class="keyword">SELECT</span>
+    <span class="func">COALESCE</span>(nickname, ho_ten)
+    <span class="keyword">AS</span> ten_hien_thi
+<span class="keyword">FROM</span> nhan_vien;</pre>
+                </div>
+            </div>
+            <div class="card excel">
+                <p>📊 <strong>Excel:</strong> COALESCE giống <code>=IFERROR(A1, "Mặc định")</code> hoặc <code>=IF(ISBLANK(A1), "Rỗng", A1)</code></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 22: Section Tổng kết ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">✓</div>
+        <h1>Tổng Kết Tuần 8</h1>
+        <p class="subtitle">Từ "đọc dữ liệu" thành "phân tích dữ liệu" thực sự</p>
+    </div>
+
+    <!-- ═══ SLIDE 23: Knowledge map ═══ -->
+    <div class="slide">
+        <h2>🗺️ Bản Đồ Kiến Thức Tuần 8</h2>
+        <div class="slide-content">
+            <div class="kmap">Tuần 8 — Truy Vấn Nâng Cao
+│
+├── <span style="color:var(--info);">SUBQUERY</span>
+│   ├── WHERE cot > (<span style="color:#ff7b72;">SELECT</span> ...)        ← lọc theo giá trị tính toán
+│   ├── WHERE id <span style="color:#ff7b72;">IN</span> (<span style="color:#ff7b72;">SELECT</span> ...)    ← lọc theo danh sách
+│   └── <span style="color:#ff7b72;">FROM</span> (<span style="color:#ff7b72;">SELECT</span> ...) <span style="color:#ff7b72;">AS</span> bang_tam ← bảng tạm thời
+│
+├── <span style="color:var(--accent);">CASE WHEN</span>
+│   ├── Searched: <span style="color:#ff7b72;">CASE WHEN</span> dk <span style="color:#ff7b72;">THEN</span> x  ← mọi điều kiện
+│   ├── Simple:   <span style="color:#ff7b72;">CASE</span> cot <span style="color:#ff7b72;">WHEN</span> val    ← chỉ so sánh =
+│   └── + GROUP BY: phân nhóm tính toán
+│
+├── <span style="color:var(--success);">HÀM CHUỖI</span>: TRIM, UPPER, LOWER, SUBSTRING, CONCAT
+├── <span style="color:var(--warning);">HÀM NGÀY</span>: EXTRACT, AGE, DATE_TRUNC, TO_CHAR
+└── <span style="color:#d2a8ff;">COALESCE</span>(cot, 'dự_phòng') ← thay NULL</div>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 24: Excel vs SQL ═══ -->
+    <div class="slide">
+        <h2>📊 So Sánh Excel ↔ SQL — Tuần 8</h2>
+        <div class="slide-content">
+            <table style="font-size:0.85rem;">
+                <tr><th>Bạn muốn làm gì?</th><th>Excel</th><th>SQL</th></tr>
+                <tr><td>Lọc theo giá trị tính toán</td><td><code>FILTER + AVERAGE</code></td><td><code>WHERE &gt; (SELECT AVG(...))</code></td></tr>
+                <tr><td>Kiểm tra trong danh sách</td><td><code>COUNTIF &gt; 0</code></td><td><code>WHERE id IN (SELECT ...)</code></td></tr>
+                <tr><td>Phân loại nhiều mức</td><td><code>=IFS()</code></td><td><code>CASE WHEN ... END</code></td></tr>
+                <tr><td>Đếm ký tự</td><td><code>=LEN()</code></td><td><code>LENGTH(cot)</code></td></tr>
+                <tr><td>Cắt chuỗi con</td><td><code>=MID()</code></td><td><code>SUBSTRING(cot, s, l)</code></td></tr>
+                <tr><td>Lấy năm/tháng</td><td><code>=YEAR()</code></td><td><code>EXTRACT(YEAR FROM cot)</code></td></tr>
+                <tr><td>Tính số năm</td><td><code>=DATEDIF()</code></td><td><code>EXTRACT(YEAR FROM AGE(...))</code></td></tr>
+                <tr><td>Xử lý ô trống</td><td><code>=IFERROR()</code></td><td><code>COALESCE(cot, 'mặc định')</code></td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 25: Closing ═══ -->
+    <div class="slide title-slide">
+        <div class="week-badge" style="border-color:var(--success);color:var(--success);">TIẾP THEO</div>
+        <h1>Tuần 9: Quản Lý Dữ Liệu</h1>
+        <p class="subtitle">UPDATE · DELETE · Transaction · VIEW · Import CSV</p>
+        <p style="color:var(--text-dim); margin-top: 20px;">Chuyển sang thay đổi dữ liệu thực — cẩn thận hơn! ⚠️</p>
+    </div>
+
+</div>
+
+<!-- Nav bar -->
+<div class="nav-bar">
+    <div><button onclick="toggleTOC()">☰ Mục Lục</button></div>
+    <div class="page-info">
+        <span id="slideNum">1</span> / <span id="totalSlides">26</span>
+    </div>
+    <div class="controls">
+        <button onclick="prevSlide()" title="← Trước">◀ Trước</button>
+        <button onclick="nextSlide()" title="→ Tiếp">Tiếp ▶</button>
+    </div>
+</div>
+
+<script>
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    let current = 0;
+    document.getElementById('totalSlides').textContent = totalSlides;
+
+    function showSlide(n) {
+        slides[current].classList.remove('active');
+        current = Math.max(0, Math.min(n, totalSlides - 1));
+        slides[current].classList.add('active');
+        document.getElementById('slideNum').textContent = current + 1;
+        document.getElementById('progressBar').style.width =
+            ((current + 1) / totalSlides * 100) + '%';
+    }
+    function nextSlide() { showSlide(current + 1); }
+    function prevSlide() { showSlide(current - 1); }
+    function goSlide(n) { showSlide(n); closeTOC(); }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); nextSlide(); }
+        else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevSlide(); }
+        else if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+        else if (e.key === 'End') { e.preventDefault(); showSlide(totalSlides - 1); }
+        else if (e.key === 'm' || e.key === 'M') { toggleTOC(); }
+        else if (e.key === 'Escape') { closeTOC(); }
+    });
+
+    function toggleTOC() { document.getElementById('tocOverlay').classList.toggle('open'); }
+    function closeTOC() { document.getElementById('tocOverlay').classList.remove('open'); }
+    showSlide(0);
+</script>
+</body>
+</html>

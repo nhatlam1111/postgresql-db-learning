@@ -19,6 +19,61 @@ docs/Slides/0X.TopicName_slides.html
 
 ---
 
+## Shared CSS File
+
+All slide decks share a single stylesheet:
+
+```
+docs/Slides/slides.css
+```
+
+Every slide HTML file **must** reference it with:
+
+```html
+<link rel="stylesheet" href="slides.css">
+```
+
+**Do NOT** copy-paste the full CSS into a `<style>` block — this was the old pattern and creates maintenance problems.
+
+If a slide file needs CSS that is genuinely unique to that file (e.g. a custom grid layout used only in one slide), add a small `<style>` block **after** the `<link>` tag:
+
+```html
+<link rel="stylesheet" href="slides.css">
+<style>
+    /* Only CSS used exclusively in THIS file */
+    .exec-flow { display: flex; flex-direction: column; gap: 6px; }
+</style>
+```
+
+### What is already in slides.css
+
+Everything listed in the Design System below is already in `slides.css`. Do not redeclare these in per-file `<style>` blocks:
+
+- CSS custom properties (`:root` variables)
+- Reset + body + typography (h1–h3, p, li)
+- `.slide-deck`, `.slide`, `.slide.active`
+- `.subtitle`, `.slide-content`
+- `pre`, `code`, syntax highlight spans (`.keyword` `.string` `.comment` `.type` `.number` `.func` `.op`)
+- `table`, `th`, `td`
+- `.card` and all variants: `.excel`, `.pg`, `.warning`, `.tip`, `.info`
+- `.compare`, `.columns-2`, `.columns-3`
+- `.badge` and badge variants
+- `.diagram`, `.box`, `.active-box`, `.success-box`, `.arrow`
+- `.step-list`, `.step-item`, `.step-num`, `.step-content`
+- `.ui-diagram` and all sub-classes
+- `.kbd`
+- `.filter-visual`, `.row-pass`, `.row-fail`, `.row-header`, `.row-dim`
+- `.highlight`
+- Text utilities: `.text-danger`, `.text-success`, `.text-warning`, `.text-info`, `.text-dim`, `.text-accent`, `.text-bright`
+- `.title-slide`, `.section-slide` and their sub-elements
+- `.nav-bar`, `.progress-bar`
+- `.toc-overlay`, `.toc-panel` and links
+- Responsive `@media (max-width: 900px)` base rules
+
+> **Critical rule:** Any element that displays ASCII art, table diagrams, or pre-formatted text MUST have `white-space: pre-wrap; overflow-x: auto;`. Both `.filter-visual` and `.ui-diagram` already have this in `slides.css`.
+
+---
+
 ## Design System
 
 ### Color Palette (CSS custom properties)
@@ -264,9 +319,11 @@ The full boilerplate for a new slide file:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tuần X: [Tên Bài] — PostgreSQL</title>
-    <style>
-        /* ── paste full CSS from design system ── */
-    </style>
+    <link rel="stylesheet" href="slides.css">
+    <!-- Only add <style> if this file has CSS unique to itself -->
+    <!-- <style>
+        .my-unique-class { ... }
+    </style> -->
 </head>
 <body>
 
@@ -348,16 +405,28 @@ The full boilerplate for a new slide file:
 
 ---
 
-## Reference: 03.Datatype_and_Table_slides.html
+## Reference Files
 
-The canonical example of a complete slide deck built with this skill:
-
+### Shared stylesheet
 ```
-docs/Slides/03.Datatype_and_Table_slides.html
+docs/Slides/slides.css
 ```
+The single source of truth for all shared styles. Read this before creating a new slide file.
 
-Consult it for:
-- Full CSS implementation
+### Canonical slide deck examples
+
+| File | Unique CSS | Notes |
+|---|---|---|
+| `01.Why_Database_slides.html` | `.story-card`, `.xl-db` | 29 slides |
+| `02.Setup_PostgreSQL_slides.html` | (none) | 28 slides, step-list heavy |
+| `03.Datatype_and_Table_slides.html` | (none) | ~27 slides, canonical example |
+| `04.SELECT_Basics_slides.html` | `.exec-flow` (horizontal) | 39 slides |
+| `05.Filter_Data_slides.html` | `.truth-grid`, `.order-flow`, `.step-label` | 37 slides |
+| `06.Aggregate_Functions_slides.html` | `.exec-flow` (vertical), `.agg-grid`, `.agg-box`, `.pivot-compare`, `.flow-col` | 38 slides |
+
+Consult `03.Datatype_and_Table_slides.html` for:
 - All component examples in context
 - TOC structure pattern
 - How to balance content across ~27 slides for a 4–5 hour lesson
+
+> Note: `.exec-flow` in file 04 (horizontal flex) and file 06 (vertical flex-direction:column) are intentionally different — they share a class name but have opposite layouts and must remain as per-file unique CSS.

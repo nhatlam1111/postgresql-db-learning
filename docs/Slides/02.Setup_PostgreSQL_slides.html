@@ -1,0 +1,1017 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuần 2: Cài Đặt PostgreSQL & DBeaver — PostgreSQL Learning</title>
+    <link rel="stylesheet" href="slides.css">
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- ══ TOC ══ -->
+<div class="toc-overlay" id="tocOverlay" onclick="closeTOC()">
+    <div class="toc-panel" onclick="event.stopPropagation()">
+        <h3>📑 Mục Lục — Tuần 2</h3>
+        <a href="#" onclick="goSlide(0);return false;">🏠 Trang bìa</a>
+        <a href="#" onclick="goSlide(1);return false;">🎯 Mục tiêu tuần này</a>
+        <a href="#" onclick="goSlide(2);return false;">📖 Từ lý thuyết sang thực tế</a>
+
+        <a class="section-header" href="#" onclick="goSlide(3);return false;">Phần 1 — Cài PostgreSQL</a>
+        <a href="#" onclick="goSlide(4);return false;">PostgreSQL là gì?</a>
+        <a href="#" onclick="goSlide(5);return false;">Bước 1–2: Tải & Cài</a>
+        <a href="#" onclick="goSlide(6);return false;">Bước 2: Chi tiết bảng cài đặt</a>
+        <a href="#" onclick="goSlide(7);return false;">⚠️ Mật khẩu postgres</a>
+        <a href="#" onclick="goSlide(8);return false;">Bước 3: Kiểm tra đang chạy</a>
+
+        <a class="section-header" href="#" onclick="goSlide(9);return false;">Phần 2 — Cài DBeaver</a>
+        <a href="#" onclick="goSlide(10);return false;">DBeaver là gì? — So sánh</a>
+        <a href="#" onclick="goSlide(11);return false;">Tải & Cài DBeaver</a>
+
+        <a class="section-header" href="#" onclick="goSlide(12);return false;">Phần 3 — Kết nối DBeaver</a>
+        <a href="#" onclick="goSlide(13);return false;">Các bước kết nối (1–3)</a>
+        <a href="#" onclick="goSlide(14);return false;">Bước 4–5: Test & hoàn thành</a>
+        <a href="#" onclick="goSlide(15);return false;">Xử lý lỗi thường gặp</a>
+
+        <a class="section-header" href="#" onclick="goSlide(16);return false;">Phần 4 — Giao diện DBeaver</a>
+        <a href="#" onclick="goSlide(17);return false;">4 khu vực chính</a>
+        <a href="#" onclick="goSlide(18);return false;">Phím tắt quan trọng</a>
+
+        <a class="section-header" href="#" onclick="goSlide(19);return false;">Phần 5 — Tạo Database</a>
+        <a href="#" onclick="goSlide(20);return false;">Tạo database hoc_sql</a>
+
+        <a class="section-header" href="#" onclick="goSlide(21);return false;">Phần 6 — SQL Đầu Tiên</a>
+        <a href="#" onclick="goSlide(22);return false;">Câu SQL đầu tiên — hệ thống</a>
+        <a href="#" onclick="goSlide(23);return false;">Tính toán & chuỗi</a>
+        <a href="#" onclick="goSlide(24);return false;">Tạo bảng & xem dữ liệu thật</a>
+
+        <a class="section-header" href="#" onclick="goSlide(25);return false;">📋 Tổng Kết</a>
+        <a href="#" onclick="goSlide(26);return false;">Checklist & Thuật ngữ mới</a>
+        <a href="#" onclick="goSlide(27);return false;">Excel ↔ DBeaver + Tuần 3</a>
+    </div>
+</div>
+
+<div class="slide-deck" id="deck">
+
+<!-- ═══ SLIDE 0: TITLE ═══ -->
+<div class="slide title-slide active">
+    <div class="week-badge">TUẦN 2</div>
+    <h1>Cài Đặt PostgreSQL &amp; DBeaver</h1>
+    <p class="subtitle">Cài đặt · Kết nối · Làm quen giao diện · Câu SQL đầu tiên</p>
+    <p style="color:var(--text-dim);margin-top:20px;font-size:1rem;">⏱ Thời lượng: 3–4 giờ &nbsp;|&nbsp; Yêu cầu: Windows có kết nối internet</p>
+    <p style="color:var(--text-dim);margin-top:12px;font-size:0.9rem;">← → Space &nbsp;điều hướng &nbsp;·&nbsp; M &nbsp;mục lục &nbsp;·&nbsp; Home/End &nbsp;đầu/cuối</p>
+</div>
+
+<!-- ═══ SLIDE 1: MỤC TIÊU ═══ -->
+<div class="slide">
+    <h2>🎯 Mục Tiêu Tuần 2</h2>
+    <div class="columns-2" style="margin-top:10px;">
+        <div class="step-list">
+            <div class="step-item">
+                <div class="step-num done">✅</div>
+                <div class="step-content">
+                    <h4>Cài được PostgreSQL</h4>
+                    <p>PostgreSQL Server chạy ngầm trên Windows</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-num done">✅</div>
+                <div class="step-content">
+                    <h4>Cài DBeaver & kết nối thành công</h4>
+                    <p>Thấy "Connected" khi test kết nối</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-num done">✅</div>
+                <div class="step-content">
+                    <h4>Biết dùng giao diện DBeaver</h4>
+                    <p>4 khu vực chính, điều hướng cơ bản</p>
+                </div>
+            </div>
+        </div>
+        <div class="step-list">
+            <div class="step-item">
+                <div class="step-num done">✅</div>
+                <div class="step-content">
+                    <h4>Tạo database <code>hoc_sql</code></h4>
+                    <p>Database riêng để học tất cả các tuần tiếp theo</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-num done">✅</div>
+                <div class="step-content">
+                    <h4>Chạy câu SQL đầu tiên</h4>
+                    <p>Thấy kết quả thật hiện ra trước mắt</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card info" style="margin-top:10px;">
+        <p>📌 Tuần này <strong>80% là thực hành</strong>, không có lý thuyết phức tạp. Mục tiêu là bạn tự tay làm được — không chỉ đọc hướng dẫn.</p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 2: MỞ ĐẦU ═══ -->
+<div class="slide">
+    <h2>📖 Từ Lý Thuyết Sang Thực Tế</h2>
+    <div class="card excel" style="margin-bottom:16px;">
+        <p>📊 <strong>Hãy nhớ lần đầu bạn học Excel:</strong> Trước khi gõ được <code>=SUM(A1:A10)</code>, bạn phải cài Excel, mở file, học cách click vào ô. Tuần này là bước đó với PostgreSQL.</p>
+    </div>
+    <div class="compare">
+        <div>
+            <h3>📚 Tuần 1 — Lý thuyết</h3>
+            <ul style="margin-top:8px;">
+                <li>Hiểu tại sao cần database</li>
+                <li>Database khác Excel ở chỗ nào</li>
+                <li>Đọc được câu SQL đơn giản</li>
+            </ul>
+            <p style="color:var(--text-dim);font-size:0.88rem;margin-top:10px;">👁 "Đọc về bơi"</p>
+        </div>
+        <div>
+            <h3>🏊 Tuần 2 — Thực tế</h3>
+            <ul style="margin-top:8px;">
+                <li>Cài đặt phần mềm thật</li>
+                <li>Tạo kết nối thật</li>
+                <li>Chạy SQL và thấy kết quả thật</li>
+            </ul>
+            <p style="color:var(--success);font-size:0.88rem;margin-top:10px;">🏊 "Nhảy xuống hồ bơi"</p>
+        </div>
+    </div>
+    <div class="card tip" style="margin-top:12px;">
+        <p>💡 Cuối tuần này bạn sẽ gõ câu SQL đầu tiên và thấy kết quả ngay trước mắt — đó là khoảnh khắc <strong>"Aha!"</strong> mà mọi người học SQL đều nhớ mãi.</p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 3: SECTION PHẦN 1 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">1</div>
+    <h1>Cài Đặt PostgreSQL</h1>
+    <p class="subtitle">Tải · Cài · Kiểm tra PostgreSQL chạy thành công</p>
+</div>
+
+<!-- ═══ SLIDE 4: POSTGRESQL LÀ GÌ ═══ -->
+<div class="slide">
+    <h2>PostgreSQL Là Gì? (Nhắc Lại Nhanh)</h2>
+    <div class="card pg" style="margin-bottom:14px;">
+        <p>🐘 PostgreSQL là <strong>phần mềm quản lý database</strong> — giống như Excel là phần mềm quản lý bảng tính. Bạn cần cài nó vào máy để máy tính "hiểu" và lưu trữ dữ liệu theo cách của database.</p>
+    </div>
+    <h3 style="margin-bottom:10px;">Bộ cài PostgreSQL gồm có:</h3>
+    <div class="columns-3">
+        <div class="card" style="text-align:center;padding:18px 14px;">
+            <div style="font-size:2rem;margin-bottom:8px;">⚙️</div>
+            <p style="font-weight:700;color:var(--text-bright);margin-bottom:6px;">PostgreSQL Server</p>
+            <p style="font-size:0.85rem;color:var(--text-dim);">"Engine" thật sự xử lý và lưu dữ liệu — chúng ta cần cái này</p>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 14px;">
+            <div style="font-size:2rem;margin-bottom:8px;">💻</div>
+            <p style="font-weight:700;color:var(--text-bright);margin-bottom:6px;">Command Line Tools</p>
+            <p style="font-size:0.85rem;color:var(--text-dim);">Công cụ dòng lệnh — sẽ dùng ít, không đáng lo</p>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 14px;opacity:0.5;">
+            <div style="font-size:2rem;margin-bottom:8px;">🚫</div>
+            <p style="font-weight:700;color:var(--text-bright);margin-bottom:6px;">pgAdmin</p>
+            <p style="font-size:0.85rem;color:var(--text-dim);">Giao diện đồ họa đi kèm — chúng ta dùng DBeaver thay thế (tốt hơn)</p>
+        </div>
+    </div>
+    <div class="card excel" style="margin-top:10px;">
+        <p>📊 <strong>Tương tự Excel:</strong> PostgreSQL = Excel engine (tính toán ngầm). DBeaver = giao diện Excel (ô, công thức, menu) mà bạn nhìn thấy và dùng hàng ngày.</p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 5: TẢI & CÀI BƯỚC 1-2 ═══ -->
+<div class="slide">
+    <h2>Bước 1 & 2 — Tải và Chạy Bộ Cài</h2>
+    <div class="columns-2">
+        <div>
+            <h3 style="margin-bottom:10px;">📥 Bước 1: Tải PostgreSQL</h3>
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Vào trang tải về</h4>
+                        <p><code>postgresql.org/download/windows/</code></p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Nhấn "Download the installer"</h4>
+                        <p>Do EnterpriseDB cung cấp</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Chọn phiên bản mới nhất</h4>
+                        <p>16.x hoặc 17.x, bản <strong>Windows x86-64</strong></p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h4>Tải về</h4>
+                        <p>File .exe, khoảng <strong>250–300 MB</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3 style="margin-bottom:10px;">⚙️ Bước 2: Chạy Bộ Cài</h3>
+            <p style="font-size:0.9rem;color:var(--text-dim);margin-bottom:10px;">Double-click file .exe — wizard sẽ dẫn từng bước:</p>
+            <div class="diagram" style="flex-direction:column;gap:6px;align-items:stretch;margin:0;">
+                <div class="card" style="padding:9px 14px;display:flex;align-items:center;gap:10px;">
+                    <span style="color:var(--success);font-weight:700;min-width:24px;">✓</span>
+                    <span style="font-size:0.88rem;">Setup → <strong>Next</strong></span>
+                </div>
+                <div class="card" style="padding:9px 14px;display:flex;align-items:center;gap:10px;">
+                    <span style="color:var(--success);font-weight:700;min-width:24px;">✓</span>
+                    <span style="font-size:0.88rem;">Installation Directory → giữ nguyên → <strong>Next</strong></span>
+                </div>
+                <div class="card" style="padding:9px 14px;display:flex;align-items:center;gap:10px;border-color:var(--warning);">
+                    <span style="color:var(--warning);font-weight:700;min-width:24px;">!</span>
+                    <span style="font-size:0.88rem;">Select Components → <strong>bỏ chọn pgAdmin 4</strong> → Next</span>
+                </div>
+                <div class="card" style="padding:9px 14px;display:flex;align-items:center;gap:10px;border-color:var(--danger);">
+                    <span style="color:var(--danger);font-weight:700;min-width:24px;">🔑</span>
+                    <span style="font-size:0.88rem;"><strong>Password</strong> — xem cảnh báo slide tiếp theo!</span>
+                </div>
+                <div class="card" style="padding:9px 14px;display:flex;align-items:center;gap:10px;">
+                    <span style="color:var(--success);font-weight:700;min-width:24px;">✓</span>
+                    <span style="font-size:0.88rem;">Port <strong>5432</strong> → Next → ... → <strong>Finish</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 6: CHI TIẾT BẢNG CÀI ═══ -->
+<div class="slide">
+    <h2>Chi Tiết Các Màn Hình Cài Đặt</h2>
+    <div class="slide-content">
+        <table>
+            <tr>
+                <th>Màn hình installer</th>
+                <th>Cần làm gì</th>
+            </tr>
+            <tr>
+                <td>"Setup - PostgreSQL"</td>
+                <td>Nhấn <strong>Next</strong></td>
+            </tr>
+            <tr>
+                <td>"Installation Directory"</td>
+                <td>Giữ nguyên mặc định → <strong>Next</strong></td>
+            </tr>
+            <tr>
+                <td>"Select Components"</td>
+                <td><span class="text-warning">⚠️ Bỏ chọn <strong>pgAdmin 4</strong></span> (không cần); giữ lại <em>PostgreSQL Server</em> và <em>Command Line Tools</em> → <strong>Next</strong></td>
+            </tr>
+            <tr>
+                <td>"Data Directory"</td>
+                <td>Giữ nguyên mặc định → <strong>Next</strong></td>
+            </tr>
+            <tr>
+                <td><strong style="color:var(--danger);">"Password"</strong></td>
+                <td><span class="text-danger">⚠️ Đặt mật khẩu — xem slide cảnh báo!</span></td>
+            </tr>
+            <tr>
+                <td>"Port"</td>
+                <td>Giữ nguyên <strong>5432</strong> → <strong>Next</strong></td>
+            </tr>
+            <tr>
+                <td>"Locale"</td>
+                <td>Giữ nguyên → <strong>Next</strong></td>
+            </tr>
+            <tr>
+                <td>"Completing the Setup Wizard"</td>
+                <td>Bỏ chọn "Launch Stack Builder at exit" → <strong>Finish</strong></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 7: CẢNH BÁO MẬT KHẨU ═══ -->
+<div class="slide">
+    <h2>🔑 Mật Khẩu Postgres — Quan Trọng Nhất!</h2>
+    <div class="card warning" style="margin-bottom:16px;">
+        <h3 style="color:var(--danger);margin-bottom:10px;">⚠️ CẢNH BÁO — ĐỌC KỸ TRƯỚC KHI ĐẶT MẬT KHẨU</h3>
+        <ul>
+            <li>Màn hình <em>"Password"</em> yêu cầu đặt mật khẩu cho tài khoản <code>postgres</code> — tài khoản <strong>quản trị chính</strong> của PostgreSQL</li>
+            <li><strong>Nếu quên mật khẩu:</strong> phải gỡ cài đặt hoàn toàn và cài lại — rất mất thời gian</li>
+            <li>Mật khẩu này <strong>không phải</strong> mật khẩu Windows của bạn — đây là mật khẩu riêng cho PostgreSQL</li>
+        </ul>
+    </div>
+    <div class="columns-2">
+        <div class="card tip">
+            <h3 style="margin-bottom:8px;">✅ Nên làm</h3>
+            <ul>
+                <li>Đặt mật khẩu <strong>đơn giản, dễ nhớ</strong><br>Ví dụ: <code>postgres123</code> hoặc <code>Admin@123</code></li>
+                <li><strong>Ghi ra giấy NGAY BÂY GIỜ</strong> — bạn cần nó khi kết nối DBeaver</li>
+            </ul>
+        </div>
+        <div class="card info" style="margin:0;">
+            <h3 style="margin-bottom:8px;">📌 Bạn sẽ dùng mật khẩu này ở đâu?</h3>
+            <div class="diagram" style="margin:0;flex-direction:column;gap:6px;align-items:stretch;">
+                <div style="background:var(--bg);border-radius:8px;padding:8px 12px;font-size:0.9rem;">
+                    1️⃣ Màn hình cài đặt PostgreSQL <em>hôm nay</em>
+                </div>
+                <div style="background:var(--bg);border-radius:8px;padding:8px 12px;font-size:0.9rem;">
+                    2️⃣ Điền vào ô <strong>Password</strong> khi kết nối DBeaver
+                </div>
+                <div style="background:var(--bg);border-radius:8px;padding:8px 12px;font-size:0.9rem;">
+                    3️⃣ Mỗi khi reset kết nối về sau
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 8: KIỂM TRA ĐANG CHẠY ═══ -->
+<div class="slide">
+    <h2>Bước 3 — Kiểm Tra PostgreSQL Đang Chạy</h2>
+    <p style="margin-bottom:14px;">PostgreSQL tự động khởi động như một <strong>dịch vụ nền (service)</strong> sau khi cài. Kiểm tra:</p>
+    <div class="columns-2">
+        <div>
+            <h3 style="margin-bottom:8px;">Cách 1: Task Manager</h3>
+            <div class="step-list" style="gap:6px;">
+                <div class="step-item" style="padding:9px 14px;">
+                    <div class="step-num" style="min-width:26px;height:26px;font-size:0.8rem;">1</div>
+                    <div class="step-content"><p><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Esc</span> → mở Task Manager</p></div>
+                </div>
+                <div class="step-item" style="padding:9px 14px;">
+                    <div class="step-num" style="min-width:26px;height:26px;font-size:0.8rem;">2</div>
+                    <div class="step-content"><p>Tab <strong>"Services"</strong></p></div>
+                </div>
+                <div class="step-item" style="padding:9px 14px;">
+                    <div class="step-num" style="min-width:26px;height:26px;font-size:0.8rem;">3</div>
+                    <div class="step-content"><p>Tìm <code>postgresql-x64-...</code> → Status: <span class="text-success"><strong>Running</strong></span></p></div>
+                </div>
+            </div>
+            <div class="card tip" style="margin-top:10px;">
+                <p>💡 <strong>Cách 2:</strong> <span class="kbd">Win</span> + <span class="kbd">R</span> → gõ <code>services.msc</code> → tìm <em>postgresql-x64-...</em> → phải là <span class="text-success">Running</span></p>
+            </div>
+        </div>
+        <div>
+            <div class="ui-diagram"><span class="ui-title">  Task Manager</span>
+<span class="ui-dim">  ┌──────────────────────────────────────────┐</span>
+<span class="ui-dim">  │ Processes  Performance  App history  </span><span class="ui-active">Services</span>  <span class="ui-dim">│</span>
+<span class="ui-dim">  ├──────────────────────────────────────────┤</span>
+<span class="ui-dim">  │  Name                      Status        │</span>
+<span class="ui-dim">  │  ...                       ...           │</span>
+<span class="ui-nav">  │  postgresql-x64-16         Running  ✅   │</span>
+<span class="ui-dim">  │  ...                                     │</span>
+<span class="ui-dim">  └──────────────────────────────────────────┘</span>
+<span class="ui-active">  Thấy "Running" → PostgreSQL đang chạy tốt!</span></div>
+            <div class="card warning" style="margin-top:10px;">
+                <p>⚠️ <strong>Nếu không thấy "Running":</strong> Click phải vào dịch vụ → "Start". Nếu vẫn không được, thử khởi động lại máy tính.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 9: SECTION PHẦN 2 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">2</div>
+    <h1>Cài Đặt DBeaver</h1>
+    <p class="subtitle">Giao diện đồ họa để giao tiếp với PostgreSQL</p>
+</div>
+
+<!-- ═══ SLIDE 10: DBEAVER LÀ GÌ ═══ -->
+<div class="slide">
+    <h2>DBeaver Là Gì? — Phép So Sánh</h2>
+    <div class="card excel" style="margin-bottom:16px;">
+        <p>📊 <strong>Phép so sánh Excel:</strong></p>
+        <div class="diagram" style="margin-top:10px;margin-bottom:0;">
+            <div class="box"><p style="font-size:0.85rem;font-weight:600;">Excel engine</p><p style="font-size:0.78rem;color:var(--text-dim);">(tính toán ngầm)</p></div>
+            <div class="arrow">+</div>
+            <div class="box"><p style="font-size:0.85rem;font-weight:600;">Giao diện Excel</p><p style="font-size:0.78rem;color:var(--text-dim);">(ô, công thức, menu)</p></div>
+            <div class="arrow">=</div>
+            <div class="box active-box"><p style="font-size:0.85rem;font-weight:600;">Excel bạn dùng</p></div>
+        </div>
+    </div>
+    <div class="card pg" style="margin-bottom:16px;">
+        <p>🐘 <strong>Với PostgreSQL:</strong></p>
+        <div class="diagram" style="margin-top:10px;margin-bottom:0;">
+            <div class="box"><p style="font-size:0.85rem;font-weight:600;">PostgreSQL</p><p style="font-size:0.78rem;color:var(--text-dim);">(xử lý dữ liệu)</p></div>
+            <div class="arrow">+</div>
+            <div class="box"><p style="font-size:0.85rem;font-weight:600;">DBeaver</p><p style="font-size:0.78rem;color:var(--text-dim);">(giao diện click chuột)</p></div>
+            <div class="arrow">=</div>
+            <div class="box active-box"><p style="font-size:0.85rem;font-weight:600;">Công cụ để học SQL</p></div>
+        </div>
+    </div>
+    <div class="columns-2">
+        <div class="card warning">
+            <p>⚠️ <strong>Không có DBeaver:</strong> phải gõ lệnh trong cửa sổ đen (terminal) — rất không thân thiện với người mới.</p>
+        </div>
+        <div class="card tip">
+            <p>✅ <strong>Với DBeaver:</strong> giao diện click chuột, viết SQL trong editor có màu sắc, thấy kết quả dạng bảng đẹp — giống Excel.</p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 11: TẢI & CÀI DBEAVER ═══ -->
+<div class="slide">
+    <h2>Tải &amp; Cài DBeaver Community</h2>
+    <div class="columns-2">
+        <div>
+            <h3 style="margin-bottom:10px;">📥 Tải về</h3>
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Vào trang tải</h4>
+                        <p><code>dbeaver.io/download/</code></p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Chọn "DBeaver Community"</h4>
+                        <p><strong>Hoàn toàn miễn phí</strong> — không cần trả tiền</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Chọn "Windows (Installer)"</h4>
+                        <p>File .exe, khoảng <strong>100 MB</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3 style="margin-bottom:10px;">⚙️ Cài đặt</h3>
+            <div class="card tip" style="margin-bottom:10px;">
+                <p>✅ Cài đặt đơn giản như mọi phần mềm Windows:<br>
+                <strong>Next → I Agree → Next → Next → Install → Finish</strong><br>
+                Không có cài đặt đặc biệt nào cần thay đổi.</p>
+            </div>
+            <h3 style="margin-bottom:8px;">🔧 Mở DBeaver lần đầu</h3>
+            <p style="font-size:0.9rem;margin-bottom:8px;">Có thể xuất hiện 2 câu hỏi:</p>
+            <div class="card" style="padding:10px 14px;margin-bottom:6px;">
+                <p style="font-size:0.88rem;"><strong>"Create sample database?"</strong> → Nhấn <span class="text-danger"><strong>No</strong></span></p>
+                <p style="font-size:0.82rem;color:var(--text-dim);">(chúng ta sẽ kết nối PostgreSQL thật)</p>
+            </div>
+            <div class="card" style="padding:10px 14px;">
+                <p style="font-size:0.88rem;"><strong>"Would you like to update DBeaver?"</strong> → Nhấn <span class="text-warning"><strong>Later</strong></span></p>
+                <p style="font-size:0.82rem;color:var(--text-dim);">(cập nhật sau)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 12: SECTION PHẦN 3 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">3</div>
+    <h1>Kết Nối DBeaver Với PostgreSQL</h1>
+    <p class="subtitle">"Giới thiệu" DBeaver với PostgreSQL — bước quan trọng nhất!</p>
+</div>
+
+<!-- ═══ SLIDE 13: KẾT NỐI BƯỚC 1-3 ═══ -->
+<div class="slide">
+    <h2>Tạo Kết Nối — Bước 1, 2, 3</h2>
+    <div class="card excel" style="margin-bottom:12px;">
+        <p>📊 <strong>Phép so sánh:</strong> Giống khi bạn mở Excel và mở file .xlsx — DBeaver là Excel, PostgreSQL là file .xlsx. Bước này là thao tác <em>"File → Open"</em>.</p>
+    </div>
+    <div class="columns-2">
+        <div>
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Tạo kết nối mới</h4>
+                        <p>Nhấn biểu tượng <strong>🔌+</strong> trên toolbar<br><em>hoặc</em> Menu <strong>Database</strong> → "New Database Connection"</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Chọn PostgreSQL</h4>
+                        <p>Gõ <code>PostgreSQL</code> vào ô tìm kiếm → click vào <strong>biểu tượng con voi xanh</strong> → Next</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Điền thông tin kết nối</h4>
+                        <p>Xem bảng bên phải →</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3 style="margin-bottom:8px;">Thông tin điền vào:</h3>
+            <table style="font-size:0.88rem;">
+                <tr><th>Trường</th><th>Giá trị</th></tr>
+                <tr><td><strong>Host</strong></td><td><code>localhost</code></td></tr>
+                <tr><td><strong>Port</strong></td><td><code>5432</code></td></tr>
+                <tr><td><strong>Database</strong></td><td><code>postgres</code></td></tr>
+                <tr><td><strong>Username</strong></td><td><code>postgres</code></td></tr>
+                <tr><td><strong>Password</strong></td><td><em>mật khẩu bạn đặt lúc cài</em></td></tr>
+            </table>
+            <div class="card tip" style="margin-top:10px;">
+                <p>💡 Tích vào <strong>"Save password locally"</strong> để DBeaver nhớ mật khẩu — không phải nhập lại mỗi lần mở.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 14: BƯỚC 4-5 + KẾT QUẢ ═══ -->
+<div class="slide">
+    <h2>Bước 4 &amp; 5 — Test Kết Nối &amp; Hoàn Thành</h2>
+    <div class="columns-2">
+        <div>
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h4>Kiểm tra kết nối</h4>
+                        <p>Nhấn nút <strong>"Test Connection"</strong> (góc dưới trái)<br>
+                        Nếu hiện <span class="text-success"><strong>"Connected"</strong></span> trong vòng tròn xanh → <strong>Thành công! 🎉</strong></p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">5</div>
+                    <div class="step-content">
+                        <h4>Nhấn Finish</h4>
+                        <p>Nhấn <strong>OK</strong> đóng thông báo, rồi nhấn <strong>Finish</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3 style="margin-bottom:8px;">Database Navigator sau khi kết nối:</h3>
+            <div class="ui-diagram"><span class="ui-dim">  Database Navigator</span>
+<span class="ui-dim">  ┌────────────────────────────────────┐</span>
+<span class="ui-nav">  │  ▼ PostgreSQL (localhost)          │</span>  <span class="ui-active">← Kết nối bạn vừa tạo</span>
+<span class="ui-nav">  │    ▼ Databases                     │</span>
+<span class="ui-nav">  │      ▶ postgres                    │</span>  <span class="ui-dim">← Database mặc định</span>
+<span class="ui-dim">  │      ▶ template0                   │</span>  <span class="ui-dim">← Hệ thống (không dùng)</span>
+<span class="ui-dim">  │      ▶ template1                   │</span>  <span class="ui-dim">← Hệ thống (không dùng)</span>
+<span class="ui-dim">  │    ▶ System Information             │</span>
+<span class="ui-dim">  └────────────────────────────────────┘</span></div>
+            <div class="card tip" style="margin-top:8px;">
+                <p>🎉 <strong>Chúc mừng!</strong> DBeaver đã kết nối thành công với PostgreSQL trên máy bạn!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 15: XỬ LÝ LỖI ═══ -->
+<div class="slide">
+    <h2>Xử Lý Lỗi Thường Gặp Khi Kết Nối</h2>
+    <p style="margin-bottom:14px;">Nếu bước "Test Connection" báo lỗi, tra bảng dưới đây:</p>
+    <table>
+        <tr>
+            <th>Thông báo lỗi</th>
+            <th>Nguyên nhân</th>
+            <th>Cách xử lý</th>
+        </tr>
+        <tr>
+            <td><code style="color:var(--danger);">Connection refused</code></td>
+            <td>PostgreSQL chưa khởi động</td>
+            <td>Vào <em>Services</em> → tìm <em>postgresql</em> → <strong>Start</strong></td>
+        </tr>
+        <tr>
+            <td><code style="color:var(--danger);">password authentication failed</code></td>
+            <td>Sai mật khẩu</td>
+            <td>Nhập lại đúng mật khẩu bạn đặt khi cài</td>
+        </tr>
+        <tr>
+            <td><code style="color:var(--danger);">could not connect to server</code></td>
+            <td>Sai host hoặc port</td>
+            <td>Kiểm tra: host = <code>localhost</code>, port = <code>5432</code></td>
+        </tr>
+        <tr>
+            <td>DBeaver hỏi tải driver</td>
+            <td>Cần tải driver PostgreSQL</td>
+            <td>Nhấn <strong>"Download"</strong> — DBeaver tự tải (cần internet)</td>
+        </tr>
+    </table>
+    <div class="card info" style="margin-top:12px;">
+        <p>📌 <strong>Lỗi hay gặp nhất:</strong> <code>password authentication failed</code> — thường do gõ sai mật khẩu hoặc nhầm chữ hoa/thường. Hãy kiểm tra lại mật khẩu bạn đã ghi ra giấy.</p>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 16: SECTION PHẦN 4 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">4</div>
+    <h1>Làm Quen Giao Diện DBeaver</h1>
+    <p class="subtitle">4 khu vực chính — dành 10 phút trước khi viết SQL</p>
+</div>
+
+<!-- ═══ SLIDE 17: 4 KHU VỰC CHÍNH ═══ -->
+<div class="slide">
+    <h2>4 Khu Vực Chính Của DBeaver</h2>
+    <div class="columns-2">
+        <div>
+            <div class="ui-diagram" style="font-size:0.75rem;"><span class="ui-dim">┌──────────────────────────────────────────────────────┐</span>
+<span class="ui-dim">│  [File][Edit][Navigate][SQL Editor][Window][Help]    │</span>
+<span class="ui-dim">├──────────────────────┬───────────────────────────────┤</span>
+<span class="ui-dim">│                      │                               │</span>
+<span class="ui-active">│  (1) DATABASE        │  (2) SQL EDITOR               │</span>
+<span class="ui-active">│      NAVIGATOR       │                               │</span>
+<span class="ui-dim">│                      │  SELECT *                     │</span>
+<span class="ui-dim">│  ▼ PostgreSQL        │  FROM nhan_vien;              │</span>
+<span class="ui-dim">│    ▼ Databases       │                               │</span>
+<span class="ui-dim">│      ▶ hoc_sql       ├───────────────────────────────┤</span>
+<span class="ui-dim">│        ▼ Tables      │                               │</span>
+<span class="ui-dim">│          nhan_vien   │  (3) RESULTS PANEL            │</span>
+<span class="ui-dim">│                      │                               │</span>
+<span class="ui-dim">│  (4) PROPERTIES      │  id │ ho_ten       │ luong    │</span>
+<span class="ui-dim">│  (khi click bảng)    │   1 │ Trần Thị Mai │ 15tr     │</span>
+<span class="ui-dim">└──────────────────────┴───────────────────────────────┘</span></div>
+        </div>
+        <div class="step-list">
+            <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                    <h4>Database Navigator (trái)</h4>
+                    <p>Giống <strong>File Explorer</strong> Windows — cây phân cấp Kết nối → Database → Tables</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                    <h4>SQL Editor (phải, trên)</h4>
+                    <p>Nơi viết SQL — giống <strong>thanh công thức Excel</strong> nhưng nhiều dòng</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-content">
+                    <h4>Results Panel (phải, dưới)</h4>
+                    <p>Kết quả sau khi chạy SQL — giống <strong>bảng kết quả PivotTable</strong></p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-content">
+                    <h4>Properties Panel</h4>
+                    <p>Thông tin chi tiết khi <strong>double-click</strong> vào một bảng</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 18: PHÍM TẮT ═══ -->
+<div class="slide">
+    <h2>Phím Tắt Quan Trọng Trong DBeaver</h2>
+    <div class="columns-2">
+        <div>
+            <h3 style="margin-bottom:10px;">⌨️ Phím tắt SQL</h3>
+            <table style="font-size:0.9rem;">
+                <tr><th>Phím tắt</th><th>Tác dụng</th></tr>
+                <tr>
+                    <td><span class="kbd">Ctrl</span> + <span class="kbd">Enter</span></td>
+                    <td><strong>Chạy câu SQL</strong> tại vị trí con trỏ</td>
+                </tr>
+                <tr>
+                    <td><span class="kbd">Alt</span> + <span class="kbd">X</span></td>
+                    <td>Chạy <strong>toàn bộ script</strong></td>
+                </tr>
+                <tr>
+                    <td><span class="kbd">Ctrl</span> + <span class="kbd">/</span></td>
+                    <td>Comment / bỏ comment dòng</td>
+                </tr>
+                <tr>
+                    <td><span class="kbd">Ctrl</span> + <span class="kbd">Z</span></td>
+                    <td>Undo (giống Excel)</td>
+                </tr>
+                <tr>
+                    <td><span class="kbd">Ctrl</span> + <span class="kbd">S</span></td>
+                    <td>Lưu script</td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <div class="card excel">
+                <h3 style="margin-bottom:8px;">📊 So sánh với Excel</h3>
+                <table style="font-size:0.88rem;">
+                    <tr><th>Excel</th><th>DBeaver</th></tr>
+                    <tr><td>Gõ công thức → <span class="kbd">Enter</span></td><td>Gõ SQL → <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span></td></tr>
+                    <tr><td>Kết quả hiện trong ô</td><td>Kết quả hiện bên dưới</td></tr>
+                    <tr><td><span class="kbd">Ctrl</span>+<span class="kbd">Z</span> Undo</td><td><span class="kbd">Ctrl</span>+<span class="kbd">Z</span> Undo</td></tr>
+                </table>
+            </div>
+            <div class="card info" style="margin-top:10px;">
+                <p>📌 <strong>Phím tắt quan trọng nhất:</strong> <span class="kbd">Ctrl</span> + <span class="kbd">Enter</span> — bạn sẽ dùng hàng trăm lần mỗi ngày. Nhớ ngay từ bây giờ!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 19: SECTION PHẦN 5 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">5</div>
+    <h1>Tạo Database Đầu Tiên</h1>
+    <p class="subtitle">Tạo database <code>hoc_sql</code> — nơi học tất cả các tuần tiếp theo</p>
+</div>
+
+<!-- ═══ SLIDE 20: TẠO DATABASE ═══ -->
+<div class="slide">
+    <h2>Tạo Database <code>hoc_sql</code></h2>
+    <div class="card excel" style="margin-bottom:14px;">
+        <p>📊 <strong>Phép so sánh:</strong> Tạo database mới giống tạo một file Excel mới (<span class="kbd">Ctrl</span>+<span class="kbd">N</span>). Database <code>postgres</code> là file hệ thống — chúng ta không nên làm việc trực tiếp ở đó.</p>
+    </div>
+    <div class="compare">
+        <div>
+            <h3>🖱 Cách 1: Click Chuột (UI)</h3>
+            <div class="step-list" style="gap:6px;margin-top:8px;">
+                <div class="step-item" style="padding:9px 14px;">
+                    <div class="step-num" style="min-width:26px;height:26px;font-size:0.8rem;">1</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Click <strong>phải</strong> vào "PostgreSQL (localhost)"</p></div>
+                </div>
+                <div class="step-item" style="padding:9px 14px;">
+                    <div class="step-num" style="min-width:26px;height:26px;font-size:0.8rem;">2</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Chọn <strong>"Create New Database"</strong></p></div>
+                </div>
+                <div class="step-item" style="padding:9px 14px;">
+                    <div class="step-num" style="min-width:26px;height:26px;font-size:0.8rem;">3</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Điền tên: <code>hoc_sql</code> → <strong>OK</strong></p></div>
+                </div>
+                <div class="step-item" style="padding:9px 14px;">
+                    <div class="step-num" style="min-width:26px;height:26px;font-size:0.8rem;">4</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Click phải → <strong>Refresh</strong> → thấy <code>hoc_sql</code> ✅</p></div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3>💻 Cách 2: Dùng SQL (Làm Quen Dần)</h3>
+            <pre style="margin-top:8px;font-size:0.88rem;"><span class="comment">-- Tạo database mới tên hoc_sql</span>
+<span class="keyword">CREATE DATABASE</span> hoc_sql;</pre>
+            <p style="font-size:0.85rem;color:var(--text-dim);margin:8px 0;">Đọc như tiếng Anh: "Tạo — cơ sở dữ liệu — tên là hoc_sql"</p>
+            <div class="card warning" style="margin-top:8px;">
+                <p>⚠️ <strong>Quan trọng — Chuyển sang <code>hoc_sql</code> sau khi tạo:</strong><br>
+                <strong>Double-click</strong> vào <code>hoc_sql</code> trong Navigator (hoặc click phải → "Set Active"). Tên database đang active sẽ hiện đậm hơn.<br>
+                <em>Nếu quên: bảng sẽ được tạo trong database sai!</em></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 21: SECTION PHẦN 6 ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">6</div>
+    <h1>SQL Editor — Câu SQL Đầu Tiên</h1>
+    <p class="subtitle">Khoảnh khắc quan trọng nhất của tuần 2!</p>
+</div>
+
+<!-- ═══ SLIDE 22: CÂU SQL HỆ THỐNG ═══ -->
+<div class="slide">
+    <h2>Các Câu SQL Kiểm Tra Hệ Thống</h2>
+    <p style="margin-bottom:10px;">Mở SQL Editor: <em>Click phải vào <code>hoc_sql</code> → SQL Editor → New SQL Script</em></p>
+    <p style="margin-bottom:12px;">Gõ từng câu, nhấn <span class="kbd">Ctrl</span> + <span class="kbd">Enter</span> để chạy:</p>
+    <div class="columns-2">
+        <div>
+            <pre style="font-size:0.85rem;"><span class="comment">-- Câu 1: Phiên bản PostgreSQL</span>
+<span class="keyword">SELECT</span> <span class="func">version</span>();
+<span class="comment">-- Kết quả: PostgreSQL 16.2, compiled...</span>
+
+<span class="comment">-- Câu 2: Ngày hôm nay</span>
+<span class="keyword">SELECT</span> <span class="func">current_date</span>;
+<span class="comment">-- Kết quả: 2026-04-17</span>
+
+<span class="comment">-- Câu 3: Ngày và giờ hiện tại</span>
+<span class="keyword">SELECT</span> <span class="func">now</span>();
+<span class="comment">-- Kết quả: 2026-04-17 14:30:25+07</span></pre>
+        </div>
+        <div>
+            <div class="card excel" style="margin-bottom:10px;">
+                <h3 style="margin-bottom:6px;">📊 Tương đương Excel</h3>
+                <table style="font-size:0.85rem;">
+                    <tr><th>SQL</th><th>Excel</th></tr>
+                    <tr><td><code>current_date</code></td><td><code>=TODAY()</code></td></tr>
+                    <tr><td><code>now()</code></td><td><code>=NOW()</code></td></tr>
+                </table>
+            </div>
+            <div class="card tip">
+                <p>💡 Các câu SELECT này không cần bảng — chúng truy vấn thẳng PostgreSQL. Thử ngay để xem kết quả thật!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 23: TÍNH TOÁN & CHUỖI ═══ -->
+<div class="slide">
+    <h2>Tính Toán &amp; Nối Chuỗi Với SQL</h2>
+    <div class="columns-2">
+        <div>
+            <pre style="font-size:0.85rem;"><span class="comment">-- Câu 4: Tính toán đơn giản</span>
+<span class="keyword">SELECT</span> <span class="number">1</span> + <span class="number">1</span> <span class="keyword">AS</span> ket_qua;
+<span class="comment">-- Kết quả: 2  (cột tên "ket_qua")</span>
+
+<span class="comment">-- Câu 5: Tính giờ làm trong năm</span>
+<span class="keyword">SELECT</span> <span class="number">52</span> * <span class="number">5</span> <span class="keyword">AS</span> tong_gio_lam_trong_nam;
+<span class="comment">-- Kết quả: 260</span>
+
+<span class="comment">-- Câu 6: Nối chuỗi với ||</span>
+<span class="keyword">SELECT</span> <span class="string">'Xin chào, '</span> || <span class="string">'PostgreSQL!'</span> <span class="keyword">AS</span> loi_chao;
+<span class="comment">-- Kết quả: Xin chào, PostgreSQL!</span></pre>
+        </div>
+        <div>
+            <div class="card excel" style="margin-bottom:10px;">
+                <h3 style="margin-bottom:8px;">📊 So sánh với Excel</h3>
+                <table style="font-size:0.85rem;">
+                    <tr><th>SQL</th><th>Excel tương đương</th></tr>
+                    <tr><td><code>1 + 1</code></td><td><code>=1+1</code> vào ô</td></tr>
+                    <tr><td><code>AS ket_qua</code></td><td>Tiêu đề cột trong Excel</td></tr>
+                    <tr>
+                        <td><code>'A' || 'B'</code></td>
+                        <td><code>="A"&"B"</code> hoặc<br><code>=CONCATENATE("A","B")</code></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="card info">
+                <p>📌 Ký hiệu nối chuỗi trong PostgreSQL là <code>||</code> (hai thanh đứng). Excel dùng <code>&</code> còn SQL dùng <code>||</code>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 24: TẠO BẢNG & DỮ LIỆU THẬT ═══ -->
+<div class="slide">
+    <h2>🎉 "Nếm Thử" — Bảng Dữ Liệu Thật Đầu Tiên!</h2>
+    <p style="margin-bottom:10px;color:var(--text-dim);font-size:0.9rem;">Đảm bảo đang kết nối vào <code>hoc_sql</code> trước khi chạy:</p>
+    <div class="columns-2">
+        <div>
+            <pre style="font-size:0.75rem;"><span class="comment">-- Bước 1: Tạo bảng (Tuần 3 giải thích kỹ)</span>
+<span class="keyword">CREATE TABLE</span> nhan_vien (
+    id        <span class="type">SERIAL PRIMARY KEY</span>,
+    ho_ten    <span class="type">VARCHAR</span>(<span class="number">100</span>) <span class="keyword">NOT NULL</span>,
+    phong_ban <span class="type">VARCHAR</span>(<span class="number">50</span>),
+    luong     <span class="type">NUMERIC</span>(<span class="number">12</span>,<span class="number">2</span>),
+    ngay_sinh <span class="type">DATE</span>,
+    email     <span class="type">VARCHAR</span>(<span class="number">150</span>)
+);
+
+<span class="comment">-- Bước 2: Nhập 6 nhân viên quen từ Tuần 1</span>
+<span class="keyword">INSERT INTO</span> nhan_vien (ho_ten, phong_ban, luong, ngay_sinh, email) <span class="keyword">VALUES</span>
+    (<span class="string">'Trần Thị Mai'</span>,   <span class="string">'Kế toán'</span>,    <span class="number">15000000</span>, <span class="string">'1995-03-20'</span>, <span class="string">'mai.tran@cty.com'</span>),
+    (<span class="string">'Nguyễn Văn An'</span>,  <span class="string">'Kinh doanh'</span>, <span class="number">20000000</span>, <span class="string">'1990-07-15'</span>, <span class="string">'an.nguyen@cty.com'</span>),
+    (<span class="string">'Lê Thị Bình'</span>,    <span class="string">'Nhân sự'</span>,    <span class="number">18000000</span>, <span class="string">'1992-11-03'</span>, <span class="string">'binh.le@cty.com'</span>),
+    (<span class="string">'Phạm Minh Châu'</span>, <span class="string">'IT'</span>,         <span class="number">25000000</span>, <span class="string">'1988-01-25'</span>, <span class="string">'chau.pham@cty.com'</span>),
+    (<span class="string">'Hoàng Thị Dung'</span>, <span class="string">'Kế toán'</span>,    <span class="number">13000000</span>, <span class="string">'1996-09-10'</span>, <span class="keyword">NULL</span>),
+    (<span class="string">'Võ Văn Em'</span>,      <span class="string">'Kinh doanh'</span>, <span class="number">22000000</span>, <span class="string">'1993-05-30'</span>, <span class="string">'em.vo@cty.com'</span>);
+
+<span class="comment">-- Bước 3: Xem kết quả!</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> nhan_vien;</pre>
+        </div>
+        <div>
+            <p style="font-size:0.88rem;color:var(--text-dim);margin-bottom:8px;">Kết quả <code>SELECT * FROM nhan_vien</code>:</p>
+            <div class="ui-diagram" style="font-size:0.75rem;"><span class="ui-dim">┌────┬──────────────────┬───────────┬──────────────┬────────────────────┐</span>
+<span class="ui-dim">│ id │ ho_ten           │ phong_ban │ luong        │ email              │</span>
+<span class="ui-dim">├────┼──────────────────┼───────────┼──────────────┼────────────────────┤</span>
+<span class="ui-result">│  1 │ Trần Thị Mai     │ Kế toán   │ 15000000.00  │ mai.tran@cty.com   │</span>
+<span class="ui-result">│  2 │ Nguyễn Văn An    │ Kinh doanh│ 20000000.00  │ an.nguyen@cty.com  │</span>
+<span class="ui-result">│  3 │ Lê Thị Bình      │ Nhân sự   │ 18000000.00  │ binh.le@cty.com    │</span>
+<span class="ui-result">│  4 │ Phạm Minh Châu   │ IT        │ 25000000.00  │ chau.pham@cty.com  │</span>
+<span class="ui-result">│  5 │ Hoàng Thị Dung   │ Kế toán   │ 13000000.00  │ (NULL)             │</span>
+<span class="ui-result">│  6 │ Võ Văn Em        │ Kinh doanh│ 22000000.00  │ em.vo@cty.com      │</span>
+<span class="ui-dim">└────┴──────────────────┴───────────┴──────────────┴────────────────────┘</span></div>
+            <div class="card tip" style="margin-top:8px;">
+                <p>🎉 Bạn nhận ra 6 nhân viên này từ Tuần 1 không? Lần này họ <strong>thật sự tồn tại trong database</strong> của bạn — không còn chỉ là ví dụ trên giấy!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 25: SECTION TỔNG KẾT ═══ -->
+<div class="slide section-slide">
+    <div class="section-num">📋</div>
+    <h1>Tổng Kết Tuần 2</h1>
+    <p class="subtitle">Checklist · Thuật ngữ mới · Cầu nối Tuần 3</p>
+</div>
+
+<!-- ═══ SLIDE 26: CHECKLIST & THUẬT NGỮ ═══ -->
+<div class="slide">
+    <h2>Checklist &amp; Thuật Ngữ Mới</h2>
+    <div class="columns-2">
+        <div>
+            <h3 style="margin-bottom:10px;">✅ Checklist — Tuần 2</h3>
+            <div class="step-list" style="gap:5px;">
+                <div class="step-item" style="padding:8px 12px;">
+                    <div class="step-num done" style="min-width:26px;height:26px;font-size:0.75rem;">✓</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Cài PostgreSQL thành công</p></div>
+                </div>
+                <div class="step-item" style="padding:8px 12px;">
+                    <div class="step-num done" style="min-width:26px;height:26px;font-size:0.75rem;">✓</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Cài DBeaver và mở được giao diện</p></div>
+                </div>
+                <div class="step-item" style="padding:8px 12px;">
+                    <div class="step-num done" style="min-width:26px;height:26px;font-size:0.75rem;">✓</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Tạo kết nối DBeaver ↔ PostgreSQL thành công</p></div>
+                </div>
+                <div class="step-item" style="padding:8px 12px;">
+                    <div class="step-num done" style="min-width:26px;height:26px;font-size:0.75rem;">✓</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Biết 4 khu vực chính của DBeaver</p></div>
+                </div>
+                <div class="step-item" style="padding:8px 12px;">
+                    <div class="step-num done" style="min-width:26px;height:26px;font-size:0.75rem;">✓</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Tạo database <code>hoc_sql</code></p></div>
+                </div>
+                <div class="step-item" style="padding:8px 12px;">
+                    <div class="step-num done" style="min-width:26px;height:26px;font-size:0.75rem;">✓</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Chạy câu SQL đầu tiên: <code>SELECT version()</code></p></div>
+                </div>
+                <div class="step-item" style="padding:8px 12px;">
+                    <div class="step-num done" style="min-width:26px;height:26px;font-size:0.75rem;">✓</div>
+                    <div class="step-content"><p style="font-size:0.88rem;">Biết phím tắt <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span></p></div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3 style="margin-bottom:10px;">📖 Thuật Ngữ Mới</h3>
+            <table style="font-size:0.82rem;">
+                <tr><th>Thuật ngữ</th><th>Ý nghĩa</th></tr>
+                <tr><td><strong>PostgreSQL Server</strong></td><td>Engine xử lý & lưu dữ liệu — chạy ngầm</td></tr>
+                <tr><td><strong>DBeaver</strong></td><td>Giao diện đồ họa để giao tiếp với PostgreSQL</td></tr>
+                <tr><td><strong>localhost</strong></td><td>Địa chỉ máy tính của chính mình</td></tr>
+                <tr><td><strong>Port 5432</strong></td><td>Cổng PostgreSQL lắng nghe (như số nhà)</td></tr>
+                <tr><td><strong>SQL Editor</strong></td><td>Nơi viết và chạy SQL trong DBeaver</td></tr>
+                <tr><td><strong>Results Panel</strong></td><td>Hiển thị kết quả sau khi chạy SQL</td></tr>
+                <tr><td><strong>CREATE DATABASE</strong></td><td>Lệnh tạo database mới</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SLIDE 27: EXCEL ↔ DBEAVER & TUẦN 3 ═══ -->
+<div class="slide title-slide">
+    <div class="week-badge" style="border-color:var(--success);color:var(--success);">TIẾP THEO</div>
+    <h1>Tuần 3: CREATE TABLE &amp; Kiểu Dữ Liệu</h1>
+    <p class="subtitle">INTEGER · VARCHAR · DATE · BOOLEAN · PRIMARY KEY · INSERT INTO</p>
+    <div style="margin-top:24px;text-align:left;max-width:680px;">
+        <p style="color:var(--accent-light);font-weight:600;margin-bottom:12px;">📊 Excel ↔ DBeaver — Ôn tập</p>
+        <div class="columns-2" style="gap:10px;">
+            <div>
+                <div class="card" style="padding:10px 14px;margin-bottom:6px;"><p style="font-size:0.86rem;">Mở file .xlsx → Tạo kết nối database</p></div>
+                <div class="card" style="padding:10px 14px;margin-bottom:6px;"><p style="font-size:0.86rem;">Thanh công thức → SQL Editor</p></div>
+                <div class="card" style="padding:10px 14px;"><p style="font-size:0.86rem;">Nhấn Enter → <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span></p></div>
+            </div>
+            <div>
+                <div class="card" style="padding:10px 14px;margin-bottom:6px;"><p style="font-size:0.86rem;">Kết quả hiện trong ô → Results Panel</p></div>
+                <div class="card" style="padding:10px 14px;margin-bottom:6px;"><p style="font-size:0.86rem;">Workbook mới → <code>CREATE DATABASE</code></p></div>
+                <div class="card" style="padding:10px 14px;"><p style="font-size:0.86rem;">Sheet mới → Table mới trong database</p></div>
+            </div>
+        </div>
+        <p style="color:var(--text-dim);font-size:0.88rem;margin-top:14px;">Tuần 3 sẽ giải thích đầy đủ <code>SERIAL PRIMARY KEY</code>, <code>VARCHAR(100)</code>, <code>NOT NULL</code>... — lúc đó bạn sẽ không chỉ chạy được SQL mà còn <strong>hiểu</strong> từng dòng đang viết.</p>
+    </div>
+</div>
+
+</div><!-- /slide-deck -->
+
+<div class="nav-bar">
+    <div><button onclick="toggleTOC()">☰ Mục Lục</button></div>
+    <div class="page-info">
+        <span id="currentSlide">1</span> / <span id="totalSlides">28</span>
+    </div>
+    <div class="controls">
+        <button onclick="prevSlide()">◄ Trước</button>
+        <button onclick="nextSlide()">Tiếp ►</button>
+    </div>
+</div>
+
+<script>
+    const slides = document.querySelectorAll('.slide');
+    const total  = slides.length;
+    let current  = 0;
+
+    document.getElementById('totalSlides').textContent = total;
+
+    function showSlide(n) {
+        slides[current].classList.remove('active');
+        current = Math.max(0, Math.min(n, total - 1));
+        slides[current].classList.add('active');
+        document.getElementById('currentSlide').textContent = current + 1;
+        document.getElementById('progressBar').style.width = ((current + 1) / total * 100) + '%';
+    }
+
+    function nextSlide() { showSlide(current + 1); }
+    function prevSlide() { showSlide(current - 1); }
+    function goSlide(n)  { showSlide(n); closeTOC(); }
+
+    document.addEventListener('keydown', e => {
+        if      (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+        else if (e.key === 'ArrowLeft')                   { e.preventDefault(); prevSlide(); }
+        else if (e.key === 'Home')                        { e.preventDefault(); showSlide(0); }
+        else if (e.key === 'End')                         { e.preventDefault(); showSlide(total - 1); }
+        else if (e.key === 'm' || e.key === 'M')          { toggleTOC(); }
+        else if (e.key === 'Escape')                      { closeTOC(); }
+    });
+
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend',   e => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 50) dx < 0 ? nextSlide() : prevSlide();
+    }, { passive: true });
+
+    function toggleTOC() { document.getElementById('tocOverlay').classList.toggle('open'); }
+    function closeTOC()  { document.getElementById('tocOverlay').classList.remove('open'); }
+
+    showSlide(0);
+</script>
+</body>
+</html>

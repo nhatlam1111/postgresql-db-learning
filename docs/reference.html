@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostgreSQL Reference — Tài Liệu Tra Cứu</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap">
+    <style>
+        :root {
+            --primary:       #336791;
+            --primary-light: #4a8db7;
+            --primary-dark:  #264d6e;
+            --accent:        #f9a825;
+            --bg:            #0f172a;
+            --bg-card:       #1e293b;
+            --bg-card-hover: #243248;
+            --bg-code:       #0d1117;
+            --text:          #e2e8f0;
+            --text-dim:      #94a3b8;
+            --text-bright:   #f8fafc;
+            --border:        #334155;
+            --sidebar-w:     272px;
+            --nav-h:         56px;
+            --success:       #22c55e;
+            --danger:        #ef4444;
+            --warning-color: #f59e0b;
+            --info-color:    #3b82f6;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); line-height:1.7; height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+
+        /* ── NAV ── */
+        nav {
+            height: var(--nav-h);
+            background: rgba(15,23,42,0.97);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+        .nav-left { display:flex; align-items:center; gap:12px; }
+        .nav-logo { display:flex; align-items:center; gap:8px; font-weight:700; font-size:0.95rem; color:var(--text-bright); }
+        .pg-icon { width:28px; height:28px; background:var(--primary); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:0.8rem; color:#fff; font-weight:800; }
+        .nav-divider { width:1px; height:20px; background:var(--border); }
+        .nav-badge { font-size:0.78rem; color:var(--text-dim); font-weight:500; }
+        .nav-right { display:flex; align-items:center; gap:8px; }
+        .btn-icon {
+            display:flex; align-items:center; justify-content:center;
+            width:36px; height:36px; border-radius:8px;
+            background:transparent; border:1px solid var(--border);
+            color:var(--text-dim); cursor:pointer; font-size:1rem;
+            transition: all 0.2s;
+        }
+        .btn-icon:hover { background:var(--bg-card); color:var(--text); border-color:var(--primary-light); }
+        .btn-home {
+            display:flex; align-items:center; gap:6px;
+            padding:7px 14px; border-radius:8px;
+            background:transparent; border:1px solid var(--border);
+            color:var(--text-dim); cursor:pointer; font-size:0.82rem;
+            text-decoration:none; font-weight:500; transition: all 0.2s;
+        }
+        .btn-home:hover { background:var(--bg-card); color:var(--text); border-color:var(--primary-light); }
+
+        /* ── LAYOUT ── */
+        .app { display:flex; flex:1; overflow:hidden; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            flex-shrink: 0;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: width 0.28s cubic-bezier(.4,0,.2,1);
+        }
+        .sidebar.collapsed { width: 0; }
+        .sidebar-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .sidebar-scroll { overflow-y: auto; flex: 1; padding: 8px 0; }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .doc-group { border-bottom: 1px solid rgba(51,65,85,0.5); }
+        .doc-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 16px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            transition: background 0.15s;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .doc-group-header:hover { background: rgba(51,103,145,0.12); }
+        .doc-group-header.active { color: var(--primary-light); background: rgba(51,103,145,0.15); }
+        .doc-group-header .doc-icon { font-size: 1rem; flex-shrink:0; }
+        .doc-group-header .doc-title { flex:1; overflow:hidden; text-overflow:ellipsis; }
+        .doc-group-header .doc-arrow { font-size:0.65rem; color:var(--text-dim); transition:transform 0.2s; flex-shrink:0; }
+        .doc-group-header.open .doc-arrow { transform: rotate(90deg); }
+
+        .doc-sections { display:none; padding: 2px 0 6px; }
+        .doc-sections.open { display: block; }
+        .section-link {
+            display: block;
+            padding: 5px 16px 5px 38px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: color 0.15s, background 0.15s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-left: 2px solid transparent;
+            margin-left: 8px;
+            text-decoration: none;
+        }
+        .section-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+        .section-link.active { color: var(--primary-light); border-left-color: var(--primary-light); background: rgba(51,103,145,0.1); }
+
+        /* ── MAIN CONTENT ── */
+        .main { flex:1; overflow-y:auto; }
+        .main::-webkit-scrollbar { width:6px; }
+        .main::-webkit-scrollbar-track { background:transparent; }
+        .main::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+        .doc-panel { display:none; }
+        .doc-panel.active { display:block; }
+
+        .content-inner { max-width:860px; margin:0 auto; padding:40px 48px 80px; }
+
+        /* ── RENDERED MARKDOWN STYLES ── */
+        .content-inner h1 {
+            font-size:2rem; font-weight:800; color:var(--text-bright);
+            margin:0 0 8px;
+            padding-bottom:16px;
+            border-bottom:2px solid var(--border);
+        }
+        .content-inner h1 .doc-meta { font-size:0.85rem; font-weight:400; color:var(--text-dim); display:block; margin-top:6px; }
+        .content-inner h2 {
+            font-size:1.25rem; font-weight:700; color:var(--text-bright);
+            margin:48px 0 16px;
+            padding:12px 16px;
+            background:var(--bg-card);
+            border-left:4px solid var(--primary);
+            border-radius:0 8px 8px 0;
+        }
+        .content-inner h3 {
+            font-size:1rem; font-weight:600; color:var(--primary-light);
+            margin:28px 0 10px;
+        }
+        .content-inner h4 {
+            font-size:0.9rem; font-weight:600; color:var(--accent);
+            margin:20px 0 8px; text-transform:uppercase; letter-spacing:0.5px;
+        }
+        .content-inner p { margin:0 0 14px; color:var(--text); font-size:0.93rem; }
+        .content-inner hr { border:none; border-top:1px solid var(--border); margin:32px 0; }
+
+        .content-inner ul, .content-inner ol { margin:0 0 14px 0; padding-left:24px; }
+        .content-inner li { margin-bottom:4px; font-size:0.93rem; color:var(--text); }
+
+        /* Code */
+        .content-inner code {
+            font-family:'Fira Code',monospace;
+            background:var(--bg-code);
+            padding:2px 7px;
+            border-radius:4px;
+            font-size:0.84em;
+            color:#7dd3fc;
+            border:1px solid #30363d;
+        }
+        .content-inner pre {
+            background:var(--bg-code);
+            border:1px solid #30363d;
+            border-radius:10px;
+            padding:18px 20px;
+            overflow-x:auto;
+            margin:0 0 18px;
+            font-size:0.83rem;
+            line-height:1.65;
+        }
+        .content-inner pre code {
+            background:none; border:none; padding:0; font-size:1em; color:var(--text);
+        }
+
+        /* SQL Highlighting */
+        .sql-keyword { color:#7dd3fc; font-weight:500; }
+        .sql-function { color:#fbbf24; }
+        .sql-string { color:#86efac; }
+        .sql-comment { color:#6b7280; font-style:italic; }
+        .sql-number { color:#f9a8d4; }
+
+        /* Tables */
+        .table-wrap { overflow-x:auto; margin:0 0 20px; border-radius:10px; border:1px solid var(--border); }
+        .content-inner table { width:100%; border-collapse:collapse; font-size:0.84rem; }
+        .content-inner th {
+            background:rgba(51,103,145,0.25); color:var(--primary-light);
+            font-weight:600; padding:10px 14px; text-align:left;
+            border-bottom:1px solid var(--border); white-space:nowrap;
+        }
+        .content-inner td { padding:9px 14px; border-bottom:1px solid rgba(51,65,85,0.4); vertical-align:top; }
+        .content-inner tr:last-child td { border-bottom:none; }
+        .content-inner tr:hover td { background:rgba(255,255,255,0.02); }
+
+        /* Blockquotes */
+        .content-inner blockquote {
+            border-left:4px solid var(--border);
+            background:rgba(30,41,59,0.6);
+            border-radius:0 8px 8px 0;
+            padding:12px 16px;
+            margin:0 0 16px;
+            font-size:0.88rem;
+        }
+        .content-inner blockquote.bq-warning {
+            border-left-color: var(--warning-color);
+            background: rgba(245,158,11,0.08);
+        }
+        .content-inner blockquote.bq-tip {
+            border-left-color: var(--info-color);
+            background: rgba(59,130,246,0.08);
+        }
+        .content-inner blockquote p { margin:0; }
+        .content-inner blockquote code { background:rgba(0,0,0,0.3); }
+
+        /* Welcome panel */
+        .welcome-banner {
+            background:linear-gradient(135deg,rgba(51,103,145,0.15),rgba(249,168,37,0.05));
+            border:1px solid rgba(51,103,145,0.3);
+            border-radius:12px; padding:24px 28px; margin-bottom:32px;
+        }
+        .welcome-banner h2 { font-size:1rem; color:var(--accent); margin:0 0 6px; background:none; padding:0; border:none; }
+        .welcome-banner p { font-size:0.88rem; color:var(--text-dim); margin:0; }
+
+        /* Loading / empty state */
+        .loading { text-align:center; padding:80px 20px; color:var(--text-dim); font-size:0.9rem; }
+    </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+    <div class="nav-left">
+        <a href="index.html" class="btn-home" title="Về trang chủ">← Trang chủ</a>
+        <div class="nav-divider"></div>
+        <div class="nav-logo">
+            <div class="pg-icon">pg</div>
+            Tài Liệu Tham Khảo
+        </div>
+        <div class="nav-badge">3 tài liệu · Tuần 1–9</div>
+    </div>
+    <div class="nav-right">
+        <button class="btn-icon" id="sidebarToggle" title="Ẩn/hiện menu (Ctrl+B)">☰</button>
+    </div>
+</nav>
+
+<!-- ── APP LAYOUT ── -->
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">📚 Tài Liệu</div>
+        <div class="sidebar-scroll" id="sidebarNav">
+            <!-- Injected by JS -->
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" id="mainArea">
+        <div id="panelCheatsheet" class="doc-panel">
+            <div class="content-inner" id="contentCheatsheet"><div class="loading">Đang tải...</div></div>
+        </div>
+        <div id="panelDatatypes" class="doc-panel">
+            <div class="content-inner" id="contentDatatypes"><div class="loading">Đang tải...</div></div>
+        </div>
+        <div id="panelCasting" class="doc-panel">
+            <div class="content-inner" id="contentCasting"><div class="loading">Đang tải...</div></div>
+        </div>
+    </main>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MARKDOWN CONTENT SOURCES
+     Stored in <script type="text/markdown"> — browser ignores,
+     JS reads via .textContent
+═══════════════════════════════════════════════════════ -->
+
+<script type="text/markdown" id="src-cheatsheet">
+# PostgreSQL Cheatsheet — Tóm Tắt Toàn Khóa Học
+
+> Tài liệu tổng hợp từ Tuần 1–9. Dùng để tra cứu nhanh khi quên cú pháp. Mỗi phần có ví dụ ngắn + so sánh Excel.
+
+## 1. Khái Niệm Nền Tảng — Excel so với Database
+
+| Khái niệm Database | Tương đương Excel | Ghi chú |
+|---|---|---|
+| **Database** | Workbook (.xlsx) | Nơi chứa toàn bộ dữ liệu |
+| **Table** | Sheet (trang tính) | Một tập dữ liệu có cấu trúc |
+| **Column** | Cột (A, B, C...) | Một loại thông tin, có tên rõ ràng |
+| **Row / Record** | Hàng (1, 2, 3...) | Một mục dữ liệu hoàn chỉnh |
+| **Field** | Cell (ô) | Giao điểm của cột và hàng |
+| **NULL** | Ô trống | Không có giá trị — khác số 0 và chuỗi rỗng |
+| **Primary Key** | Cột STT không trùng | Định danh duy nhất cho mỗi hàng |
+| **Foreign Key** | Cột dùng với VLOOKUP | Liên kết đến bảng khác |
+| **SQL** | Công thức Excel | Ngôn ngữ giao tiếp với database |
+| **Query** | Công thức | Một câu lệnh SQL |
+
+**Quy tắc SQL cơ bản:**
+
+```sql
+-- Kết thúc bằng dấu chấm phẩy ;
+-- Không phân biệt HOA/thường (nhưng quy ước: từ khóa VIẾT HOA)
+-- Comment bắt đầu bằng --
+SELECT * FROM nhan_vien;
+```
+
+## 2. Kiểu Dữ Liệu (Data Types)
+
+| Câu hỏi | Kiểu nên dùng | Ví dụ |
+|---|---|---|
+| Cột id tự tăng? | `SERIAL` | `id SERIAL PRIMARY KEY` |
+| Số nguyên thông thường? | `INTEGER` | `so_luong INTEGER` |
+| Tiền tệ, giá cả? | `NUMERIC(p,s)` | `luong NUMERIC(12,2)` |
+| Tên, email (có giới hạn)? | `VARCHAR(n)` | `ho_ten VARCHAR(100)` |
+| Mô tả, ghi chú dài? | `TEXT` | `mo_ta TEXT` |
+| Chỉ lưu ngày? | `DATE` | `ngay_sinh DATE` |
+| Ngày + giờ? | `TIMESTAMP` | `ngay_tao TIMESTAMP` |
+| Đúng/Sai? | `BOOLEAN` | `dang_lam BOOLEAN` |
+
+**Giải thích NUMERIC(p, s):**
+
+```
+NUMERIC(12, 2)  →  p=12 chữ số tổng, s=2 chữ số thập phân
+Ví dụ hợp lệ: 9999999999.99  (10 nguyên + 2 thập phân)
+```
+
+> ⚠️ **Tiền tệ luôn dùng NUMERIC — không dùng REAL/FLOAT vì bị lỗi làm tròn!**
+
+## 3. Tạo & Xóa Bảng
+
+### CREATE TABLE
+
+```sql
+CREATE TABLE nhan_vien (
+    id           SERIAL          PRIMARY KEY,
+    ho_ten       VARCHAR(100)    NOT NULL,
+    phong_ban    VARCHAR(50),
+    luong        NUMERIC(12, 2)  CHECK (luong >= 0),
+    ngay_sinh    DATE,
+    email        VARCHAR(150)    UNIQUE,
+    ngay_vao     DATE            DEFAULT CURRENT_DATE,
+    dang_lam     BOOLEAN         DEFAULT TRUE
+);
+
+-- Tạo nếu chưa có (tránh lỗi khi chạy lại)
+CREATE TABLE IF NOT EXISTS ten_bang ( ... );
+```
+
+### DROP TABLE
+
+```sql
+DROP TABLE ten_bang;                  -- Xóa bảng và toàn bộ dữ liệu (KHÔNG hoàn tác!)
+DROP TABLE IF EXISTS ten_bang;        -- Không báo lỗi nếu bảng không tồn tại
+DROP TABLE ten_bang CASCADE;          -- Xóa cả các bảng phụ thuộc (nguy hiểm!)
+```
+
+> ⚠️ **Trước khi DROP: `SELECT COUNT(*) FROM ten_bang;` để biết mình đang xóa bao nhiêu hàng.**
+
+## 4. Ràng Buộc (Constraints)
+
+| Ràng buộc | Ý nghĩa | Excel tương đương |
+|---|---|---|
+| `PRIMARY KEY` | Duy nhất + NOT NULL | Cột STT, không được trùng |
+| `NOT NULL` | Bắt buộc phải có giá trị | Trường bắt buộc trong form |
+| `UNIQUE` | Giá trị không được trùng (cho phép NULL) | Data Validation không trùng |
+| `DEFAULT value` | Tự điền nếu không nhập | Ô đã có giá trị mặc định |
+| `CHECK (điều kiện)` | Điều kiện tùy chỉnh | Data Validation → Custom |
+| `REFERENCES bang(cot)` | Foreign Key — liên kết bảng khác | VLOOKUP kiểm tra danh sách |
+
+```sql
+luong     NUMERIC(12,2)  CHECK (luong >= 0),
+gioi_tinh VARCHAR(3)     CHECK (gioi_tinh IN ('Nam', 'Nu')),
+email     VARCHAR(150)   UNIQUE,
+ho_ten    VARCHAR(100)   NOT NULL,
+pb_id     INTEGER        REFERENCES phong_ban(id)
+```
+
+## 5. Nhập Dữ Liệu — INSERT INTO
+
+```sql
+-- Một hàng
+INSERT INTO nhan_vien (ho_ten, phong_ban, luong, ngay_sinh)
+VALUES ('Tran Thi Mai', 'Ke toan', 15000000, '1995-03-20');
+
+-- Nhiều hàng cùng lúc (nhanh hơn nhiều)
+INSERT INTO nhan_vien (ho_ten, phong_ban, luong)
+VALUES
+    ('Nguyen Van An',  'Kinh doanh', 20000000),
+    ('Le Thi Binh',    'Nhan su',    18000000),
+    ('Pham Minh Chau', 'IT',         25000000);
+
+-- Lấy lại giá trị vừa INSERT
+INSERT INTO nhan_vien (ho_ten, luong)
+VALUES ('Nguyen Moi', 18000000)
+RETURNING id, ho_ten;
+```
+
+**Lưu ý:** Chuỗi và ngày dùng nháy đơn `'...'`. Ngày dùng format `'YYYY-MM-DD'`.
+
+## 6. Đọc Dữ Liệu — SELECT
+
+```sql
+-- Xem tất cả
+SELECT * FROM nhan_vien;
+
+-- Chọn cột cụ thể
+SELECT ho_ten, luong, phong_ban FROM nhan_vien;
+
+-- Đặt tên hiển thị (Alias)
+SELECT
+    ho_ten    AS "Ho va ten",
+    luong     AS "Muc luong (VND)",
+    phong_ban AS "Phong ban"
+FROM nhan_vien;
+
+-- Tính toán trong SELECT
+SELECT
+    ho_ten,
+    luong                   AS "Luong gross",
+    ROUND(luong * 0.10, 0)  AS "Thue 10%",
+    ROUND(luong * 0.90, 0)  AS "Luong thuc nhan"
+FROM nhan_vien;
+```
+
+**Thứ tự thực thi (quan trọng!):**
+
+```
+1. FROM      → Lấy bảng
+2. WHERE     → Lọc hàng
+3. GROUP BY  → Nhóm
+4. HAVING    → Lọc nhóm
+5. SELECT    → Chọn cột, tính toán
+6. ORDER BY  → Sắp xếp
+7. LIMIT     → Cắt kết quả
+
+WHERE chạy TRƯỚC SELECT → không dùng được alias trong WHERE!
+```
+
+**Toán tử số học:**
+
+```sql
+luong + 5000000   -- Cộng
+luong - 2000000   -- Trừ
+gia * so_luong    -- Nhân
+luong / 12.0      -- Chia (dùng 12.0 để tránh bẫy số nguyên!)
+so_luong % 10     -- Phần dư (MOD)
+```
+
+> ⚠️ **Bẫy chia số nguyên:** `7 / 2 = 3` (không phải 3.5!). Fix: `7.0 / 2` hoặc `7::NUMERIC / 2`
+
+**DISTINCT — loại bỏ trùng (= Remove Duplicates trong Excel):**
+
+```sql
+SELECT DISTINCT phong_ban FROM nhan_vien;
+SELECT COUNT(DISTINCT phong_ban) FROM nhan_vien;
+```
+
+## 7. Lọc Dữ Liệu — WHERE
+
+*Excel tương đương: Filter*
+
+### Toán tử so sánh
+
+| Toán tử | Ý nghĩa | Ví dụ |
+|---|---|---|
+| `=` | Bằng | `phong_ban = 'IT'` |
+| `<>` hoặc `!=` | Khác | `phong_ban <> 'IT'` |
+| `>` | Lớn hơn | `luong > 15000000` |
+| `<` | Nhỏ hơn | `luong < 20000000` |
+| `>=` | Lớn hơn hoặc bằng | `luong >= 15000000` |
+| `<=` | Nhỏ hơn hoặc bằng | `luong <= 20000000` |
+
+### AND / OR / NOT
+
+```sql
+WHERE phong_ban = 'IT' AND luong > 20000000
+WHERE phong_ban = 'IT' OR phong_ban = 'Kinh doanh'
+WHERE NOT phong_ban = 'IT'
+-- Kết hợp — dùng () để rõ ý
+WHERE (phong_ban = 'IT' OR phong_ban = 'Kinh doanh') AND luong > 20000000
+```
+
+### BETWEEN / IN
+
+```sql
+WHERE luong BETWEEN 15000000 AND 25000000
+WHERE ngay_sinh BETWEEN '1990-01-01' AND '2000-12-31'
+WHERE phong_ban IN ('IT', 'Kinh doanh', 'Nhan su')
+WHERE phong_ban NOT IN ('Ke toan')
+```
+
+### LIKE — Tìm kiếm theo mẫu (= Filter "Contains")
+
+```sql
+WHERE ho_ten LIKE 'Nguyen%'    -- Bắt đầu bằng "Nguyen"
+WHERE ho_ten LIKE '%Van%'      -- Chứa "Van" ở bất kỳ đâu
+WHERE email LIKE '%@gmail.com' -- Kết thúc bằng "@gmail.com"
+WHERE ho_ten ILIKE '%mai%'     -- ILIKE: không phân biệt hoa/thường
+-- % = bất kỳ số ký tự,  _ = đúng 1 ký tự
+```
+
+### IS NULL / IS NOT NULL (= Filter Blanks)
+
+```sql
+WHERE email IS NULL         -- Tìm hàng không có email
+WHERE email IS NOT NULL     -- Tìm hàng có email
+-- KHÔNG dùng: WHERE email = NULL  (luôn trả về rỗng!)
+```
+
+## 8. Sắp Xếp & Giới Hạn
+
+### ORDER BY (= Sort trong Excel)
+
+```sql
+SELECT * FROM nhan_vien ORDER BY luong;           -- Tăng dần (mặc định)
+SELECT * FROM nhan_vien ORDER BY luong ASC;
+SELECT * FROM nhan_vien ORDER BY luong DESC;      -- Giảm dần
+-- Sắp xếp nhiều cột:
+SELECT * FROM nhan_vien ORDER BY phong_ban ASC, luong DESC;
+```
+
+### LIMIT / OFFSET
+
+```sql
+SELECT * FROM nhan_vien LIMIT 10;               -- 10 hàng đầu
+SELECT * FROM nhan_vien LIMIT 10 OFFSET 20;     -- Bỏ qua 20, lấy 10 tiếp theo
+
+-- Phân trang: OFFSET = (trang - 1) × số_hàng_mỗi_trang
+-- Trang 1: LIMIT 10 OFFSET 0
+-- Trang 2: LIMIT 10 OFFSET 10
+```
+
+> ⚠️ **Không có ORDER BY → thứ tự không đảm bảo!** Luôn kết hợp LIMIT với ORDER BY.
+
+## 9. Hàm Tổng Hợp
+
+| Hàm SQL | Excel | Ý nghĩa |
+|---|---|---|
+| `COUNT(*)` | `=COUNTA()` | Đếm tất cả hàng (kể cả NULL) |
+| `COUNT(cot)` | `=COUNT()` | Đếm hàng không NULL ở cột đó |
+| `COUNT(DISTINCT cot)` | *(hàm phức tạp)* | Đếm giá trị khác nhau |
+| `SUM(cot)` | `=SUM()` | Tính tổng |
+| `AVG(cot)` | `=AVERAGE()` | Tính trung bình (bỏ qua NULL) |
+| `MIN(cot)` | `=MIN()` | Giá trị nhỏ nhất |
+| `MAX(cot)` | `=MAX()` | Giá trị lớn nhất |
+
+```sql
+SELECT
+    COUNT(*)                AS "Tong so nhan vien",
+    COUNT(email)            AS "So nguoi co email",
+    ROUND(AVG(luong), 0)    AS "Luong trung binh",
+    MIN(luong)              AS "Luong thap nhat",
+    MAX(luong)              AS "Luong cao nhat",
+    SUM(luong)              AS "Tong quy luong"
+FROM nhan_vien;
+```
+
+## 10. Nhóm Dữ Liệu — GROUP BY + HAVING
+
+*Excel tương đương: Pivot Table*
+
+```sql
+-- GROUP BY cơ bản
+SELECT
+    phong_ban,
+    COUNT(*)                AS "So nhan vien",
+    ROUND(AVG(luong), 0)    AS "Luong trung binh"
+FROM nhan_vien
+GROUP BY phong_ban;
+
+-- HAVING: lọc sau khi đã nhóm
+SELECT phong_ban, COUNT(*) AS so_nguoi
+FROM nhan_vien
+GROUP BY phong_ban
+HAVING COUNT(*) >= 2;
+
+-- Công thức hoàn chỉnh (đúng thứ tự)
+SELECT   phong_ban, COUNT(*) AS so_nguoi, AVG(luong) AS luong_tb
+FROM     nhan_vien
+WHERE    dang_lam = TRUE
+GROUP BY phong_ban
+HAVING   AVG(luong) > 15000000
+ORDER BY luong_tb DESC
+LIMIT    5;
+```
+
+**Phân biệt WHERE vs HAVING:**
+
+```
+WHERE  → lọc từng HÀNG (trước khi nhóm)   = Filter trên dữ liệu gốc
+HAVING → lọc từng NHÓM (sau khi nhóm)     = Filter trên Pivot Table
+```
+
+> ⚠️ **Quy tắc GROUP BY:** Mọi cột trong SELECT (không phải hàm tổng hợp) phải có trong GROUP BY.
+
+## 11. Kết Nối Bảng — JOIN
+
+*Excel tương đương: VLOOKUP / INDEX-MATCH*
+
+### Sơ đồ 4 loại JOIN
+
+```
+INNER JOIN            LEFT JOIN             RIGHT JOIN            FULL JOIN
+(chỉ hàng khớp)      (tất cả trái + khớp)  (khớp + tất cả phải)  (tất cả cả hai)
+    A ∩ B                A + A∩B               A∩B + B              A ∪ B
+```
+
+### Cú pháp
+
+```sql
+-- INNER JOIN: chỉ hàng có khớp ở cả hai bảng
+SELECT nv.ho_ten, pb.ten_phong
+FROM nhan_vien AS nv
+INNER JOIN phong_ban AS pb ON nv.pb_id = pb.id;
+
+-- LEFT JOIN: tất cả bảng trái, NULL nếu không khớp
+SELECT kh.ho_ten, dh.ngay_dat, dh.tong_tien
+FROM khach_hang AS kh
+LEFT JOIN don_hang AS dh ON kh.id = dh.khach_id;
+
+-- JOIN nhiều bảng
+SELECT kh.ho_ten, dh.id, ctdh.ten_sp
+FROM khach_hang AS kh
+JOIN don_hang AS dh ON kh.id = dh.khach_id
+JOIN chi_tiet_don_hang AS ctdh ON dh.id = ctdh.don_hang_id;
+```
+
+> ⚠️ **Quên điều kiện ON → tạo Cartesian product (hàng triệu hàng rác!).**
+
+## 12. Truy Vấn Lồng Nhau — Subquery
+
+*Excel tương đương: Hàm lồng nhau như `=AVERAGE(IF(...))`*
+
+```sql
+-- Subquery trong WHERE: nhân viên lương cao hơn trung bình
+SELECT ho_ten, luong
+FROM nhan_vien
+WHERE luong > (SELECT AVG(luong) FROM nhan_vien);
+
+-- Subquery với IN
+SELECT ho_ten
+FROM khach_hang
+WHERE id IN (
+    SELECT DISTINCT khach_id
+    FROM don_hang
+    WHERE EXTRACT(MONTH FROM ngay_dat) = 1
+);
+
+-- Subquery trong FROM (bảng tạm)
+SELECT phong_ban, luong_tb
+FROM (
+    SELECT phong_ban, AVG(luong) AS luong_tb
+    FROM nhan_vien
+    GROUP BY phong_ban
+) AS bang_tam
+WHERE luong_tb > 18000000;
+```
+
+## 13. Phân Loại Điều Kiện — CASE WHEN
+
+*Excel tương đương: `=IF()` / `=IFS()`*
+
+```sql
+-- Dạng cơ bản
+SELECT
+    ho_ten,
+    CASE
+        WHEN luong >= 25000000 THEN 'Cao'
+        WHEN luong >= 15000000 THEN 'Trung binh'
+        ELSE 'Thap'
+    END AS "Nhom luong"
+FROM nhan_vien;
+
+-- Dạng rút gọn (so sánh một giá trị)
+SELECT
+    ten_sp,
+    CASE danh_muc
+        WHEN 'Do uong' THEN 'Thuc uong'
+        WHEN 'Do an'   THEN 'Thuc pham'
+        ELSE 'Khac'
+    END AS "Nhom"
+FROM san_pham;
+
+-- CASE WHEN kết hợp GROUP BY
+SELECT
+    CASE
+        WHEN luong >= 20000000 THEN 'Senior'
+        WHEN luong >= 15000000 THEN 'Mid'
+        ELSE 'Junior'
+    END AS cap_bac,
+    COUNT(*) AS so_nguoi
+FROM nhan_vien
+GROUP BY cap_bac;
+```
+
+## 14. Hàm Chuỗi
+
+| Hàm | Ý nghĩa | Ví dụ | Excel |
+|---|---|---|---|
+| `UPPER(s)` | Chữ HOA | `UPPER('hello')` → `'HELLO'` | `=UPPER()` |
+| `LOWER(s)` | chữ thường | `LOWER('HI')` → `'hi'` | `=LOWER()` |
+| `INITCAP(s)` | Viết Hoa Đầu Từ | `INITCAP('hello world')` → `'Hello World'` | `=PROPER()` |
+| `LENGTH(s)` | Độ dài chuỗi | `LENGTH('hello')` → `5` | `=LEN()` |
+| `TRIM(s)` | Xóa khoảng trắng 2 đầu | `TRIM(' hi ')` → `'hi'` | `=TRIM()` |
+| `LEFT(s,n)` | Lấy n ký tự trái | `LEFT('hello',3)` → `'hel'` | `=LEFT()` |
+| `RIGHT(s,n)` | Lấy n ký tự phải | `RIGHT('hello',3)` → `'llo'` | `=RIGHT()` |
+| `SUBSTRING(s,from,n)` | Cắt từ vị trí | `SUBSTRING('hello',2,3)` → `'ell'` | `=MID()` |
+| `REPLACE(s,old,new)` | Thay thế | `REPLACE('abc','b','X')` → `'aXc'` | `=SUBSTITUTE()` |
+| `POSITION(sub IN s)` | Tìm vị trí | `POSITION('l' IN 'hello')` → `3` | `=FIND()` |
+| `SPLIT_PART(s,sep,n)` | Tách chuỗi | `SPLIT_PART('a,b,c',',',2)` → `'b'` | *(không có)* |
+| `LPAD(s,n,c)` | Thêm ký tự bên trái | `LPAD('5',3,'0')` → `'005'` | `=TEXT(A1,"000")` |
+| `CONCAT(...)` | Nối chuỗi an toàn | `CONCAT('A',' ','B')` → `'A B'` | `=CONCAT()` |
+| `s1 \|\| s2` | Nối chuỗi | `'Xin' \|\| ' chao'` → `'Xin chao'` | `=A1&" "&B1` |
+
+> ⚠️ **`||` với NULL cho kết quả NULL!** Dùng `CONCAT()` hoặc `COALESCE()` để an toàn hơn.
+
+```sql
+SELECT
+    'NV-' || LPAD(id::TEXT, 3, '0')    AS "Ma NV",
+    UPPER(TRIM(email))                  AS "Email chuan",
+    SPLIT_PART(email, '@', 1)           AS "Username"
+FROM nhan_vien;
+```
+
+## 15. Hàm Ngày/Giờ
+
+| Hàm | Ý nghĩa | Excel |
+|---|---|---|
+| `CURRENT_DATE` | Ngày hôm nay | `=TODAY()` |
+| `CURRENT_TIMESTAMP` | Thời điểm hiện tại | `=NOW()` |
+| `AGE(date)` | Khoảng thời gian từ ngày đó đến nay | *(không có)* |
+| `EXTRACT(field FROM date)` | Lấy thành phần | `=YEAR()`, `=MONTH()`, ... |
+| `TO_CHAR(date, 'format')` | Ngày → chuỗi | `=TEXT(A1,"DD/MM/YYYY")` |
+| `TO_DATE(string, 'format')` | Chuỗi → ngày | `=DATEVALUE()` |
+
+```sql
+-- EXTRACT
+EXTRACT(YEAR    FROM ngay_sinh)   -- 1995
+EXTRACT(MONTH   FROM ngay_sinh)   -- 3
+EXTRACT(DAY     FROM ngay_sinh)   -- 20
+EXTRACT(DOW     FROM ngay_sinh)   -- 0=CN, 1=T2...6=T7
+EXTRACT(QUARTER FROM ngay_sinh)   -- 1, 2, 3, 4
+
+-- TO_CHAR
+TO_CHAR(ngay_sinh, 'DD/MM/YYYY')           -- 20/03/1995
+TO_CHAR(now(), 'HH24:MI:SS')               -- 14:30:25
+
+-- Tính toán
+CURRENT_DATE + 7                           -- Sau 7 ngày
+date1 - date2                              -- Số ngày giữa 2 ngày
+
+-- Ứng dụng
+SELECT
+    ho_ten,
+    EXTRACT(YEAR FROM AGE(ngay_sinh))   AS "Tuoi",
+    EXTRACT(YEAR FROM AGE(ngay_vao))    AS "Nam lam viec",
+    CURRENT_DATE - ngay_vao             AS "So ngay da lam"
+FROM nhan_vien;
+```
+
+## 16. Xử Lý NULL
+
+*Excel tương đương: `=IFERROR()`, `=IF(ISBLANK(...))`*
+
+```sql
+-- Kiểm tra NULL — LUÔN dùng IS NULL, không dùng = NULL
+WHERE email IS NULL
+WHERE email IS NOT NULL
+
+-- COALESCE: giá trị đầu tiên không NULL
+COALESCE(email, 'Chua co email')       -- Nếu NULL → 'Chua co email'
+COALESCE(luong, 0) * 12               -- Nếu NULL → tính bằng 0
+
+-- NULLIF: chuyển giá trị thành NULL theo điều kiện
+NULLIF(so_luong, 0)    -- Nếu = 0 → NULL (tránh lỗi chia cho 0)
+NULLIF(ghi_chu, '')    -- Chuỗi rỗng '' → NULL
+
+-- NULL trong phép tính → luôn cho kết quả NULL
+-- 5 + NULL = NULL,  NULL * 100 = NULL
+
+-- COUNT xử lý NULL
+COUNT(*)       -- Đếm tất cả, kể cả hàng có NULL
+COUNT(email)   -- Chỉ đếm hàng email không NULL
+AVG(luong)     -- Bỏ qua NULL (không tính NULL là 0)
+```
+
+## 17. Sửa Dữ Liệu — UPDATE
+
+*Excel tương đương: Sửa nội dung ô*
+
+```sql
+UPDATE ten_bang
+SET
+    cot_1 = gia_tri_moi_1,
+    cot_2 = gia_tri_moi_2
+WHERE dieu_kien;    -- LUON CO WHERE!
+```
+
+```sql
+UPDATE nhan_vien SET luong = 16000000 WHERE id = 5;
+UPDATE nhan_vien SET luong = luong * 1.10 WHERE phong_ban = 'IT';
+
+-- Xem kết quả sau khi UPDATE
+UPDATE nhan_vien
+SET luong = 20000000
+WHERE id = 1
+RETURNING id, ho_ten, luong;
+```
+
+> ⚠️ **Quy trình an toàn:** Chạy `SELECT` với cùng `WHERE` trước, kiểm tra đúng hàng, rồi mới `UPDATE`.
+
+## 18. Xóa Dữ Liệu — DELETE & TRUNCATE
+
+```sql
+-- DELETE: xóa có chọn lọc
+DELETE FROM nhan_vien WHERE id = 5;
+DELETE FROM nhan_vien WHERE dang_lam = FALSE;
+DELETE FROM nhan_vien WHERE id = 5 RETURNING id, ho_ten;
+
+-- TRUNCATE: xóa tất cả, giữ cấu trúc bảng
+TRUNCATE TABLE nhan_vien;
+TRUNCATE TABLE nhan_vien RESTART IDENTITY;   -- Reset SERIAL về 1
+```
+
+> ⚠️ **Quy trình an toàn:** `SELECT * FROM nhan_vien WHERE ...` trước để xem sẽ xóa hàng nào.
+
+## 19. Transaction
+
+*Excel tương đương: Ctrl+Z nhiều bước liên tiếp*
+
+```sql
+BEGIN;
+
+    UPDATE nhan_vien SET luong = luong * 1.10 WHERE phong_ban = 'IT';
+    DELETE FROM nhan_vien WHERE dang_lam = FALSE;
+
+COMMIT;    -- Xác nhận — lưu vĩnh viễn
+-- hoặc:
+ROLLBACK;  -- Hủy bỏ — quay về trước BEGIN
+
+-- SAVEPOINT: điểm lưu giữa chừng
+BEGIN;
+    UPDATE nhan_vien SET luong = 20000000 WHERE id = 1;
+    SAVEPOINT buoc_1;
+
+    DELETE FROM nhan_vien WHERE id = 3;  -- Nguy hiểm!
+    ROLLBACK TO SAVEPOINT buoc_1;        -- Quay về buoc_1, giữ UPDATE
+
+COMMIT;
+```
+
+## 20. VIEW
+
+*Excel tương đương: Named Range / Pivot Table đã lưu*
+
+```sql
+-- Tạo VIEW
+CREATE VIEW nhan_vien_dang_lam AS
+SELECT id, ho_ten, phong_ban, luong
+FROM nhan_vien
+WHERE dang_lam = TRUE;
+
+-- Dùng VIEW như bảng thông thường
+SELECT * FROM nhan_vien_dang_lam;
+SELECT * FROM nhan_vien_dang_lam WHERE phong_ban = 'IT';
+
+-- Cập nhật VIEW
+CREATE OR REPLACE VIEW nhan_vien_dang_lam AS
+SELECT id, ho_ten, phong_ban, luong, email
+FROM nhan_vien WHERE dang_lam = TRUE;
+
+-- Xóa VIEW
+DROP VIEW IF EXISTS nhan_vien_dang_lam;
+```
+
+## 21. Chỉnh Cấu Trúc Bảng — ALTER TABLE
+
+```sql
+-- Thêm cột
+ALTER TABLE nhan_vien ADD COLUMN so_dien_thoai VARCHAR(20);
+ALTER TABLE nhan_vien ADD COLUMN cap_bac VARCHAR(20) DEFAULT 'Nhan vien';
+
+-- Xóa cột (VINH VIEN!)
+ALTER TABLE nhan_vien DROP COLUMN IF EXISTS so_dien_thoai;
+
+-- Đổi tên cột
+ALTER TABLE nhan_vien RENAME COLUMN ho_ten TO ten_day_du;
+
+-- Đổi kiểu dữ liệu
+ALTER TABLE nhan_vien ALTER COLUMN phong_ban TYPE VARCHAR(100);
+
+-- Thêm/bỏ NOT NULL
+ALTER TABLE nhan_vien ALTER COLUMN phong_ban SET NOT NULL;
+ALTER TABLE nhan_vien ALTER COLUMN phong_ban DROP NOT NULL;
+
+-- Thêm/bỏ DEFAULT
+ALTER TABLE nhan_vien ALTER COLUMN dang_lam SET DEFAULT TRUE;
+ALTER TABLE nhan_vien ALTER COLUMN dang_lam DROP DEFAULT;
+
+-- Thêm constraint sau khi tạo
+ALTER TABLE nhan_vien ADD CONSTRAINT nhan_vien_email_unique UNIQUE (email);
+ALTER TABLE nhan_vien ADD CONSTRAINT luong_duong CHECK (luong >= 0);
+ALTER TABLE nhan_vien DROP CONSTRAINT luong_duong;
+
+-- Đổi tên bảng
+ALTER TABLE nhan_vien RENAME TO nhan_su;
+```
+
+## 22. Tra Cứu Nhanh — Bảng Tổng Hợp
+
+### Excel → SQL
+
+| Làm trong Excel | Tương đương SQL |
+|---|---|
+| Mở sheet, xem tất cả | `SELECT * FROM bang;` |
+| Chỉ xem vài cột | `SELECT cot1, cot2 FROM bang;` |
+| Đổi tên header | `SELECT cot AS "Ten moi"` |
+| Filter | `WHERE dieu_kien` |
+| Sort A→Z | `ORDER BY cot ASC` |
+| Sort Z→A | `ORDER BY cot DESC` |
+| Remove Duplicates | `SELECT DISTINCT cot` |
+| `=SUM()` | `SUM(cot)` |
+| `=AVERAGE()` | `AVG(cot)` |
+| `=COUNT()` | `COUNT(*)` |
+| Pivot Table | `GROUP BY + ham tong hop` |
+| VLOOKUP | `JOIN` |
+| `=IF()` / `=IFS()` | `CASE WHEN ... THEN ... END` |
+| `=IFERROR()` | `COALESCE()` |
+| `=UPPER()` / `=LOWER()` | `UPPER()` / `LOWER()` |
+| `=MID()` | `SUBSTRING()` |
+| `=LEN()` | `LENGTH()` |
+| `=TRIM()` | `TRIM()` |
+| `=TODAY()` | `CURRENT_DATE` |
+| `=YEAR()` / `=MONTH()` | `EXTRACT(YEAR FROM ...)` |
+| `=TEXT(A1,"DD/MM/YYYY")` | `TO_CHAR(cot, 'DD/MM/YYYY')` |
+| Ctrl+Z nhiều bước | `BEGIN; ... ROLLBACK;` |
+| Xóa cả sheet | `DROP TABLE ...` |
+| Xóa nội dung, giữ tiêu đề | `TRUNCATE TABLE ...` |
+
+### Hàm Làm Tròn Số
+
+| Hàm | Kết quả | Ghi nhớ |
+|---|---|---|
+| `ROUND(9.567, 2)` | `9.57` | Làm tròn thông thường |
+| `ROUND(9.567, 0)` | `10` | Đến số nguyên |
+| `CEIL(9.1)` | `10` | Lên (ceiling — trần nhà) |
+| `FLOOR(9.9)` | `9` | Xuống (floor — sàn nhà) |
+| `TRUNC(9.99, 1)` | `9.9` | Cắt bỏ, không làm tròn |
+| `ABS(-5)` | `5` | Giá trị tuyệt đối |
+
+### Kiểm Tra Cấu Trúc Bảng
+
+```sql
+-- Danh sách tất cả bảng
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+
+-- Cột của một bảng
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_name = 'nhan_vien' AND table_schema = 'public'
+ORDER BY ordinal_position;
+```
+
+### Lỗi Thường Gặp & Cách Fix
+
+| Thông báo lỗi | Nguyên nhân | Cách fix |
+|---|---|---|
+| `null value in column "..." violates not-null constraint` | Bỏ qua cột NOT NULL | Thêm giá trị cho cột đó |
+| `duplicate key value violates unique constraint` | Trùng UNIQUE/PRIMARY KEY | Kiểm tra trùng trước INSERT |
+| `invalid input syntax for type date` | Sai format ngày | Dùng `'YYYY-MM-DD'` |
+| `value too long for type character varying(n)` | Chuỗi quá dài | Tăng n hoặc cắt chuỗi |
+| `column "..." does not exist` | Sai tên cột / alias trong WHERE | Dùng tên cột gốc trong WHERE |
+| `column "..." must appear in GROUP BY` | Cột SELECT không có trong GROUP BY | Thêm vào GROUP BY |
+</script>
+
+<script type="text/markdown" id="src-datatypes">
+# Tổng Hợp Kiểu Dữ Liệu PostgreSQL — Tài Liệu Tham Khảo
+
+> Tài liệu tra cứu toàn bộ kiểu dữ liệu PostgreSQL — bổ sung các kiểu mở rộng và nâng cao khi gặp tình huống đặc biệt.
+
+## Nhóm 1: Kiểu Thiết Yếu (Đã Học Tuần 3)
+
+| Kiểu | Phạm vi / Kích thước | Dùng khi nào | Excel tương đương |
+|---|---|---|---|
+| `INTEGER` | ±2,147,483,647 | Id, số lượng, năm | Số nguyên |
+| `SERIAL` | 1 → 2.1 tỷ, tự tăng | Cột id tự tăng | Fill series tự động |
+| `NUMERIC(p,s)` | Chính xác tuyệt đối | **Tiền tệ, kế toán** | Number (decimal) |
+| `VARCHAR(n)` | Biến đổi, tối đa n ký tự | Tên, email, địa chỉ | Text giới hạn |
+| `TEXT` | Không giới hạn | Mô tả dài, ghi chú | Text tự do |
+| `DATE` | Ngày (YYYY-MM-DD) | Ngày sinh, ngày hết hạn | Date format |
+| `TIMESTAMP` | Ngày + giờ (không múi giờ) | Ghi log, thời gian tạo | Date+Time |
+| `BOOLEAN` | TRUE / FALSE / NULL | Trạng thái, cờ bật/tắt | TRUE/FALSE |
+
+## Nhóm 2: Kiểu Số Nguyên Mở Rộng
+
+### SMALLINT — Số Nguyên Nhỏ
+
+```sql
+tuoi    SMALLINT,
+so_sao  SMALLINT   -- đánh giá từ 1 đến 5
+```
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Bộ nhớ | 2 bytes |
+| Phạm vi | -32,768 đến 32,767 |
+| Dùng khi nào | Số nhỏ, biết chắc không vượt 32,767 |
+
+**Ví dụ phù hợp:** tuổi (0–150), điểm đánh giá (1–5), số tầng tòa nhà.
+
+> **Thực tế:** Ưu tiên dùng `INTEGER` cho an toàn, trừ khi bảng có hàng trăm triệu dòng và cần tiết kiệm bộ nhớ.
+
+### BIGINT — Số Nguyên Rất Lớn
+
+```sql
+so_luong_toan_quoc   BIGINT,
+tong_doanh_thu       BIGINT
+```
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Bộ nhớ | 8 bytes |
+| Phạm vi | khoảng ±9.2 × 10^18 |
+| Dùng khi nào | Số cực lớn, id bảng hàng tỷ dòng |
+
+> **Thực tế:** Đại đa số ứng dụng không cần BIGINT — `INTEGER` (2.1 tỷ) là quá đủ.
+
+### BIGSERIAL — Số Tự Tăng Cho Bảng Cực Lớn
+
+```sql
+id   BIGSERIAL PRIMARY KEY
+```
+
+| Kiểu | Phạm vi |
+|---|---|
+| SERIAL | 1 đến 2,147,483,647 |
+| BIGSERIAL | 1 đến 9,223,372,036,854,775,807 |
+
+## Nhóm 3: Số Thập Phân Dấu Phẩy Động
+
+> ⚠️ **CẢNH BÁO:** Không dùng `REAL` hay `DOUBLE PRECISION` cho tiền tệ, giá cả. Dùng `NUMERIC(p,s)`.
+
+### REAL — Số Dấu Phẩy Động Đơn
+
+```sql
+nhiet_do    REAL
+```
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Bộ nhớ | 4 bytes |
+| Độ chính xác | ~6 chữ số thập phân |
+| Dùng khi nào | Tính toán khoa học, vật lý |
+
+**Lỗi làm tròn quan trọng:**
+
+```sql
+SELECT 0.1::REAL + 0.2::REAL;
+-- Kết quả: 0.30000001192...  (KHÔNG phải 0.3!)
+```
+
+**Khi nào dùng REAL:** Tính toán khoa học — kết quả gần đúng chấp nhận được, không liên quan tiền bạc.
+
+### DOUBLE PRECISION — Số Dấu Phẩy Động Kép
+
+```sql
+toa_do_x    DOUBLE PRECISION
+```
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Bộ nhớ | 8 bytes |
+| Độ chính xác | ~15 chữ số thập phân |
+
+Tương tự `REAL` nhưng chính xác hơn. Vẫn có lỗi làm tròn — **không dùng cho tiền tệ**.
+
+## Nhóm 4: Kiểu Chuỗi Mở Rộng
+
+### CHAR(n) — Chuỗi Độ Dài Cố Định
+
+```sql
+ma_tinh   CHAR(2),    -- 'HN', 'SG', 'DN'
+ma_quoc   CHAR(3)     -- 'VNM', 'USA', 'JPN'
+```
+
+| Thuộc tính | Giá trị |
+|---|---|
+| n | Số ký tự cố định |
+| Đặc điểm | Luôn chiếm đúng n ký tự — tự thêm dấu cách nếu thiếu |
+| Dùng khi nào | Mã có độ dài **cố định và đã biết trước** |
+
+```sql
+-- Cột mã tỉnh CHAR(2):
+'HN'  -- lưu 'HN'  (đúng 2 ký tự)
+'H'   -- lưu 'H '  (tự thêm 1 dấu cách)
+'HNO' -- Lỗi! (vượt quá 2 ký tự)
+```
+
+> **Thực tế:** Khi nghi ngờ, hãy dùng `VARCHAR`.
+
+## Nhóm 5: Kiểu Thời Gian Mở Rộng
+
+### TIME — Chỉ Giờ
+
+```sql
+gio_mo_cua   TIME DEFAULT '08:00:00'
+```
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Lưu gì | Chỉ giờ phút giây (không có ngày) |
+| Format | `'HH:MM:SS'` |
+
+> **Thực tế:** `TIME` ít dùng vì mất thông tin ngày. Thường `TIMESTAMP` phù hợp hơn.
+
+### TIMESTAMPTZ — Ngày, Giờ và Múi Giờ
+
+```sql
+thoi_gian_dat_hang   TIMESTAMPTZ DEFAULT NOW()
+```
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Lưu gì | Ngày + giờ + múi giờ (lưu nội bộ dưới dạng UTC) |
+| Múi giờ | **Có lưu** — tự động chuyển đổi khi đọc |
+
+**TIMESTAMP vs TIMESTAMPTZ:**
+
+```
+Dùng TIMESTAMP khi:
+  Ứng dụng chỉ dùng tại Việt Nam (một múi giờ)
+  Giờ luôn là giờ Việt Nam (UTC+7)
+
+Dùng TIMESTAMPTZ khi:
+  Người dùng ở nhiều múi giờ khác nhau
+  Giao dịch tài chính quốc tế
+  Không chắc → CHỌN TIMESTAMPTZ cho an toàn
+```
+
+### INTERVAL — Khoảng Thời Gian
+
+```sql
+thoi_gian_bao_hanh   INTERVAL,
+thoi_han_hop_dong    INTERVAL
+```
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Lưu gì | Khoảng thời gian (bao lâu, không phải thời điểm) |
+| Ví dụ | `'1 year'`, `'3 months'`, `'30 days'` |
+
+```sql
+SELECT '2024-01-15'::DATE + INTERVAL '1 year';    -- 2025-01-15
+SELECT '2024-01-15'::DATE + INTERVAL '3 months';  -- 2024-04-15
+
+-- Lọc đơn hàng trong 30 ngày qua
+SELECT * FROM don_hang
+WHERE ngay_dat >= NOW() - INTERVAL '30 days';
+```
+
+## Nhóm 6: Kiểu Nâng Cao
+
+> Các kiểu này dành cho trường hợp đặc biệt. Nắm vững các kiểu thiết yếu trước.
+
+### UUID — Mã Định Danh Toàn Cầu
+
+```sql
+id   UUID DEFAULT gen_random_uuid()
+-- Ví dụ: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+```
+
+**Khi nào dùng UUID thay SERIAL:**
+- Hệ thống phân tán (nhiều server tự tạo id)
+- Không muốn lộ số lượng bản ghi
+- Merge dữ liệu từ nhiều nguồn
+
+```sql
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+```
+
+### JSON và JSONB — Dữ Liệu Bán Cấu Trúc
+
+```sql
+thong_tin_bo_sung   JSONB
+-- '{"mau_sac": "do", "kich_co": "L"}'
+```
+
+| | JSON | JSONB |
+|---|---|---|
+| Lưu dạng | Text nguyên gốc | Binary |
+| Tốc độ đọc | Chậm hơn | **Nhanh hơn** |
+| Index | Không tốt | **Có thể đánh index** |
+| Nên dùng | Hiếm | **Ưu tiên** |
+
+### ARRAY — Mảng Giá Trị
+
+```sql
+so_dien_thoai   TEXT[],
+ky_nang         VARCHAR[]
+
+INSERT INTO nhan_vien (so_dien_thoai)
+VALUES (ARRAY['0901234567', '0281234567']);
+
+SELECT so_dien_thoai[1] FROM nhan_vien;
+SELECT * FROM nhan_vien WHERE '0901234567' = ANY(so_dien_thoai);
+```
+
+## Bảng Tra Cứu Toàn Bộ
+
+| Câu hỏi | Kiểu nên dùng |
+|---|---|
+| Cột id tự tăng? | `SERIAL` |
+| Số nguyên thông thường? | `INTEGER` |
+| Số nguyên nhỏ (< 32,767)? | `SMALLINT` |
+| Số nguyên cực lớn (hàng tỷ)? | `BIGINT` |
+| Tiền tệ, giá cả (cần chính xác)? | `NUMERIC(p, s)` |
+| Số khoa học (gần đúng OK)? | `DOUBLE PRECISION` |
+| Tên người, email (giới hạn)? | `VARCHAR(n)` |
+| Mô tả, ghi chú dài? | `TEXT` |
+| Mã cố định (mã tỉnh, quốc gia)? | `CHAR(n)` |
+| Chỉ lưu ngày? | `DATE` |
+| Chỉ lưu giờ? | `TIME` |
+| Ngày + giờ (nội địa)? | `TIMESTAMP` |
+| Ngày + giờ (quốc tế / không chắc)? | `TIMESTAMPTZ` |
+| Khoảng thời gian (1 tháng, 30 ngày)? | `INTERVAL` |
+| Đúng/Sai? | `BOOLEAN` |
+| Id phân tán (không trùng toàn cầu)? | `UUID` |
+| Dữ liệu linh hoạt, không cố định? | `JSONB` |
+| Nhiều giá trị cùng loại trong 1 cột? | `ARRAY` |
+</script>
+
+<script type="text/markdown" id="src-casting">
+# Chuyển Đổi Kiểu Dữ Liệu — Type Casting
+
+> Tài liệu tra cứu về chuyển đổi kiểu dữ liệu trong PostgreSQL.
+
+## Type Casting Là Gì?
+
+**Type casting** = "dịch" một giá trị từ kiểu dữ liệu này sang kiểu dữ liệu khác.
+
+*Excel tương đương:* Đổi format ô từ "Number" sang "Text", hoặc dùng `TEXT(A1, "DD/MM/YYYY")`.
+
+```
+Luồng chuyển đổi:
+  CAST(x AS type)   hoặc   x::type
+  ──────────────────────────────────
+  Giá trị gốc (Kiểu A) ─────► Giá trị đích (Kiểu B)
+
+  42           (INTEGER) ──[::TEXT]────► '42'         (TEXT)    OK
+  '123'        (TEXT)    ──[::INTEGER]─► 123          (INTEGER) Lỗi nếu không phải số
+  '2024-01-15' (TEXT)    ──[::DATE]───► 2024-01-15   (DATE)    Lỗi nếu sai format
+  3.99         (NUMERIC) ──[::INTEGER]─► 3 (CAT!)    (INTEGER) Mất phần thập phân
+  TRUE         (BOOLEAN) ──[::INTEGER]─► 1            (INTEGER) OK
+```
+
+## Hai Cú Pháp Cast
+
+### CAST() — Chuẩn SQL (dùng được ở mọi database)
+
+```sql
+CAST(expression AS target_type)
+```
+
+### :: — Rút Gọn Của PostgreSQL (ngắn hơn, phổ biến hơn)
+
+```sql
+expression::target_type
+```
+
+**So sánh — cả hai cho kết quả giống nhau:**
+
+```sql
+CAST(42 AS TEXT)          -- Kết quả: '42'
+42::TEXT                  -- Kết quả: '42'
+
+CAST('123' AS INTEGER)    -- Kết quả: 123
+'123'::INTEGER            -- Kết quả: 123
+
+CAST('2024-01-15' AS DATE)
+'2024-01-15'::DATE        -- Kết quả: 2024-01-15
+```
+
+> **Khuyến nghị:** Dùng `::` trong PostgreSQL. Dùng `CAST()` nếu code cần chạy trên nhiều loại database.
+
+## Bảng Chuyển Đổi Thường Gặp
+
+### Nhóm 1: Bất Kỳ Kiểu → TEXT (luôn an toàn)
+
+| Từ kiểu | Cú pháp | Ví dụ đầu vào | Kết quả |
+|---|---|---|---|
+| `INTEGER` | `42::TEXT` | `42` | `'42'` |
+| `NUMERIC` | `3.14::TEXT` | `3.14` | `'3.14'` |
+| `DATE` | `current_date::TEXT` | `2026-04-13` | `'2026-04-13'` |
+| `TIMESTAMP` | `now()::TEXT` | *(hiện tại)* | `'2026-04-13 14:30:25...'` |
+| `BOOLEAN` | `TRUE::TEXT` | `TRUE` | `'true'` |
+| `INTERVAL` | `INTERVAL '1 year'::TEXT` | *(interval)* | `'1 year'` |
+
+### Nhóm 2: TEXT → Các Kiểu Khác (có thể lỗi!)
+
+| Từ kiểu | Sang | Cú pháp | Thất bại khi |
+|---|---|---|---|
+| `TEXT` | `INTEGER` | `'123'::INTEGER` | Chứa chữ hoặc dấu phẩy |
+| `TEXT` | `NUMERIC` | `'99.5'::NUMERIC` | Chứa dấu phẩy ngăn nhóm (`'1,000'`) |
+| `TEXT` | `DATE` | `'2024-01-15'::DATE` | Không đúng format `YYYY-MM-DD` |
+| `TEXT` | `BOOLEAN` | `'true'::BOOLEAN` | Giá trị không hợp lệ (`'maybe'`) |
+
+> 💡 **Số có dấu phẩy:** Dùng `TO_NUMBER('1,000,000', '9,999,999')` thay vì `::NUMERIC`.
+
+### Nhóm 3: Số ↔ Số
+
+| Từ kiểu | Sang | Kết quả | Lưu ý |
+|---|---|---|---|
+| `INTEGER` | `NUMERIC` | `42::NUMERIC(10,2)` → `42.00` | Luôn an toàn |
+| `INTEGER` | `BIGINT` | `42::BIGINT` → `42` | Luôn an toàn |
+| `NUMERIC` | `INTEGER` | `9.9::INTEGER` → `9` | **CẮT** không làm tròn! |
+| `BIGINT` | `INTEGER` | `9999999999::INTEGER` | **LỖI** nếu vượt ±2.1 tỷ |
+
+> ⚠️ **`NUMERIC → INTEGER` dùng CẮT (truncate), không làm tròn!**
+> `9.9 → 9`, không phải `10`. Muốn làm tròn: `ROUND(9.9, 0)::INTEGER`
+
+### Nhóm 4: Ngày / Giờ ↔ Ngày / Giờ
+
+| Từ | Sang | Cú pháp | Kết quả |
+|---|---|---|---|
+| `DATE` | `TIMESTAMP` | `'2024-01-15'::DATE::TIMESTAMP` | `2024-01-15 00:00:00` |
+| `TIMESTAMP` | `DATE` | `now()::DATE` | `2026-04-13` (bỏ giờ) |
+| `TIMESTAMP` | `TIME` | `now()::TIME` | `14:30:25` (bỏ ngày) |
+| `DATE` | `TEXT` | `ngay_sinh::TEXT` | `'1995-03-20'` |
+| `DATE` | `TEXT` dạng VN | `TO_CHAR(ngay_sinh, 'DD/MM/YYYY')` | `'20/03/1995'` |
+| `TEXT` dạng VN | `DATE` | `TO_DATE('20/03/1995', 'DD/MM/YYYY')` | `1995-03-20` |
+
+### Nhóm 5: BOOLEAN ↔ Các Kiểu Khác
+
+| Từ | Sang | Kết quả |
+|---|---|---|
+| `BOOLEAN` | `TEXT` | `TRUE::TEXT` → `'true'` |
+| `BOOLEAN` | `INTEGER` | `TRUE::INTEGER` → `1`, `FALSE::INTEGER` → `0` |
+| `INTEGER` | `BOOLEAN` | `1::BOOLEAN` → `TRUE`, `0::BOOLEAN` → `FALSE` |
+| `TEXT` | `BOOLEAN` | `'yes'::BOOLEAN` → `TRUE`, `'no'::BOOLEAN` → `FALSE` |
+
+### Tóm Tắt An Toàn
+
+| Chiều | Mức độ | Ghi chú |
+|---|---|---|
+| Bất kỳ → `TEXT` | OK | Không bao giờ lỗi |
+| Số nhỏ → Số lớn (`INTEGER → BIGINT`) | OK | Phạm vi lớn hơn |
+| `DATE → TIMESTAMP` | OK | Tự thêm `00:00:00` |
+| `NUMERIC → INTEGER` | Mất dữ liệu | Cắt phần thập phân |
+| `TIMESTAMP → DATE` | Mất dữ liệu | Mất thông tin giờ |
+| Số lớn → Số nhỏ (`BIGINT → INTEGER`) | Có thể lỗi | Lỗi nếu vượt phạm vi |
+| `TEXT` → Số/Ngày/Boolean | Có thể lỗi | Lỗi nếu chuỗi không hợp lệ |
+
+## Chi Tiết Từng Nhóm Chuyển Đổi — Ví Dụ SQL
+
+### Chuyển Sang TEXT
+
+```sql
+SELECT 42::TEXT;                   -- '42'
+SELECT (-100)::TEXT;               -- '-100'
+SELECT 15000000.50::TEXT;          -- '15000000.5'
+SELECT current_date::TEXT;         -- '2026-04-13'
+SELECT now()::TEXT;                -- '2026-04-13 14:30:25...'
+SELECT TRUE::TEXT;                 -- 'true'
+SELECT FALSE::TEXT;                -- 'false'
+```
+
+### Chuyển Text Sang Các Kiểu Khác
+
+```sql
+SELECT '123'::INTEGER;             -- 123
+SELECT '  456  '::INTEGER;         -- 456 (tự bỏ khoảng trắng)
+SELECT 'abc'::INTEGER;             -- LỖI!
+SELECT '12.5'::NUMERIC::INTEGER;   -- 12 (cắt phần thập phân)
+
+SELECT '99.50'::NUMERIC;           -- 99.5
+SELECT '15,000,000'::NUMERIC;      -- LỖI! (dấu phẩy không hợp lệ)
+-- Giải pháp:
+SELECT TO_NUMBER('15,000,000', '999,999,999');  -- 15000000
+
+SELECT '2024-01-15'::DATE;         -- 2024-01-15
+SELECT '15/01/2024'::DATE;         -- Lỗi hoặc sai! Dùng TO_DATE()
+
+SELECT 'true'::BOOLEAN;            -- TRUE
+SELECT 'yes'::BOOLEAN;             -- TRUE
+SELECT '1'::BOOLEAN;               -- TRUE
+SELECT 'maybe'::BOOLEAN;           -- LỖI!
+```
+
+### Chuyển Giữa Các Kiểu Số
+
+```sql
+SELECT 9.9::INTEGER;               -- 9 (CẮT, không làm tròn!)
+SELECT 9.1::INTEGER;               -- 9
+SELECT (-9.9)::INTEGER;            -- -9 (về phía 0)
+SELECT ROUND(9.9)::INTEGER;        -- 10 (làm tròn đúng)
+SELECT CEIL(9.1)::INTEGER;         -- 10
+SELECT FLOOR(9.9)::INTEGER;        -- 9
+
+SELECT 9999999999::INTEGER;        -- LỖI! (vượt ±2.1 tỷ)
+```
+
+### Chuyển Đổi Ngày Tháng
+
+```sql
+SELECT '2024-01-15'::DATE::TIMESTAMP;   -- 2024-01-15 00:00:00
+SELECT '2024-01-15 14:30:00'::TIMESTAMP::DATE;  -- 2024-01-15
+SELECT '2024-01-15 14:30:00'::TIMESTAMP::TIME;  -- 14:30:00
+SELECT '2024-01-15'::DATE + INTERVAL '1 month'; -- 2024-02-15
+SELECT '2024-01-15'::DATE + INTERVAL '1 year 6 months'; -- 2025-07-15
+```
+
+## Hàm Định Dạng — TO_CHAR, TO_DATE, TO_NUMBER
+
+### TO_CHAR() — Số / Ngày → Chuỗi Có Định Dạng
+
+*Excel tương đương: `TEXT(value, format)`*
+
+**Ký hiệu format ngày:**
+
+| Ký hiệu | Ý nghĩa | Ví dụ (2024-03-20) |
+|---|---|---|
+| `YYYY` | Năm 4 chữ số | `2024` |
+| `YY` | Năm 2 chữ số | `24` |
+| `MM` | Tháng 2 chữ số | `03` |
+| `Month` | Tên tháng đầy đủ | `March` |
+| `DD` | Ngày 2 chữ số | `20` |
+| `Day` | Tên thứ đầy đủ | `Wednesday` |
+| `HH24` | Giờ hệ 24h | `14` |
+| `HH12` | Giờ hệ 12h | `02` |
+| `MI` | Phút | `30` |
+| `SS` | Giây | `00` |
+| `AM/PM` | Sáng/Chiều | `PM` |
+| `FM` | Bỏ khoảng trắng thừa | *(xem ví dụ)* |
+
+```sql
+SELECT TO_CHAR('1995-03-20'::DATE, 'DD/MM/YYYY');       -- '20/03/1995'
+SELECT TO_CHAR('1995-03-20'::DATE, 'FMDay, DD Month YYYY'); -- 'Wednesday, 20 March 1995'
+SELECT TO_CHAR(NOW(), 'HH24:MI:SS DD/MM/YYYY');          -- '14:30:25 13/04/2026'
+SELECT TO_CHAR(current_date, 'MM/YYYY');                 -- '04/2026'
+```
+
+**Ký hiệu format số:**
+
+| Ký hiệu | Ý nghĩa |
+|---|---|
+| `9` | Chữ số (khoảng trắng nếu không có) |
+| `0` | Chữ số (số 0 nếu không có) |
+| `.` | Dấu thập phân |
+| `,` | Dấu phân cách nhóm 3 chữ số |
+| `FM` | Bỏ khoảng trắng thừa |
+
+```sql
+SELECT TO_CHAR(15000000, 'FM999,999,999');           -- '15,000,000'
+SELECT TO_CHAR(15000000, 'FM999,999,999') || ' VND'; -- '15,000,000 VND'
+SELECT TO_CHAR(3.14159, 'FM9.99');                   -- '3.14'
+
+-- Ứng dụng thực tế
+SELECT ho_ten, TO_CHAR(luong, 'FM999,999,999') || ' VND' AS luong_format
+FROM nhan_vien;
+```
+
+### TO_DATE() — Chuỗi → DATE Theo Format Tùy Chỉnh
+
+```sql
+SELECT TO_DATE('20/03/1995', 'DD/MM/YYYY');     -- 1995-03-20
+SELECT TO_DATE('03/20/1995', 'MM/DD/YYYY');     -- 1995-03-20
+SELECT TO_DATE('20-Mar-1995', 'DD-Mon-YYYY');   -- 1995-03-20
+SELECT TO_DATE('20 March 1995', 'DD Month YYYY'); -- 1995-03-20
+
+-- Import từ Excel/CSV (ngày dạng DD/MM/YYYY):
+INSERT INTO nhan_vien (ho_ten, ngay_sinh)
+VALUES ('Tran Thi Mai', TO_DATE('20/03/1995', 'DD/MM/YYYY'));
+```
+
+### TO_NUMBER() — Chuỗi → Số
+
+```sql
+SELECT TO_NUMBER('15,000,000', '999,999,999');  -- 15000000
+SELECT TO_NUMBER('99.50', '99.99');             -- 99.50
+SELECT TO_NUMBER('$1,234.56', 'L9,999.99');    -- 1234.56
+```
+
+## Xử Lý Lỗi Khi Cast
+
+### Lỗi Thường Gặp
+
+```sql
+-- Lỗi 1: invalid input syntax for type integer
+SELECT 'abc'::INTEGER;  -- ERROR!
+
+-- Cách xử lý: kiểm tra trước
+SELECT CASE
+    WHEN ma_so ~ '^[0-9]+$'   -- Chỉ chứa chữ số
+    THEN ma_so::INTEGER
+    ELSE NULL
+END AS ma_so_int
+FROM bang_nhap;
+
+-- Lỗi 2: date/time field value out of range
+SELECT '30/02/2024'::DATE;  -- ERROR! (tháng 30 không tồn tại)
+-- Fix: dùng YYYY-MM-DD hoặc TO_DATE()
+SELECT TO_DATE('29/02/2024', 'DD/MM/YYYY');  -- OK (2024 năm nhuận)
+
+-- Lỗi 3: numeric field overflow
+-- Cột NUMERIC(5,2) tối đa 999.99
+INSERT INTO bang_test (so_nho) VALUES (10000.00);  -- ERROR!
+-- Fix: tăng p khi khai báo cột
+
+-- Lỗi 4: value too long for type character varying(n)
+-- Fix: tăng n hoặc dùng TEXT
+```
+
+### Mất Dữ Liệu Âm Thầm — Cẩn Thận!
+
+```sql
+SELECT 9.9::INTEGER;   -- 9  (mất 0.9!)
+SELECT 9.1::INTEGER;   -- 9  (mất 0.1!)
+
+-- Làm tròn đúng trước khi cast:
+SELECT ROUND(9.9, 0)::INTEGER;  -- 10
+SELECT ROUND(9.4, 0)::INTEGER;  -- 9
+
+-- TIMESTAMP → DATE: mất phần giờ
+SELECT '2024-01-15 23:59:59'::TIMESTAMP::DATE;  -- 2024-01-15 (mất giờ!)
+```
+
+## Ví Dụ Tổng Hợp Thực Tế
+
+### Tạo Câu Chào Với Ngày
+
+```sql
+SELECT 'Hom nay la ' || TO_CHAR(current_date, 'FMDay, DD/MM/YYYY');
+-- 'Hom nay la Monday, 13/04/2026'
+```
+
+### Tính Tuổi Nhân Viên
+
+```sql
+SELECT
+    ho_ten,
+    TO_CHAR(ngay_sinh, 'DD/MM/YYYY') AS ngay_sinh_format,
+    EXTRACT(YEAR FROM AGE(ngay_sinh))::INTEGER AS tuoi
+FROM nhan_vien
+ORDER BY tuoi DESC;
+```
+
+### Format Báo Cáo Lương
+
+```sql
+SELECT
+    ho_ten,
+    phong_ban,
+    TO_CHAR(luong, 'FM999,999,999') || ' VND' AS luong_format
+FROM nhan_vien
+ORDER BY luong DESC;
+```
+
+### Import Ngày Từ CSV Dạng DD/MM/YYYY
+
+```sql
+INSERT INTO nhan_vien (ho_ten, ngay_sinh) VALUES
+    ('Tran Thi Mai',  TO_DATE('20/03/1995', 'DD/MM/YYYY')),
+    ('Nguyen Van An', TO_DATE('15/07/1990', 'DD/MM/YYYY'));
+```
+
+### Tính Ngày Hết Hạn
+
+```sql
+SELECT
+    ho_ten,
+    ngay_vao,
+    (ngay_vao + INTERVAL '1 year')::DATE AS het_thu_viec,
+    CASE
+        WHEN (ngay_vao + INTERVAL '1 year')::DATE <= current_date
+        THEN 'Da het thu viec'
+        ELSE 'Dang thu viec - con ' ||
+             ((ngay_vao + INTERVAL '1 year')::DATE - current_date)::TEXT ||
+             ' ngay'
+    END AS trang_thai
+FROM nhan_vien;
+```
+
+## Bảng Tra Cứu Nhanh
+
+```sql
+-- Số → Chuỗi
+42::TEXT                              -- '42'
+TO_CHAR(15000000, 'FM999,999,999')    -- '15,000,000'
+
+-- Chuỗi → Số
+'123'::INTEGER                        -- 123
+TO_NUMBER('15,000', 'FM999,999')      -- 15000
+
+-- Ngày → Chuỗi
+current_date::TEXT                    -- '2026-04-13'
+TO_CHAR(current_date, 'DD/MM/YYYY')  -- '13/04/2026'
+
+-- Chuỗi → Ngày
+'2024-01-15'::DATE                    -- 2024-01-15
+TO_DATE('15/01/2024', 'DD/MM/YYYY')  -- 2024-01-15
+
+-- Cắt phần giờ
+NOW()::DATE                           -- Ngày hôm nay
+
+-- Làm tròn rồi chuyển số
+ROUND(9.7, 0)::INTEGER               -- 10
+FLOOR(9.7)::INTEGER                  -- 9
+CEIL(9.1)::INTEGER                   -- 10
+
+-- Format hay dùng
+TO_CHAR(ngay, 'DD/MM/YYYY')          -- 13/04/2026
+TO_CHAR(ngay, 'DD Month YYYY')       -- 13 April 2026
+TO_CHAR(ngaygio, 'HH24:MI DD/MM/YYYY') -- 14:30 13/04/2026
+TO_CHAR(so, 'FM999,999,999')         -- Số có dấu phẩy
+TO_DATE(chuoi, 'DD/MM/YYYY')         -- Chuỗi VN → ngày
+TO_NUMBER(chuoi, 'FM999,999,999')    -- Chuỗi có dấu phẩy → số
+```
+</script>
+
+<!-- ── JAVASCRIPT ── -->
+<script>
+(function () {
+
+/* ═══════════════════════════════════════════════════
+   SQL HIGHLIGHTING
+═══════════════════════════════════════════════════ */
+const SQL_KW = new Set([
+  'SELECT','FROM','WHERE','GROUP','ORDER','HAVING','JOIN','LEFT','RIGHT','INNER',
+  'OUTER','FULL','CROSS','ON','AS','AND','OR','NOT','IN','LIKE','ILIKE',
+  'BETWEEN','IS','NULL','INSERT','INTO','VALUES','UPDATE','SET','DELETE',
+  'CREATE','TABLE','DROP','ALTER','COLUMN','ADD','RENAME','TYPE','IF','EXISTS',
+  'UNIQUE','PRIMARY','KEY','FOREIGN','REFERENCES','CHECK','DEFAULT','CASCADE',
+  'DISTINCT','LIMIT','OFFSET','RETURNING','BEGIN','COMMIT','ROLLBACK','SAVEPOINT',
+  'TO','TRUNCATE','VIEW','REPLACE','CONSTRAINT','SERIAL','BIGSERIAL','SMALLSERIAL',
+  'INTEGER','INT','NUMERIC','DECIMAL','VARCHAR','TEXT','DATE','TIMESTAMP',
+  'TIMESTAMPTZ','BOOLEAN','BOOL','BIGINT','SMALLINT','REAL','FLOAT','INTERVAL',
+  'UUID','JSONB','JSON','ARRAY','CAST','TRUE','FALSE','ASC','DESC','WITH',
+  'CASE','WHEN','THEN','ELSE','END','EXTENSION','BY','PARTITION','OVER',
+  'RESTART','IDENTITY','GENERATED','ALWAYS','SEQUENCE','DOUBLE','PRECISION',
+  'CHAR','TIME','ANY','ALL','UNION','INTERSECT','EXCEPT','USING','LATERAL',
+  'NO','ACTION','RESTRICT','NATURAL','ONLY','RETURNING','SAVEPOINT'
+]);
+
+const SQL_FN = new Set([
+  'COUNT','SUM','AVG','MIN','MAX','ROUND','CEIL','CEILING','FLOOR','TRUNC',
+  'ABS','POWER','SQRT','MOD','SIGN','EXP','LN','LOG','PI','LENGTH','UPPER',
+  'LOWER','TRIM','LTRIM','RTRIM','SUBSTRING','REPLACE','POSITION','CONCAT',
+  'COALESCE','NULLIF','EXTRACT','AGE','NOW','TO_CHAR','TO_DATE','TO_NUMBER',
+  'TO_TIMESTAMP','INITCAP','SPLIT_PART','LPAD','RPAD','REPEAT','REVERSE',
+  'CURRENT_DATE','CURRENT_TIMESTAMP','CURRENT_USER','NEXTVAL','DATE_PART',
+  'DATE_TRUNC','GEN_RANDOM_UUID','GENERATE_SERIES','ARRAY_AGG','STRING_AGG',
+  'RANK','DENSE_RANK','ROW_NUMBER','LEAD','LAG','FIRST_VALUE','LAST_VALUE',
+  'GREATEST','LEAST','FORMAT','REGEXP_REPLACE','BOOL_AND','BOOL_OR'
+]);
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function highlightSQL(raw) {
+  let r = '', i = 0;
+  while (i < raw.length) {
+    // Comment --
+    if (raw[i] === '-' && raw[i+1] === '-') {
+      const nl = raw.indexOf('\n', i);
+      const end = nl === -1 ? raw.length : nl;
+      r += '<span class="sql-comment">' + esc(raw.slice(i, end)) + '</span>';
+      i = end; continue;
+    }
+    // String '...'
+    if (raw[i] === "'") {
+      let j = i + 1;
+      while (j < raw.length) {
+        if (raw[j] === "'" && raw[j+1] === "'") { j += 2; continue; }
+        if (raw[j] === "'") { j++; break; }
+        j++;
+      }
+      r += '<span class="sql-string">' + esc(raw.slice(i, j)) + '</span>';
+      i = j; continue;
+    }
+    // Word
+    if (/[A-Za-z_]/.test(raw[i])) {
+      let j = i;
+      while (j < raw.length && /[A-Za-z_0-9]/.test(raw[j])) j++;
+      const word = raw.slice(i, j);
+      const up = word.toUpperCase();
+      if (SQL_KW.has(up)) r += '<span class="sql-keyword">' + esc(word) + '</span>';
+      else if (SQL_FN.has(up)) r += '<span class="sql-function">' + esc(word) + '</span>';
+      else r += esc(word);
+      i = j; continue;
+    }
+    // Number
+    if (/[0-9]/.test(raw[i])) {
+      let j = i;
+      while (j < raw.length && /[0-9.,]/.test(raw[j])) j++;
+      r += '<span class="sql-number">' + raw.slice(i, j) + '</span>';
+      i = j; continue;
+    }
+    r += esc(raw[i]);
+    i++;
+  }
+  return r;
+}
+
+/* ═══════════════════════════════════════════════════
+   MARKDOWN PARSER
+═══════════════════════════════════════════════════ */
+function parseInline(text) {
+  text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  text = text.replace(/\\\|/g, '&#124;');
+  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+  text = text.replace(/`([^`]+)`/g, (_, c) => '<code>' + c.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</code>');
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return text;
+}
+
+function parseTable(lines) {
+  if (lines.length < 2) return '';
+  const splitRow = l => l.replace(/^\||\|$/g,'').split('|').map(c => c.trim());
+  const headers = splitRow(lines[0]);
+  const rows = lines.slice(2).map(splitRow);
+  const th = headers.map(h => '<th>' + parseInline(h) + '</th>').join('');
+  const trs = rows.map(r => '<tr>' + r.map(c => '<td>' + parseInline(c) + '</td>').join('') + '</tr>').join('');
+  return '<div class="table-wrap"><table><thead><tr>' + th + '</tr></thead><tbody>' + trs + '</tbody></table></div>';
+}
+
+function slugify(text) {
+  const vi = {'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ă':'a','ắ':'a','ặ':'a','ẳ':'a','ẵ':'a','ầ':'a','ẩ':'a','ẫ':'a','ấ':'a','ậ':'a','â':'a','è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ê':'e','ế':'e','ệ':'e','ề':'e','ể':'e','ễ':'e','ì':'i','ỉ':'i','ĩ':'i','í':'i','ị':'i','ò':'o','ỏ':'o','õ':'o','ó':'o','ọ':'o','ô':'o','ố':'o','ộ':'o','ồ':'o','ổ':'o','ỗ':'o','ơ':'o','ớ':'o','ợ':'o','ờ':'o','ở':'o','ỡ':'o','ù':'u','ủ':'u','ũ':'u','ú':'u','ụ':'u','ư':'u','ứ':'u','ự':'u','ừ':'u','ử':'u','ữ':'u','ỳ':'y','ỷ':'y','ỹ':'y','ý':'y','ỵ':'y','đ':'d','À':'a','Á':'a','Â':'a','Ă':'a','È':'e','É':'e','Ê':'e','Ì':'i','Í':'i','Ò':'o','Ó':'o','Ô':'o','Ơ':'o','Ù':'u','Ú':'u','Ư':'u','Ý':'y','Đ':'d'};
+  return text.split('').map(c => vi[c] || c).join('')
+    .toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+}
+
+const sectionCounters = {};
+function uniqueId(docId, text) {
+  const base = docId + '-' + slugify(text);
+  sectionCounters[base] = (sectionCounters[base] || 0) + 1;
+  return sectionCounters[base] === 1 ? base : base + '-' + sectionCounters[base];
+}
+
+function parseMarkdown(md, docId) {
+  const lines = md.split('\n');
+  const blocks = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Fenced code block
+    if (line.match(/^```/)) {
+      const lang = line.slice(3).trim().toLowerCase() || 'text';
+      i++;
+      const codeLines = [];
+      while (i < lines.length && !lines[i].match(/^```/)) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      i++;
+      const raw = codeLines.join('\n');
+      const hi = (lang === 'sql') ? highlightSQL(raw) : esc(raw);
+      blocks.push('<pre><code class="lang-' + lang + '">' + hi + '</code></pre>');
+      continue;
+    }
+
+    // Headings
+    const hm = line.match(/^(#{1,4})\s+(.+)/);
+    if (hm) {
+      const lvl = hm[1].length;
+      const txt = hm[2];
+      const id = uniqueId(docId, txt.replace(/\*\*/g,''));
+      blocks.push('<h' + lvl + ' id="' + id + '">' + parseInline(txt) + '</h' + lvl + '>');
+      i++; continue;
+    }
+
+    // Table
+    if (line.startsWith('|')) {
+      const tbl = [];
+      while (i < lines.length && lines[i].startsWith('|')) { tbl.push(lines[i]); i++; }
+      blocks.push(parseTable(tbl));
+      continue;
+    }
+
+    // Blockquote
+    if (line.startsWith('>')) {
+      const bq = [];
+      while (i < lines.length && lines[i].startsWith('>')) {
+        bq.push(lines[i].replace(/^>\s?/, ''));
+        i++;
+      }
+      const content = bq.join('\n');
+      let cls = '';
+      if (content.includes('⚠️') || content.includes('CẢNH BÁO')) cls = 'bq-warning';
+      else if (content.includes('💡')) cls = 'bq-tip';
+      blocks.push('<blockquote class="' + cls + '"><p>' + parseInline(content.replace(/\n/g, ' ')) + '</p></blockquote>');
+      continue;
+    }
+
+    // Unordered list
+    if (line.match(/^[-*]\s/)) {
+      const items = [];
+      while (i < lines.length && lines[i].match(/^[-*]\s/)) {
+        items.push('<li>' + parseInline(lines[i].replace(/^[-*]\s/, '')) + '</li>');
+        i++;
+      }
+      blocks.push('<ul>' + items.join('') + '</ul>');
+      continue;
+    }
+
+    // Ordered list
+    if (line.match(/^\d+\.\s/)) {
+      const items = [];
+      while (i < lines.length && lines[i].match(/^\d+\.\s/)) {
+        items.push('<li>' + parseInline(lines[i].replace(/^\d+\.\s/, '')) + '</li>');
+        i++;
+      }
+      blocks.push('<ol>' + items.join('') + '</ol>');
+      continue;
+    }
+
+    // HR
+    if (line.match(/^-{3,}$/)) {
+      blocks.push('<hr>'); i++; continue;
+    }
+
+    // Empty
+    if (line.trim() === '') { i++; continue; }
+
+    // Paragraph
+    const para = [];
+    while (i < lines.length) {
+      const l = lines[i];
+      if (!l.trim() || l.startsWith('#') || l.startsWith('|') ||
+          l.startsWith('>') || l.match(/^[-*]\s/) || l.match(/^\d+\.\s/) ||
+          l.match(/^-{3,}$/) || l.match(/^```/)) break;
+      para.push(l);
+      i++;
+    }
+    if (para.length) blocks.push('<p>' + parseInline(para.join(' ')) + '</p>');
+  }
+
+  return blocks.join('\n');
+}
+
+/* ═══════════════════════════════════════════════════
+   DOCS CONFIG
+═══════════════════════════════════════════════════ */
+const DOCS = [
+  { id:'cheatsheet', icon:'📋', title:'PostgreSQL Cheatsheet', srcId:'src-cheatsheet', panelId:'panelCheatsheet', contentId:'contentCheatsheet' },
+  { id:'datatypes',  icon:'🗃️', title:'Kiểu Dữ Liệu',          srcId:'src-datatypes',  panelId:'panelDatatypes',  contentId:'contentDatatypes' },
+  { id:'casting',    icon:'🔄', title:'Type Casting',           srcId:'src-casting',    panelId:'panelCasting',    contentId:'contentCasting' }
+];
+
+/* ═══════════════════════════════════════════════════
+   RENDER ALL DOCS
+═══════════════════════════════════════════════════ */
+const docHeadings = {};
+
+function renderDocs() {
+  DOCS.forEach(doc => {
+    const src = document.getElementById(doc.srcId);
+    if (!src) return;
+    const md = src.textContent;
+    const html = parseMarkdown(md, doc.id);
+    const container = document.getElementById(doc.contentId);
+
+    // Extract H2s for sidebar
+    const h2s = [];
+    const re = new RegExp('id="(' + doc.id + '-[^"]+)"[^>]*>([^<]+)', 'g');
+    let m;
+    // Parse headings from rendered HTML by scanning markdown
+    md.split('\n').forEach(line => {
+      const hm = line.match(/^## (.+)/);
+      if (hm) {
+        const txt = hm[1].replace(/\*\*/g,'');
+        h2s.push({ id: doc.id + '-' + slugify(txt), label: txt });
+      }
+    });
+    docHeadings[doc.id] = h2s;
+
+    const banner = '<div class="welcome-banner"><h2>' + doc.icon + ' ' + doc.title + '</h2><p>Tài liệu tra cứu nhanh — click phần trong menu trái để điều hướng.</p></div>';
+    container.innerHTML = banner + html;
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   BUILD SIDEBAR
+═══════════════════════════════════════════════════ */
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = '';
+
+  DOCS.forEach(doc => {
+    const headings = docHeadings[doc.id] || [];
+
+    const group = document.createElement('div');
+    group.className = 'doc-group';
+    group.id = 'nav-group-' + doc.id;
+
+    const header = document.createElement('div');
+    header.className = 'doc-group-header';
+    header.innerHTML = '<span class="doc-icon">' + doc.icon + '</span>' +
+      '<span class="doc-title">' + doc.title + '</span>' +
+      '<span class="doc-arrow">▶</span>';
+    header.onclick = () => activateDoc(doc.id, true);
+
+    const sections = document.createElement('div');
+    sections.className = 'doc-sections';
+    sections.id = 'nav-sections-' + doc.id;
+
+    headings.forEach(h => {
+      const a = document.createElement('a');
+      a.className = 'section-link';
+      a.href = '#';
+      a.textContent = h.label;
+      a.dataset.docId = doc.id;
+      a.dataset.sectionId = h.id;
+      a.onclick = e => { e.preventDefault(); activateSection(doc.id, h.id); };
+      sections.appendChild(a);
+    });
+
+    group.appendChild(header);
+    group.appendChild(sections);
+    nav.appendChild(group);
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════ */
+let currentDocId = null;
+
+function activateDoc(docId, scrollTop, toggleIfActive = true) {
+  if (currentDocId === docId) {
+    const sections = document.getElementById('nav-sections-' + docId);
+    const header = document.querySelector('#nav-group-' + docId + ' .doc-group-header');
+
+    if (toggleIfActive) {
+      sections.classList.toggle('open');
+      header.classList.toggle('open');
+    } else {
+      sections.classList.add('open');
+      header.classList.add('open');
+    }
+    return;
+  }
+
+  // Hide all panels
+  DOCS.forEach(d => {
+    document.getElementById(d.panelId).classList.remove('active');
+    const g = document.getElementById('nav-group-' + d.id);
+    if (g) {
+      g.querySelector('.doc-group-header').classList.remove('active','open');
+      g.querySelector('.doc-sections').classList.remove('open');
+    }
+  });
+
+  // Clear active section links
+  document.querySelectorAll('.section-link').forEach(l => l.classList.remove('active'));
+
+  // Show target panel
+  document.getElementById(DOCS.find(d=>d.id===docId).panelId).classList.add('active');
+  currentDocId = docId;
+
+  // Activate sidebar group
+  const group = document.getElementById('nav-group-' + docId);
+  if (group) {
+    group.querySelector('.doc-group-header').classList.add('active','open');
+    group.querySelector('.doc-sections').classList.add('open');
+  }
+
+  if (scrollTop) {
+    const main = document.getElementById('mainArea');
+    main.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Activate first section link by default
+  const firstLink = document.querySelector('#nav-sections-' + docId + ' .section-link');
+  if (firstLink) firstLink.classList.add('active');
+}
+
+function activateSection(docId, sectionId) {
+  activateDoc(docId, false, false);
+
+  // Scroll to section
+  const el = document.getElementById(sectionId);
+  if (el) {
+    const main = document.getElementById('mainArea');
+    const offset = el.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop - 20;
+    main.scrollTo({ top: offset, behavior: 'smooth' });
+  }
+
+  // Update active section link
+  document.querySelectorAll('.section-link').forEach(l => {
+    l.classList.toggle('active', l.dataset.docId === docId && l.dataset.sectionId === sectionId);
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   SCROLL → ACTIVE SECTION TRACKING
+═══════════════════════════════════════════════════ */
+function setupScrollTracking() {
+  const mainArea = document.getElementById('mainArea');
+
+  mainArea.addEventListener('scroll', () => {
+    if (!currentDocId) return;
+    const headings = docHeadings[currentDocId] || [];
+    if (!headings.length) return;
+
+    const scrollTop = mainArea.scrollTop + 80;
+    let activeId = headings[0].id;
+
+    headings.forEach(h => {
+      const el = document.getElementById(h.id);
+      if (el && el.offsetTop <= scrollTop) activeId = h.id;
+    });
+
+    document.querySelectorAll('#nav-sections-' + currentDocId + ' .section-link').forEach(l => {
+      l.classList.toggle('active', l.dataset.sectionId === activeId);
+    });
+  }, { passive: true });
+}
+
+/* ═══════════════════════════════════════════════════
+   SIDEBAR TOGGLE
+═══════════════════════════════════════════════════ */
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+    e.preventDefault();
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  }
+});
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+renderDocs();
+buildSidebar();
+setupScrollTracking();
+activateDoc('cheatsheet', false);
+
+})();
+</script>
+
+</body>
+</html>
