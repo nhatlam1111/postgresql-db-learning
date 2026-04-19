@@ -54,35 +54,38 @@
 
         <a href="#" class="section-header" onclick="goSlide(2)">9.1 UPDATE</a>
         <a href="#" onclick="goSlide(3)">Cú pháp UPDATE</a>
-        <a href="#" onclick="goSlide(4)">UPDATE nâng cao</a>
+        <a href="#" onclick="goSlide(4)">UPDATE với CASE WHEN</a>
+        <a href="#" onclick="goSlide(5)">UPDATE Subquery & RETURNING</a>
 
-        <a href="#" class="section-header" onclick="goSlide(5)">9.2 DELETE</a>
-        <a href="#" onclick="goSlide(6)">DELETE cú pháp</a>
+        <a href="#" class="section-header" onclick="goSlide(6)">9.2 DELETE</a>
+        <a href="#" onclick="goSlide(7)">DELETE cú pháp</a>
 
-        <a href="#" class="section-header" onclick="goSlide(7)">9.3 Mẫu An Toàn</a>
-        <a href="#" onclick="goSlide(8)">SELECT trước — UPDATE/DELETE sau</a>
+        <a href="#" class="section-header" onclick="goSlide(8)">9.3 Mẫu An Toàn</a>
+        <a href="#" onclick="goSlide(9)">SELECT trước — UPDATE/DELETE sau</a>
 
-        <a href="#" class="section-header" onclick="goSlide(9)">9.4 TRUNCATE vs DELETE</a>
+        <a href="#" class="section-header" onclick="goSlide(10)">9.4 TRUNCATE vs DELETE</a>
 
-        <a href="#" class="section-header" onclick="goSlide(10)">9.5 Transaction</a>
-        <a href="#" onclick="goSlide(11)">Ví dụ chuyển tiền</a>
-        <a href="#" onclick="goSlide(12)">BEGIN / COMMIT / ROLLBACK</a>
+        <a href="#" class="section-header" onclick="goSlide(11)">9.5 Transaction</a>
+        <a href="#" onclick="goSlide(12)">Ví dụ chuyển tiền</a>
+        <a href="#" onclick="goSlide(13)">BEGIN / COMMIT / ROLLBACK</a>
 
-        <a href="#" class="section-header" onclick="goSlide(13)">9.6 SAVEPOINT</a>
+        <a href="#" class="section-header" onclick="goSlide(14)">9.6 SAVEPOINT</a>
 
-        <a href="#" class="section-header" onclick="goSlide(14)">9.7 VIEW</a>
-        <a href="#" onclick="goSlide(15)">Tạo & sử dụng VIEW</a>
-        <a href="#" onclick="goSlide(16)">Khi nào dùng VIEW</a>
+        <a href="#" class="section-header" onclick="goSlide(15)">9.7 VIEW</a>
+        <a href="#" onclick="goSlide(16)">Tạo & sử dụng VIEW</a>
+        <a href="#" onclick="goSlide(17)">Khi nào dùng VIEW</a>
 
-        <a href="#" class="section-header" onclick="goSlide(17)">9.8 ALTER TABLE</a>
+        <a href="#" class="section-header" onclick="goSlide(18)">9.8 ALTER TABLE</a>
 
-        <a href="#" class="section-header" onclick="goSlide(18)">9.9 Import CSV</a>
-        <a href="#" onclick="goSlide(19)">DBeaver & COPY</a>
+        <a href="#" class="section-header" onclick="goSlide(19)">9.9 Import CSV</a>
+        <a href="#" onclick="goSlide(20)">DBeaver & COPY</a>
 
-        <a href="#" class="section-header" onclick="goSlide(20)">Tổng Kết</a>
-        <a href="#" onclick="goSlide(21)">Bảng tra cứu nhanh</a>
-        <a href="#" onclick="goSlide(22)">Checklist an toàn</a>
-        <a href="#" onclick="goSlide(23)">Cầu nối tuần 10</a>
+        <a href="#" onclick="goSlide(21)">ON CONFLICT (UPSERT)</a>
+
+        <a href="#" class="section-header" onclick="goSlide(22)">Tổng Kết</a>
+        <a href="#" onclick="goSlide(23)">Bảng tra cứu nhanh</a>
+        <a href="#" onclick="goSlide(24)">Checklist an toàn</a>
+        <a href="#" onclick="goSlide(25)">Cầu nối tuần 10</a>
     </div>
 </div>
 
@@ -164,20 +167,27 @@
         </div>
     </div>
 
-    <!-- ═══ SLIDE 4: UPDATE nâng cao ═══ -->
+    <!-- ═══ SLIDE 4: UPDATE với CASE WHEN ═══ -->
     <div class="slide">
-        <h2>🔧 UPDATE Nâng Cao — CASE WHEN & Subquery</h2>
-        <div class="slide-content">
-            <pre>
-<span class="comment">-- UPDATE với CASE WHEN: tăng lương theo mức khác nhau</span>
+        <h2>🔧 UPDATE với CASE WHEN — Sửa Theo Điều Kiện</h2>
+        <pre>
+<span class="comment">-- Tăng lương khác nhau theo mức hiện tại</span>
 <span class="keyword">UPDATE</span> nhan_vien
 <span class="keyword">SET</span> luong <span class="op">=</span> <span class="keyword">CASE</span>
     <span class="keyword">WHEN</span> luong <span class="op">&lt;</span> <span class="number">15000000</span> <span class="keyword">THEN</span> luong <span class="op">*</span> <span class="number">1.15</span>    <span class="comment">-- +15%</span>
     <span class="keyword">WHEN</span> luong <span class="op">&lt;</span> <span class="number">25000000</span> <span class="keyword">THEN</span> luong <span class="op">*</span> <span class="number">1.10</span>    <span class="comment">-- +10%</span>
     <span class="keyword">ELSE</span>                        luong <span class="op">*</span> <span class="number">1.05</span>    <span class="comment">-- +5%</span>
 <span class="keyword">END</span>;</pre>
-            <pre>
-<span class="comment">-- UPDATE từ bảng khác (subquery)</span>
+        <div class="card excel" style="margin-top:16px;">
+            <p>📊 <strong>Excel:</strong> Giống tính cột mới bằng <code>=IF(B2&lt;15M, B2*1.15, IF(B2&lt;25M, B2*1.10, B2*1.05))</code> rồi paste values đè lên cột cũ.</p>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 4b: UPDATE từ Subquery + RETURNING ═══ -->
+    <div class="slide">
+        <h2>🔧 UPDATE từ Subquery & RETURNING</h2>
+        <pre>
+<span class="comment">-- UPDATE từ bảng khác: đánh dấu sản phẩm bán chạy</span>
 <span class="keyword">UPDATE</span> san_pham
 <span class="keyword">SET</span> trang_thai <span class="op">=</span> <span class="string">'ban_chay'</span>
 <span class="keyword">WHERE</span> id <span class="keyword">IN</span> (
@@ -186,6 +196,13 @@
     <span class="keyword">GROUP BY</span> san_pham_id
     <span class="keyword">HAVING</span> <span class="func">SUM</span>(so_luong) <span class="op">&gt;</span> <span class="number">50</span>
 );</pre>
+        <pre style="margin-top:12px;">
+<span class="comment">-- RETURNING: xem ngay dữ liệu vừa sửa</span>
+<span class="keyword">UPDATE</span> nhan_vien <span class="keyword">SET</span> luong <span class="op">=</span> luong <span class="op">*</span> <span class="number">1.10</span>
+<span class="keyword">WHERE</span> phong_ban <span class="op">=</span> <span class="string">'IT'</span>
+<span class="keyword">RETURNING</span> id, ho_ten, luong <span class="keyword">AS</span> luong_moi;</pre>
+        <div class="card tip" style="margin-top:12px;">
+            <p>💡 <code>RETURNING</code> là tính năng đặc biệt của PostgreSQL — xem ngay kết quả thay đổi mà không cần chạy SELECT riêng.</p>
         </div>
     </div>
 
@@ -433,6 +450,14 @@
             <div class="card excel">
                 <p>📊 <strong>Excel:</strong> ALTER TABLE giống <strong>Insert Column / Delete Column</strong> + <strong>Format Cells</strong> — thay đổi cấu trúc bảng.</p>
             </div>
+            <div class="card warning" style="margin-top:12px;">
+                <p>⚠️ <strong>CẢNH BÁO:</strong></p>
+                <ul style="margin:4px 0 0 16px;font-size:0.9rem;">
+                    <li><strong>DROP COLUMN</strong> xóa vĩnh viễn cột + dữ liệu</li>
+                    <li><strong>ALTER TYPE</strong> có thể fail nếu dữ liệu không tương thích</li>
+                    <li>Luôn <strong>backup trước</strong> khi ALTER trên bảng production</li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -476,7 +501,30 @@
         </div>
     </div>
 
-    <!-- ═══ SLIDE 20: Section Tổng kết ═══ -->
+    <!-- ═══ SLIDE 20: ON CONFLICT (UPSERT) ═══ -->
+    <div class="slide">
+        <h2>🔄 ON CONFLICT — INSERT Hoặc UPDATE</h2>
+        <pre>
+<span class="comment">-- Thêm mới, nếu trùng email → cập nhật tên</span>
+<span class="keyword">INSERT INTO</span> khach_hang (email, ho_ten, dien_thoai)
+<span class="keyword">VALUES</span> (<span class="string">'an@email.com'</span>, <span class="string">'Nguyễn An'</span>, <span class="string">'0901234567'</span>)
+<span class="keyword">ON CONFLICT</span> (email) <span class="keyword">DO UPDATE SET</span>
+    ho_ten <span class="op">=</span> <span class="keyword">EXCLUDED</span>.ho_ten,
+    dien_thoai <span class="op">=</span> <span class="keyword">EXCLUDED</span>.dien_thoai;</pre>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+            <div class="card tip">
+                <p>💡 <code>EXCLUDED</code> = dữ liệu định INSERT bị xung đột. Dùng nó để lấy giá trị mới.</p>
+            </div>
+            <div class="card">
+                <p>🚫 <code>ON CONFLICT ... DO NOTHING</code> — bỏ qua hàng trùng, không báo lỗi.</p>
+            </div>
+        </div>
+        <div class="card excel" style="margin-top:12px;">
+            <p>📊 <strong>Excel:</strong> Giống khi bạn paste dữ liệu mới lên vùng đã có — chọn "Replace" (DO UPDATE) hoặc "Skip" (DO NOTHING).</p>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 21: Section Tổng kết ═══ -->
     <div class="slide section-slide">
         <div class="section-num">✓</div>
         <h1>Tổng Kết Tuần 9</h1>
@@ -498,6 +546,8 @@
                 <tr><td>Tạo VIEW</td><td><code>CREATE VIEW v_ten AS SELECT ...</code></td><td>Tiền tố v_ cho dễ nhận biết</td></tr>
                 <tr><td>Thêm cột</td><td><code>ALTER TABLE bang ADD COLUMN cot TYPE</code></td><td>—</td></tr>
                 <tr><td>Import CSV</td><td><code>COPY bang FROM 'file' WITH (...)</code></td><td>Kiểm tra encoding UTF8</td></tr>
+                <tr><td>Xem kết quả sửa</td><td><code>UPDATE/DELETE ... RETURNING *</code></td><td>Chỉ PostgreSQL</td></tr>
+                <tr><td>Upsert</td><td><code>INSERT ... ON CONFLICT DO UPDATE</code></td><td>Cần UNIQUE constraint</td></tr>
             </table>
         </div>
     </div>
@@ -530,7 +580,7 @@
 <div class="nav-bar">
     <div><button onclick="toggleTOC()">☰ Mục Lục</button></div>
     <div class="page-info">
-        <span id="slideNum">1</span> / <span id="totalSlides">24</span>
+        <span id="slideNum">1</span> / <span id="totalSlides">26</span>
     </div>
     <div class="controls">
         <button onclick="prevSlide()" title="← Trước">◀ Trước</button>

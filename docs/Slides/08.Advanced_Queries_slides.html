@@ -70,10 +70,17 @@
         <a href="#" class="section-header" onclick="goSlide(20)">8.9 COALESCE</a>
         <a href="#" onclick="goSlide(21)">Ứng dụng COALESCE</a>
 
-        <a href="#" class="section-header" onclick="goSlide(22)">Tổng Kết</a>
-        <a href="#" onclick="goSlide(23)">Bản đồ kiến thức</a>
-        <a href="#" onclick="goSlide(24)">So sánh Excel ↔ SQL</a>
-        <a href="#" onclick="goSlide(25)">Cầu nối tuần 9</a>
+        <a href="#" class="section-header" onclick="goSlide(22)">8.10 CTE (WITH)</a>
+        <a href="#" onclick="goSlide(23)">CTE cú pháp & ví dụ</a>
+
+        <a href="#" class="section-header" onclick="goSlide(24)">8.11 Window Functions</a>
+        <a href="#" onclick="goSlide(25)">OVER (PARTITION BY)</a>
+        <a href="#" onclick="goSlide(26)">ROW_NUMBER / RANK</a>
+
+        <a href="#" class="section-header" onclick="goSlide(27)">Tổng Kết</a>
+        <a href="#" onclick="goSlide(28)">Bản đồ kiến thức</a>
+        <a href="#" onclick="goSlide(29)">So sánh Excel ↔ SQL</a>
+        <a href="#" onclick="goSlide(30)">Cầu nối tuần 9</a>
     </div>
 </div>
 
@@ -501,14 +508,91 @@
         </div>
     </div>
 
-    <!-- ═══ SLIDE 22: Section Tổng kết ═══ -->
+    <!-- ═══ SLIDE 22: Section 8.10 CTE ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">8.10</div>
+        <h1>CTE — WITH Clause</h1>
+        <p class="subtitle">Đặt tên cho truy vấn con — dễ đọc hơn subquery</p>
+    </div>
+
+    <!-- ═══ SLIDE 23: CTE cú pháp ═══ -->
+    <div class="slide">
+        <h2>📦 CTE — Truy Vấn Có Tên</h2>
+        <pre>
+<span class="comment">-- Tìm nhân viên lương cao hơn trung bình phòng ban</span>
+<span class="keyword">WITH</span> tb_phong <span class="keyword">AS</span> (
+    <span class="keyword">SELECT</span> phong_ban, <span class="func">AVG</span>(luong) <span class="keyword">AS</span> luong_tb
+    <span class="keyword">FROM</span> nhan_vien
+    <span class="keyword">GROUP BY</span> phong_ban
+)
+<span class="keyword">SELECT</span> nv.ho_ten, nv.luong, tb.luong_tb
+<span class="keyword">FROM</span> nhan_vien nv
+<span class="keyword">JOIN</span> tb_phong tb <span class="keyword">ON</span> nv.phong_ban <span class="op">=</span> tb.phong_ban
+<span class="keyword">WHERE</span> nv.luong <span class="op">&gt;</span> tb.luong_tb;</pre>
+        <div class="card excel" style="margin-top:12px;">
+            <p>📊 <strong>Excel:</strong> CTE giống tạo <strong>sheet trung gian</strong> để tính toán, rồi dùng kết quả đó ở sheet chính.</p>
+        </div>
+        <div class="card tip" style="margin-top:8px;">
+            <p>💡 CTE dễ đọc hơn subquery lồng nhau — đặt tên rõ ràng cho từng bước tính.</p>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 24: Section 8.11 Window Functions ═══ -->
+    <div class="slide section-slide">
+        <div class="section-num">8.11</div>
+        <h1>Window Functions — Giới Thiệu</h1>
+        <p class="subtitle">Tính toán trên "nhóm" mà không gộp hàng</p>
+    </div>
+
+    <!-- ═══ SLIDE 25: Window Functions ví dụ ═══ -->
+    <div class="slide">
+        <h2>🪟 Window Functions — Tính Trên Từng Dòng</h2>
+        <pre>
+<span class="comment">-- Lương TB phòng ban TRÊN TỪNG DÒNG (không gộp!)</span>
+<span class="keyword">SELECT</span> ho_ten, phong_ban, luong,
+       <span class="func">AVG</span>(luong) <span class="keyword">OVER</span> (<span class="keyword">PARTITION BY</span> phong_ban) <span class="keyword">AS</span> luong_tb_phong
+<span class="keyword">FROM</span> nhan_vien;</pre>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+            <div class="card">
+                <h4>GROUP BY</h4>
+                <p>Gộp → 1 dòng/nhóm</p>
+                <p style="color:var(--text-dim);font-size:0.85rem;">3 phòng ban → 3 dòng</p>
+            </div>
+            <div class="card" style="border-color:var(--accent);">
+                <h4>OVER (PARTITION BY)</h4>
+                <p>Giữ nguyên tất cả dòng + thêm cột tính toán</p>
+                <p style="color:var(--text-dim);font-size:0.85rem;">10 NV → vẫn 10 dòng</p>
+            </div>
+        </div>
+        <div class="card excel" style="margin-top:8px;">
+            <p>📊 <strong>Excel:</strong> Giống <code>=AVERAGEIF($C:$C, C2, $D:$D)</code> — tính TB theo nhóm nhưng giữ từng dòng.</p>
+        </div>
+    </div>
+
+    <!-- ═══ SLIDE 26: ROW_NUMBER / RANK ═══ -->
+    <div class="slide">
+        <h2>🏆 ROW_NUMBER, RANK, DENSE_RANK</h2>
+        <pre>
+<span class="comment">-- Xếp hạng lương trong mỗi phòng ban</span>
+<span class="keyword">SELECT</span> ho_ten, phong_ban, luong,
+       <span class="func">ROW_NUMBER</span>() <span class="keyword">OVER</span> (<span class="keyword">PARTITION BY</span> phong_ban <span class="keyword">ORDER BY</span> luong <span class="keyword">DESC</span>) <span class="keyword">AS</span> hang
+<span class="keyword">FROM</span> nhan_vien;</pre>
+        <table style="font-size:0.85rem;margin-top:12px;">
+            <tr><th>Hàm</th><th>Khi hòa (cùng giá trị)</th><th>Ví dụ: 100, 100, 80</th></tr>
+            <tr><td><code>ROW_NUMBER()</code></td><td>Số khác nhau</td><td>1, 2, 3</td></tr>
+            <tr><td><code>RANK()</code></td><td>Cùng hạng, bỏ số</td><td>1, 1, 3</td></tr>
+            <tr><td><code>DENSE_RANK()</code></td><td>Cùng hạng, liên tục</td><td>1, 1, 2</td></tr>
+        </table>
+    </div>
+
+    <!-- ═══ SLIDE 27: Section Tổng kết ═══ -->
     <div class="slide section-slide">
         <div class="section-num">✓</div>
         <h1>Tổng Kết Tuần 8</h1>
         <p class="subtitle">Từ "đọc dữ liệu" thành "phân tích dữ liệu" thực sự</p>
     </div>
 
-    <!-- ═══ SLIDE 23: Knowledge map ═══ -->
+    <!-- ═══ SLIDE 28: Knowledge map ═══ -->
     <div class="slide">
         <h2>🗺️ Bản Đồ Kiến Thức Tuần 8</h2>
         <div class="slide-content">
@@ -530,7 +614,7 @@
         </div>
     </div>
 
-    <!-- ═══ SLIDE 24: Excel vs SQL ═══ -->
+    <!-- ═══ SLIDE 29: Excel vs SQL ═══ -->
     <div class="slide">
         <h2>📊 So Sánh Excel ↔ SQL — Tuần 8</h2>
         <div class="slide-content">
@@ -548,7 +632,7 @@
         </div>
     </div>
 
-    <!-- ═══ SLIDE 25: Closing ═══ -->
+    <!-- ═══ SLIDE 30: Closing ═══ -->
     <div class="slide title-slide">
         <div class="week-badge" style="border-color:var(--success);color:var(--success);">TIẾP THEO</div>
         <h1>Tuần 9: Quản Lý Dữ Liệu</h1>

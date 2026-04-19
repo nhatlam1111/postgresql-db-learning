@@ -17,7 +17,7 @@ Repo này dùng Excel làm cầu nối để giải thích SQL:
 | IF / IFS | CASE WHEN |
 | IFERROR | COALESCE |
 
-Lộ trình tổng thể là 10 tuần. Hiện tại repo đã có học liệu từ tuần 1 đến tuần 7, kèm lesson, ví dụ SQL và bài tập thực hành.
+Lộ trình tổng thể là 10 tuần. Hiện tại repo đã có học liệu từ tuần 1 đến tuần 9, kèm lesson, ví dụ SQL, bài tập thực hành và slide HTML.
 
 ## Học Online
 
@@ -69,12 +69,14 @@ postgresql-db-learning/
 | Tuần | Chủ đề | Lesson | Example SQL | Bài tập | Slide |
 |---|---|---|---|---|---|
 | 1 | Tại sao cần cơ sở dữ liệu? | [Lesson](Lessons%20%26%20Examples/Lesson/01.Why_Database_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/01.Why_Database_examples.sql) | [Exercise](Exercises/01.Why_Database_exercises.md) | [HTML](docs/Slides/01.Why_Database_slides.html) |
-| 2 | Cài đặt PostgreSQL & Làm quen công cụ | [Lesson](Lessons%20%26%20Examples/Lesson/02.Setup_PostgreSQL_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/02.Setup_PostgreSQL_examples.sql) | [Exercise](Exercises/02.Setup_PostgreSQL_exercises.md) | - |
+| 2 | Cài đặt PostgreSQL & Làm quen công cụ | [Lesson](Lessons%20%26%20Examples/Lesson/02.Setup_PostgreSQL_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/02.Setup_PostgreSQL_examples.sql) | [Exercise](Exercises/02.Setup_PostgreSQL_exercises.md) | [HTML](docs/Slides/02.Setup_PostgreSQL_slides.html) |
 | 3 | Kiểu dữ liệu & Tạo bảng | [Lesson](Lessons%20%26%20Examples/Lesson/03.Datatype_and_Table_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/03.Datatype_and_Table_examples.sql) | [Exercise](Exercises/03.Datatype_and_Table_exercises.md) | [HTML](docs/Slides/03.Datatype_and_Table_slides.html) |
 | 4 | Truy vấn dữ liệu - SELECT cơ bản | [Lesson](Lessons%20%26%20Examples/Lesson/04.SELECT_Basics_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/04.SELECT_Basics_examples.sql) | [Exercise](Exercises/04.SELECT_Basics_exercises.md) | [HTML](docs/Slides/04.SELECT_Basics_slides.html) |
 | 5 | Lọc & Sắp xếp dữ liệu | [Lesson](Lessons%20%26%20Examples/Lesson/05.Filter_Data_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/05.Filter_Data_examples.sql) | [Exercise](Exercises/05.Filter_Data_exercises.md) | [HTML](docs/Slides/05.Filter_Data_slides.html) |
-| 6 | Hàm tổng hợp & GROUP BY | [Lesson](Lessons%20%26%20Examples/Lesson/06.Aggregate_Functions_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/06.Aggregate_Functions_examples.sql) | [Exercise](Exercises/06.Aggregate_Functions_exercises.md) | - |
-| 7 | Kết nối nhiều bảng - JOIN | [Lesson](Lessons%20%26%20Examples/Lesson/07.JOIN_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/07.JOIN_examples.sql) | [Exercise](Exercises/07.JOIN_exercises.md) | - |
+| 6 | Hàm tổng hợp & GROUP BY | [Lesson](Lessons%20%26%20Examples/Lesson/06.Aggregate_Functions_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/06.Aggregate_Functions_examples.sql) | [Exercise](Exercises/06.Aggregate_Functions_exercises.md) | [HTML](docs/Slides/06.Aggregate_Functions_slides.html) |
+| 7 | Kết nối nhiều bảng - JOIN | [Lesson](Lessons%20%26%20Examples/Lesson/07.JOIN_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/07.JOIN_examples.sql) | [Exercise](Exercises/07.JOIN_exercises.md) | [HTML](docs/Slides/07.JOIN_slides.html) |
+| 8 | Truy vấn nâng cao | [Lesson](Lessons%20%26%20Examples/Lesson/08.Advanced_Queries_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/08.Advanced_Queries_examples.sql) | [Exercise](Exercises/08.Advanced_Queries_exercises.md) | [HTML](docs/Slides/08.Advanced_Queries_slides.html) |
+| 9 | Quản lý dữ liệu | [Lesson](Lessons%20%26%20Examples/Lesson/09.Data_Management_lesson.md) | [SQL](Lessons%20%26%20Examples/Example/09.Data_Management_examples.sql) | [Exercise](Exercises/09.Data_Management_exercises.md) | [HTML](docs/Slides/09.Data_Management_slides.html) |
 
 ## Cần Chuẩn Bị Gì Để Học?
 
@@ -104,6 +106,7 @@ Nếu bạn chưa cài đặt xong, hãy bắt đầu từ học liệu tuần 2
 
 - [Kiểu dữ liệu PostgreSQL](Reference/datatypes_reference.md)
 - [Ép kiểu dữ liệu](Reference/type_casting.md)
+- [PostgreSQL Cheatsheet](Reference/postgresql_cheatsheet.md)
 
 ## Ghi Chú
 

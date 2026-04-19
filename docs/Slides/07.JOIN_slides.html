@@ -59,31 +59,32 @@
         <a href="#" onclick="goSlide(12)">Tìm hàng "mồ côi"</a>
 
         <a href="#" class="section-header" onclick="goSlide(13)">7.5 RIGHT & FULL JOIN</a>
-        <a href="#" onclick="goSlide(14)">FULL JOIN</a>
+        <a href="#" onclick="goSlide(14)">RIGHT JOIN</a>
+        <a href="#" onclick="goSlide(15)">FULL JOIN</a>
 
-        <a href="#" class="section-header" onclick="goSlide(15)">7.6 Tổng Hợp 4 Loại JOIN</a>
-        <a href="#" onclick="goSlide(16)">Chọn JOIN nào?</a>
+        <a href="#" class="section-header" onclick="goSlide(16)">7.6 Tổng Hợp 4 Loại JOIN</a>
+        <a href="#" onclick="goSlide(17)">Chọn JOIN nào?</a>
 
-        <a href="#" class="section-header" onclick="goSlide(17)">7.7 JOIN Nhiều Bảng</a>
-        <a href="#" onclick="goSlide(18)">Ví dụ JOIN 4 bảng</a>
+        <a href="#" class="section-header" onclick="goSlide(18)">7.7 JOIN Nhiều Bảng</a>
+        <a href="#" onclick="goSlide(19)">Ví dụ JOIN 4 bảng</a>
 
-        <a href="#" class="section-header" onclick="goSlide(19)">7.8 JOIN + GROUP BY</a>
-        <a href="#" onclick="goSlide(20)">Top khách hàng</a>
-        <a href="#" onclick="goSlide(21)">Sản phẩm bán chạy</a>
-        <a href="#" onclick="goSlide(22)">ON vs WHERE trong LEFT JOIN</a>
+        <a href="#" class="section-header" onclick="goSlide(20)">7.8 JOIN + GROUP BY</a>
+        <a href="#" onclick="goSlide(21)">Top khách hàng</a>
+        <a href="#" onclick="goSlide(22)">Sản phẩm bán chạy</a>
+        <a href="#" onclick="goSlide(23)">ON vs WHERE trong LEFT JOIN</a>
 
-        <a href="#" class="section-header" onclick="goSlide(23)">7.9 Lỗi Hay Gặp</a>
-        <a href="#" onclick="goSlide(24)">Lỗi Cartesian Product</a>
-        <a href="#" onclick="goSlide(25)">Lỗi Ambiguous Column</a>
-        <a href="#" onclick="goSlide(26)">Lỗi NULL + LEFT JOIN</a>
-        <a href="#" onclick="goSlide(27)">Lỗi JOIN sai cột</a>
+        <a href="#" class="section-header" onclick="goSlide(24)">7.9 Lỗi Hay Gặp</a>
+        <a href="#" onclick="goSlide(25)">Lỗi Cartesian Product</a>
+        <a href="#" onclick="goSlide(26)">Lỗi Ambiguous Column</a>
+        <a href="#" onclick="goSlide(27)">Lỗi NULL + LEFT JOIN</a>
+        <a href="#" onclick="goSlide(28)">Lỗi JOIN sai cột</a>
 
-        <a href="#" class="section-header" onclick="goSlide(28)">7.10 Thứ Tự Thực Thi</a>
+        <a href="#" class="section-header" onclick="goSlide(29)">7.10 Thứ Tự Thực Thi</a>
 
-        <a href="#" class="section-header" onclick="goSlide(29)">Tổng Kết</a>
-        <a href="#" onclick="goSlide(30)">Bảng tra cứu nhanh</a>
-        <a href="#" onclick="goSlide(31)">Checklist</a>
-        <a href="#" onclick="goSlide(32)">Cầu nối tuần 8</a>
+        <a href="#" class="section-header" onclick="goSlide(30)">Tổng Kết</a>
+        <a href="#" onclick="goSlide(31)">Bảng tra cứu nhanh</a>
+        <a href="#" onclick="goSlide(32)">Checklist</a>
+        <a href="#" onclick="goSlide(33)">Cầu nối tuần 8</a>
     </div>
 </div>
 
@@ -364,42 +365,45 @@
         <p class="subtitle">Hai loại JOIN bổ sung — ít dùng hơn nhưng cần biết</p>
     </div>
 
-    <!-- ═══ SLIDE 14: RIGHT + FULL JOIN ═══ -->
+    <!-- ═══ SLIDE 14: RIGHT JOIN ═══ -->
     <div class="slide">
-        <h2>↔️ RIGHT JOIN & FULL JOIN</h2>
+        <h2>➡️ RIGHT JOIN — Ngược LEFT JOIN</h2>
         <div class="slide-content">
-            <div class="columns-2">
-                <div class="card">
-                    <h3>RIGHT JOIN</h3>
-                    <div class="join-visual" style="margin:8px 0;">
-                        <div class="join-circle left dim" style="width:100px;height:70px;font-size:0.75rem;">A</div>
-                        <div class="join-overlap" style="width:35px;height:55px;font-size:0.65rem;">∩</div>
-                        <div class="join-circle right active-fill" style="width:100px;height:70px;font-size:0.75rem;">B</div>
-                    </div>
-                    <p style="font-size:0.88rem;">Ngược LEFT JOIN — lấy tất cả bảng <strong>phải</strong>.</p>
-                    <p style="font-size:0.82rem; color:var(--text-dim);">Ít dùng — viết lại thành LEFT JOIN bằng cách đổi thứ tự bảng.</p>
-                </div>
-                <div class="card">
-                    <h3>FULL JOIN</h3>
-                    <div class="join-visual" style="margin:8px 0;">
-                        <div class="join-circle left active-fill" style="width:100px;height:70px;font-size:0.75rem;">A</div>
-                        <div class="join-overlap" style="width:35px;height:55px;font-size:0.65rem;">∩</div>
-                        <div class="join-circle right active-fill" style="width:100px;height:70px;font-size:0.75rem;">B</div>
-                    </div>
-                    <p style="font-size:0.88rem;">Lấy <strong>tất cả từ cả hai</strong> — NULL nếu không khớp.</p>
-                    <p style="font-size:0.82rem; color:var(--text-dim);">Dùng khi cần bức tranh toàn cảnh.</p>
-                </div>
+            <div class="join-visual" style="margin:12px auto;">
+                <div class="join-circle left dim" style="width:120px;height:80px;">A</div>
+                <div class="join-overlap" style="width:40px;height:65px;">∩</div>
+                <div class="join-circle right active-fill" style="width:120px;height:80px;">B</div>
             </div>
+            <p>Lấy <strong>tất cả bảng phải</strong> — NULL nếu bảng trái không khớp.</p>
 <pre>
 <span class="comment">-- RIGHT JOIN (ít dùng)</span>
 <span class="keyword">SELECT</span> kh.ho_ten, dh.ma_don_hang
 <span class="keyword">FROM</span> khach_hang kh
-<span class="keyword">RIGHT JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id;
+<span class="keyword">RIGHT JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id;</pre>
+            <div class="card tip" style="margin-top:12px;">
+                <p>💡 <strong>Mẹo:</strong> Ít dùng RIGHT JOIN — viết lại thành LEFT JOIN bằng cách đổi thứ tự bảng. Dễ đọc hơn!</p>
+            </div>
+        </div>
+    </div>
 
-<span class="comment">-- FULL JOIN — tất cả từ cả hai</span>
+    <!-- ═══ SLIDE 14b: FULL JOIN ═══ -->
+    <div class="slide">
+        <h2>↔️ FULL JOIN — Tất Cả Từ Cả Hai</h2>
+        <div class="slide-content">
+            <div class="join-visual" style="margin:12px auto;">
+                <div class="join-circle left active-fill" style="width:120px;height:80px;">A</div>
+                <div class="join-overlap" style="width:40px;height:65px;">∩</div>
+                <div class="join-circle right active-fill" style="width:120px;height:80px;">B</div>
+            </div>
+            <p>Lấy <strong>tất cả từ cả hai bảng</strong> — NULL ở bên nào không khớp.</p>
+<pre>
+<span class="comment">-- FULL JOIN — bức tranh toàn cảnh</span>
 <span class="keyword">SELECT</span> kh.ho_ten, dh.ma_don_hang
 <span class="keyword">FROM</span> khach_hang kh
 <span class="keyword">FULL JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id;</pre>
+            <div class="card excel" style="margin-top:12px;">
+                <p>📊 <strong>Excel:</strong> FULL JOIN giống merge 2 bảng giữ tất cả — hàng không khớp vẫn hiện với ô trống.</p>
+            </div>
         </div>
     </div>
 
@@ -781,7 +785,7 @@
 <div class="nav-bar">
     <div><button onclick="toggleTOC()">☰ Mục Lục</button></div>
     <div class="page-info">
-        <span id="slideNum">1</span> / <span id="totalSlides">33</span>
+        <span id="slideNum">1</span> / <span id="totalSlides">34</span>
     </div>
     <div class="controls">
         <button onclick="prevSlide()" title="← Trước">◀ Trước</button>

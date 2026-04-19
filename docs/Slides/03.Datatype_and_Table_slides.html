@@ -46,14 +46,15 @@
         <a href="#" onclick="goSlide(21)">COALESCE & NULLIF</a>
 
         <a href="#" class="section-header" onclick="goSlide(22)">3.5 ALTER TABLE</a>
-        <a href="#" onclick="goSlide(22)">Chỉnh sửa cấu trúc bảng</a>
+        <a href="#" onclick="goSlide(22)">Thêm/Xóa cột</a>
+        <a href="#" onclick="goSlide(23)">Đổi tên, kiểu & Constraints</a>
 
-        <a href="#" class="section-header" onclick="goSlide(23)">3.6 DROP TABLE & TRUNCATE</a>
+        <a href="#" class="section-header" onclick="goSlide(24)">3.6 DROP TABLE & TRUNCATE</a>
 
-        <a href="#" class="section-header" onclick="goSlide(24)">3.7 Xem cấu trúc bảng</a>
+        <a href="#" class="section-header" onclick="goSlide(25)">3.7 Xem cấu trúc bảng</a>
 
-        <a href="#" class="section-header" onclick="goSlide(25)">Tóm tắt & Excel ↔ PostgreSQL</a>
-        <a href="#" onclick="goSlide(26)">Cầu nối sang Tuần 4</a>
+        <a href="#" class="section-header" onclick="goSlide(26)">Tóm tắt & Excel ↔ PostgreSQL</a>
+        <a href="#" onclick="goSlide(27)">Cầu nối sang Tuần 4</a>
     </div>
 </div>
 
@@ -912,61 +913,79 @@ diem  <span class="type">INTEGER</span>
     </div>
 </div>
 
-<!-- ════════════════════ SLIDE 22: SECTION 3.5 — ALTER TABLE ════════════════════ -->
+<!-- ════════════════════ SLIDE 22: SECTION 3.5 — ALTER TABLE (Thêm/Xóa cột) ════════════════════ -->
 <div class="slide">
     <div class="section-num" style="font-size:3rem;opacity:0.3;color:var(--accent);text-align:center;">3.5</div>
-    <h2 style="text-align:center;margin-bottom:16px;">Chỉnh Sửa Bảng — ALTER TABLE</h2>
-    <p class="text-dim" style="text-align:center;margin-bottom:20px;">📊 Excel: Thêm/xóa/đổi tên cột trong sheet — nhưng cần thận trọng hơn vì có dữ liệu hiện có.</p>
+    <h2 style="text-align:center;margin-bottom:16px;">Chỉnh Sửa Bảng — ALTER TABLE (Phần 1)</h2>
+    <p class="text-dim" style="text-align:center;margin-bottom:20px;">📊 Excel: Thêm/xóa cột trong sheet — nhưng cần thận trọng vì có dữ liệu hiện có.</p>
 
-    <div class="slide-content">
-        <div class="columns-2">
-            <div>
-                <div class="card" style="margin-bottom:12px;">
-                    <h3>➕ Thêm cột — ADD COLUMN</h3>
-                    <pre style="font-size:0.82rem;"><span class="keyword">ALTER TABLE</span> nhan_vien
+    <div class="columns-2">
+        <div>
+            <div class="card" style="margin-bottom:12px;">
+                <h3>➕ Thêm cột — ADD COLUMN</h3>
+                <pre style="font-size:0.85rem;"><span class="keyword">ALTER TABLE</span> nhan_vien
   <span class="keyword">ADD COLUMN</span> so_dien_thoai <span class="type">VARCHAR</span>(<span class="number">20</span>);
 
 <span class="comment">-- NOT NULL phải có DEFAULT:</span>
 <span class="keyword">ALTER TABLE</span> nhan_vien
   <span class="keyword">ADD COLUMN</span> ma_nv <span class="type">VARCHAR</span>(<span class="number">10</span>)
   <span class="keyword">NOT NULL DEFAULT</span> <span class="string">'NV000'</span>;</pre>
-                </div>
-                <div class="card" style="margin-bottom:12px;">
-                    <h3>➖ Xóa cột — DROP COLUMN</h3>
-                    <pre style="font-size:0.82rem;"><span class="keyword">ALTER TABLE</span> nhan_vien
+            </div>
+            <div class="card tip">
+                <p>💡 Thêm cột <code>NOT NULL</code> vào bảng đã có dữ liệu → <strong>bắt buộc có DEFAULT</strong> (PostgreSQL không biết điền gì vào hàng cũ).</p>
+            </div>
+        </div>
+        <div>
+            <div class="card" style="margin-bottom:12px;">
+                <h3>➖ Xóa cột — DROP COLUMN</h3>
+                <pre style="font-size:0.85rem;"><span class="keyword">ALTER TABLE</span> nhan_vien
   <span class="keyword">DROP COLUMN</span> so_dien_thoai;
 
 <span class="comment">-- An toàn hơn:</span>
 <span class="keyword">ALTER TABLE</span> nhan_vien
   <span class="keyword">DROP COLUMN IF EXISTS</span> so_dien_thoai;</pre>
-                </div>
             </div>
-            <div>
-                <div class="card" style="margin-bottom:12px;">
-                    <h3>✏️ Đổi tên cột — RENAME</h3>
-                    <pre style="font-size:0.82rem;"><span class="keyword">ALTER TABLE</span> nhan_vien
-  <span class="keyword">RENAME COLUMN</span> ho_ten <span class="keyword">TO</span> ten_day_du;
+            <div class="card warning">
+                <p>⚠️ <strong>CẢNH BÁO:</strong> DROP COLUMN xóa <strong>vĩnh viễn</strong> cột và toàn bộ dữ liệu trong cột đó!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════ SLIDE 22b: ALTER TABLE (Đổi tên, kiểu, constraints) ════════════════════ -->
+<div class="slide">
+    <h2 style="text-align:center;margin-bottom:16px;">ALTER TABLE (Phần 2) — Đổi Tên, Kiểu & Constraints</h2>
+
+    <div class="columns-3">
+        <div class="card">
+            <h3>✏️ Đổi tên cột/bảng</h3>
+            <pre style="font-size:0.82rem;"><span class="comment">-- Đổi tên cột:</span>
+<span class="keyword">ALTER TABLE</span> nhan_vien
+  <span class="keyword">RENAME COLUMN</span> ho_ten
+  <span class="keyword">TO</span> ten_day_du;
 
 <span class="comment">-- Đổi tên bảng:</span>
-<span class="keyword">ALTER TABLE</span> nhan_vien <span class="keyword">RENAME TO</span> nhan_su;</pre>
-                </div>
-                <div class="card" style="margin-bottom:12px;">
-                    <h3>🔄 Đổi kiểu dữ liệu</h3>
-                    <pre style="font-size:0.82rem;"><span class="keyword">ALTER TABLE</span> nhan_vien
+<span class="keyword">ALTER TABLE</span> nhan_vien
+  <span class="keyword">RENAME TO</span> nhan_su;</pre>
+        </div>
+        <div class="card">
+            <h3>🔄 Đổi kiểu dữ liệu</h3>
+            <pre style="font-size:0.82rem;"><span class="keyword">ALTER TABLE</span> nhan_vien
   <span class="keyword">ALTER COLUMN</span> phong_ban
   <span class="keyword">TYPE</span> <span class="type">VARCHAR</span>(<span class="number">100</span>);</pre>
-                </div>
-                <div class="card" style="margin-bottom:12px;">
-                    <h3>🔒 Thêm/Xóa Constraint</h3>
-                    <pre style="font-size:0.82rem;"><span class="comment">-- Thêm NOT NULL:</span>
+            <p style="margin-top:12px;font-size:0.88rem;">⚠️ Đổi kiểu có thể <strong>thất bại</strong> nếu dữ liệu hiện tại không tương thích.</p>
+        </div>
+        <div class="card">
+            <h3>🔒 Thêm/Xóa Constraint</h3>
+            <pre style="font-size:0.82rem;"><span class="comment">-- Thêm NOT NULL:</span>
 <span class="keyword">ALTER TABLE</span> nhan_vien
-  <span class="keyword">ALTER COLUMN</span> phong_ban <span class="keyword">SET NOT NULL</span>;
+  <span class="keyword">ALTER COLUMN</span> phong_ban
+  <span class="keyword">SET NOT NULL</span>;
 
 <span class="comment">-- Bỏ NOT NULL:</span>
 <span class="keyword">ALTER TABLE</span> nhan_vien
-  <span class="keyword">ALTER COLUMN</span> phong_ban <span class="keyword">DROP NOT NULL</span>;</pre>
-                </div>
-            </div>
+  <span class="keyword">ALTER COLUMN</span> phong_ban
+  <span class="keyword">DROP NOT NULL</span>;</pre>
         </div>
     </div>
 </div>

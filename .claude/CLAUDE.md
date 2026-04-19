@@ -141,11 +141,11 @@ The 10-week curriculum at `plan.md` is structured as:
 | 2 | Installing PostgreSQL & DBeaver | ✅ Done |
 | 3 | CREATE TABLE, data types, INSERT | ✅ Done |
 | 4 | SELECT basics — viewing data | ✅ Done |
-| 5 | WHERE, ORDER BY, LIMIT — filtering & sorting | 📝 In progress |
-| 6 | Aggregate functions & GROUP BY (Pivot Table equivalent) | 📝 In progress |
-| 7 | JOIN — connecting tables (VLOOKUP equivalent) | 📝 In progress |
-| 8 | Subqueries, CASE WHEN, date/string functions | 📝 In progress |
-| 9 | UPDATE, DELETE, transactions, VIEWs, CSV import | 📝 In progress |
+| 5 | WHERE, ORDER BY, LIMIT — filtering & sorting | ✅ Done |
+| 6 | Aggregate functions & GROUP BY (Pivot Table equivalent) | ✅ Done |
+| 7 | JOIN — connecting tables (VLOOKUP equivalent) | ✅ Done |
+| 8 | Subqueries, CASE WHEN, CTE, Window Functions, date/string functions | ✅ Done |
+| 9 | UPDATE, DELETE, transactions, VIEWs, CSV import, ON CONFLICT | ✅ Done |
 | 10 | Capstone project — Coffee shop management system | 📝 In progress |
 
 ## Content Conventions
