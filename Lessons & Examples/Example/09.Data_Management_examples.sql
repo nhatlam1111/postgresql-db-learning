@@ -8,7 +8,7 @@
 -- ============================================================
 -- SETUP: Tạo toàn bộ dữ liệu mẫu cho tuần này
 -- Chạy phần này TRƯỚC KHI chạy các ví dụ bên dưới
--- Dùng lại cấu trúc 5 bảng từ Tuần 8
+-- Dùng lại cấu trúc 5 bảng từ Tuần 8 và bổ sung ma_sp/ten_sp cho san_pham
 -- ============================================================
 
 DROP TABLE IF EXISTS chi_tiet_don_hang;
@@ -46,12 +46,12 @@ INSERT INTO nhan_vien (ho_ten, phong_ban, luong, ngay_sinh, ngay_vao, tinh_trang
 CREATE TABLE khach_hang (
     id          SERIAL PRIMARY KEY,
     ho_ten      VARCHAR(100) NOT NULL,
-    dien_thoai  VARCHAR(15),
+    so_dien_thoai VARCHAR(15),
     email       VARCHAR(100),
     thanh_pho   VARCHAR(50)
 );
 
-INSERT INTO khach_hang (ho_ten, dien_thoai, email, thanh_pho) VALUES
+INSERT INTO khach_hang (ho_ten, so_dien_thoai, email, thanh_pho) VALUES
     ('Trần Thị Mai',    '0901123456', 'mai.tran@gmail.com',   'Hà Nội'),
     ('Nguyễn Văn An',   '0912234567', 'an.nguyen@gmail.com',  'TP.HCM'),
     ('Lê Thị Bình',     '0923345678', 'binh.le@outlook.com',  'Đà Nẵng'),
@@ -61,21 +61,22 @@ INSERT INTO khach_hang (ho_ten, dien_thoai, email, thanh_pho) VALUES
 
 CREATE TABLE san_pham (
     id            SERIAL PRIMARY KEY,
-    ten_san_pham  VARCHAR(200) NOT NULL,
+    ma_sp         VARCHAR(20) UNIQUE,
+    ten_sp        VARCHAR(200) NOT NULL,
     danh_muc      VARCHAR(50),
     gia           NUMERIC(12,0) NOT NULL,
     so_luong_ton  INTEGER DEFAULT 0
 );
 
-INSERT INTO san_pham (ten_san_pham, danh_muc, gia, so_luong_ton) VALUES
-    ('Laptop Dell XPS 13',        'Điện tử',    28000000,  5),
-    ('Chuột không dây Logitech',  'Điện tử',      450000, 50),
-    ('Áo thun nam Cotton',        'Thời trang',   250000, 100),
-    ('Quần Jean nữ Slim',         'Thời trang',   650000,  40),
-    ('Bình nước giữ nhiệt 500ml', 'Gia dụng',     320000,  80),
-    ('Máy pha cà phê mini',       'Gia dụng',    1200000,  15),
-    ('Tai nghe Sony WH-1000XM5',  'Điện tử',    8500000,   8),
-    ('Sách PostgreSQL Căn Bản',   'Sách',         180000,   0);
+INSERT INTO san_pham (ma_sp, ten_sp, danh_muc, gia, so_luong_ton) VALUES
+    ('SP001', 'Laptop Dell XPS 13',        'Điện tử',    28000000,  5),
+    ('SP002', 'Chuột không dây Logitech',  'Điện tử',      450000, 50),
+    ('SP003', 'Áo thun nam Cotton',        'Thời trang',   250000, 100),
+    ('SP004', 'Quần Jean nữ Slim',         'Thời trang',   650000,  40),
+    ('SP005', 'Bình nước giữ nhiệt 500ml', 'Gia dụng',     320000,  80),
+    ('SP006', 'Máy pha cà phê mini',       'Gia dụng',    1200000,  15),
+    ('SP007', 'Tai nghe Sony WH-1000XM5',  'Điện tử',    8500000,   8),
+    ('SP008', 'Sách PostgreSQL Căn Bản',   'Sách',         180000,   0);
 
 CREATE TABLE don_hang (
     id              SERIAL PRIMARY KEY,
@@ -455,7 +456,7 @@ WHERE phan_loai = 'VIP';
 SELECT
     tkh.ho_ten   AS ten_khach,
     tkh.phan_loai,
-    kh.dien_thoai
+    kh.so_dien_thoai
 FROM v_thong_ke_khach_hang tkh
 JOIN khach_hang kh ON tkh.id = kh.id
 WHERE tkh.phan_loai != 'Chưa mua'
@@ -548,7 +549,7 @@ ORDER BY diem_danh_gia DESC NULLS LAST;
 
 
 -- Ví dụ 9.6.2: Thêm cột số điện thoại vào bảng khách hàng (đã có)
--- Thực ra bảng khach_hang đã có dien_thoai, thêm cột ghi_chu thay
+-- Thực ra bảng khach_hang đã có so_dien_thoai, thêm cột ghi_chu thay
 ALTER TABLE khach_hang
 ADD COLUMN ghi_chu TEXT;
 
@@ -593,7 +594,7 @@ SELECT id, ho_ten, ten_goi FROM nhan_vien LIMIT 3;
 
 -- Import dữ liệu từ CSV:
 /*
-COPY san_pham (ten_san_pham, danh_muc, gia, so_luong_ton)
+COPY san_pham (ma_sp, ten_sp, danh_muc, gia, so_luong_ton)
 FROM 'C:/data/san_pham_moi.csv'
 WITH (
     FORMAT CSV,
@@ -610,7 +611,7 @@ COPY (
         nv.ho_ten,
         nv.phong_ban,
         nv.luong,
-        TO_CHAR(nv.ngay_vao, 'DD/MM/YYYY') AS ngay_vao_lam
+        TO_CHAR(nv.ngay_vao, 'DD/MM/YYYY') AS ngay_vao
     FROM nhan_vien nv
     WHERE nv.tinh_trang = 'dang_lam'
     ORDER BY nv.phong_ban, nv.ho_ten
@@ -622,7 +623,8 @@ WITH (FORMAT CSV, HEADER TRUE, ENCODING 'UTF8');
 -- Ví dụ 9.7.2: Dùng bảng tạm để kiểm tra dữ liệu trước khi import chính thức
 -- Bước 1: Tạo bảng tạm cùng cấu trúc
 CREATE TEMP TABLE san_pham_import (
-    ten_san_pham VARCHAR(200),
+    ma_sp        VARCHAR(20),
+    ten_sp       VARCHAR(200),
     danh_muc     VARCHAR(50),
     gia          NUMERIC(12,0),
     so_luong_ton INTEGER
@@ -633,21 +635,40 @@ CREATE TEMP TABLE san_pham_import (
 
 -- Bước 3: Kiểm tra dữ liệu trong bảng tạm (giả lập bằng INSERT)
 INSERT INTO san_pham_import VALUES
-    ('Bàn phím cơ RGB', 'Điện tử', 1500000, 20),
-    ('Màn hình 27 inch', 'Điện tử', 6500000, 10),
-    ('Ghế văn phòng',    'Nội thất', 3200000, 8);
+    ('SP009', 'Bàn phím cơ RGB', 'Điện tử', 1500000, 20),
+    ('SP010', 'Màn hình 27 inch', 'Điện tử', 6500000, 10),
+    ('SP011', 'Ghế văn phòng',    'Nội thất', 3200000, 8);
 
 -- Bước 4: Kiểm tra — có dữ liệu nào bất thường không?
 SELECT * FROM san_pham_import;
 SELECT COUNT(*), MIN(gia), MAX(gia) FROM san_pham_import;
 
 -- Bước 5: Chuyển sang bảng thật nếu OK
-INSERT INTO san_pham (ten_san_pham, danh_muc, gia, so_luong_ton)
-SELECT ten_san_pham, danh_muc, gia, so_luong_ton
+INSERT INTO san_pham (ma_sp, ten_sp, danh_muc, gia, so_luong_ton)
+SELECT ma_sp, ten_sp, danh_muc, gia, so_luong_ton
 FROM san_pham_import;
 
 -- Kiểm tra kết quả
 SELECT * FROM san_pham ORDER BY id;
+
+-- Ví dụ 9.7.3: ON CONFLICT (UPSERT) — nếu trùng ma_sp thì cập nhật
+INSERT INTO san_pham (ma_sp, ten_sp, danh_muc, gia, so_luong_ton)
+VALUES ('SP002', 'Chuột không dây Logitech M331', 'Điện tử', 490000, 60)
+ON CONFLICT (ma_sp)
+DO UPDATE SET
+    ten_sp       = EXCLUDED.ten_sp,
+    danh_muc     = EXCLUDED.danh_muc,
+    gia          = EXCLUDED.gia,
+    so_luong_ton = EXCLUDED.so_luong_ton;
+
+SELECT ma_sp, ten_sp, gia, so_luong_ton
+FROM san_pham
+WHERE ma_sp = 'SP002';
+
+-- Nếu chỉ muốn bỏ qua hàng trùng, dùng DO NOTHING
+INSERT INTO san_pham (ma_sp, ten_sp, danh_muc, gia, so_luong_ton)
+VALUES ('SP002', 'Chuột không dây Logitech M331', 'Điện tử', 490000, 60)
+ON CONFLICT (ma_sp) DO NOTHING;
 
 -- Bảng tạm tự xóa khi đóng phiên làm việc
 -- Hoặc xóa thủ công:

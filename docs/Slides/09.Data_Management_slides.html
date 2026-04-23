@@ -379,12 +379,12 @@
 <span class="comment">-- Tạo VIEW — lưu câu query phức tạp</span>
 <span class="keyword">CREATE VIEW</span> v_bao_cao_khach <span class="keyword">AS</span>
 <span class="keyword">SELECT</span>
-    kh.ho_ten, kh.dien_thoai,
+    kh.ho_ten, kh.so_dien_thoai,
     <span class="func">COUNT</span>(dh.id)          <span class="keyword">AS</span> so_don_hang,
     <span class="func">COALESCE</span>(<span class="func">SUM</span>(dh.tong_tien), <span class="number">0</span>) <span class="keyword">AS</span> tong_chi_tieu
 <span class="keyword">FROM</span> khach_hang kh
 <span class="keyword">LEFT JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
-<span class="keyword">GROUP BY</span> kh.id, kh.ho_ten, kh.dien_thoai;
+<span class="keyword">GROUP BY</span> kh.id, kh.ho_ten, kh.so_dien_thoai;
 
 <span class="comment">-- Dùng VIEW như một bảng bình thường!</span>
 <span class="keyword">SELECT</span> <span class="op">*</span> <span class="keyword">FROM</span> v_bao_cao_khach
@@ -438,7 +438,7 @@
 
 <span class="comment">-- Đổi kiểu dữ liệu</span>
 <span class="keyword">ALTER TABLE</span> nhan_vien
-<span class="keyword">ALTER COLUMN</span> dien_thoai <span class="keyword">TYPE</span> <span class="type">VARCHAR</span>(<span class="number">15</span>);
+<span class="keyword">ALTER COLUMN</span> so_dien_thoai <span class="keyword">TYPE</span> <span class="type">VARCHAR</span>(<span class="number">20</span>);
 
 <span class="comment">-- Đặt giá trị mặc định</span>
 <span class="keyword">ALTER TABLE</span> nhan_vien
@@ -505,12 +505,12 @@
     <div class="slide">
         <h2>🔄 ON CONFLICT — INSERT Hoặc UPDATE</h2>
         <pre>
-<span class="comment">-- Thêm mới, nếu trùng email → cập nhật tên</span>
-<span class="keyword">INSERT INTO</span> khach_hang (email, ho_ten, dien_thoai)
-<span class="keyword">VALUES</span> (<span class="string">'an@email.com'</span>, <span class="string">'Nguyễn An'</span>, <span class="string">'0901234567'</span>)
-<span class="keyword">ON CONFLICT</span> (email) <span class="keyword">DO UPDATE SET</span>
-    ho_ten <span class="op">=</span> <span class="keyword">EXCLUDED</span>.ho_ten,
-    dien_thoai <span class="op">=</span> <span class="keyword">EXCLUDED</span>.dien_thoai;</pre>
+<span class="comment">-- Thêm mới, nếu trùng ma_sp → cập nhật tên và giá</span>
+<span class="keyword">INSERT INTO</span> san_pham (ma_sp, ten_sp, gia)
+<span class="keyword">VALUES</span> (<span class="string">'SP002'</span>, <span class="string">'Chuột không dây Logitech M331'</span>, <span class="number">490000</span>)
+<span class="keyword">ON CONFLICT</span> (ma_sp) <span class="keyword">DO UPDATE SET</span>
+    ten_sp <span class="op">=</span> <span class="keyword">EXCLUDED</span>.ten_sp,
+    gia <span class="op">=</span> <span class="keyword">EXCLUDED</span>.gia;</pre>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
             <div class="card tip">
                 <p>💡 <code>EXCLUDED</code> = dữ liệu định INSERT bị xung đột. Dùng nó để lấy giá trị mới.</p>

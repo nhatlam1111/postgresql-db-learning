@@ -7,7 +7,7 @@
 -- ============================================================
 -- SETUP: Tạo toàn bộ dữ liệu mẫu cho tuần này
 -- Chạy phần này TRƯỚC KHI chạy các ví dụ bên dưới
--- Dùng lại cấu trúc 5 bảng từ Tuần 7 + thêm cột ngay_vao và tinh_trang
+-- Dùng lại cấu trúc 5 bảng từ Tuần 7 và đồng bộ lại tên cột cho nhất quán
 -- ============================================================
 
 DROP TABLE IF EXISTS chi_tiet_don_hang;
@@ -47,12 +47,12 @@ INSERT INTO nhan_vien (ho_ten, phong_ban, luong, ngay_sinh, ngay_vao, tinh_trang
 CREATE TABLE khach_hang (
     id          SERIAL PRIMARY KEY,
     ho_ten      VARCHAR(100) NOT NULL,
-    dien_thoai  VARCHAR(15),
+    so_dien_thoai VARCHAR(15),
     email       VARCHAR(100),
     thanh_pho   VARCHAR(50)
 );
 
-INSERT INTO khach_hang (ho_ten, dien_thoai, email, thanh_pho) VALUES
+INSERT INTO khach_hang (ho_ten, so_dien_thoai, email, thanh_pho) VALUES
     ('Trần Thị Mai',    '0901123456', 'mai.tran@gmail.com',   'Hà Nội'),
     ('Nguyễn Văn An',   '0912234567', 'an.nguyen@gmail.com',  'TP.HCM'),
     ('Lê Thị Bình',     '0923345678', 'binh.le@outlook.com',  'Đà Nẵng'),
@@ -64,12 +64,12 @@ INSERT INTO khach_hang (ho_ten, dien_thoai, email, thanh_pho) VALUES
 -- Bảng 3: Sản phẩm
 CREATE TABLE san_pham (
     id            SERIAL PRIMARY KEY,
-    ten_san_pham  VARCHAR(200) NOT NULL,
+    ten_sp        VARCHAR(200) NOT NULL,
     danh_muc      VARCHAR(50),
     gia           NUMERIC(12,0) NOT NULL
 );
 
-INSERT INTO san_pham (ten_san_pham, danh_muc, gia) VALUES
+INSERT INTO san_pham (ten_sp, danh_muc, gia) VALUES
     ('Laptop Dell XPS 13',        'Điện tử',   28000000),
     ('Chuột không dây Logitech',  'Điện tử',    450000),
     ('Áo thun nam Cotton',        'Thời trang', 250000),
@@ -155,7 +155,7 @@ SELECT ROUND(AVG(luong), 0) AS luong_trung_binh FROM nhan_vien;
 
 -- Ví dụ 8.1.2: Tìm sản phẩm đắt hơn giá trung bình của cùng danh mục
 -- Phức tạp hơn: subquery tham chiếu đến giá trị của hàng ngoài (correlated subquery)
-SELECT sp1.ten_san_pham, sp1.danh_muc, sp1.gia
+SELECT sp1.ten_sp, sp1.danh_muc, sp1.gia
 FROM san_pham sp1
 WHERE sp1.gia > (
     SELECT AVG(sp2.gia)
@@ -166,7 +166,7 @@ ORDER BY sp1.danh_muc, sp1.gia DESC;
 
 
 -- Ví dụ 8.1.3: Tìm sản phẩm đắt nhất (không dùng ORDER BY LIMIT 1)
-SELECT ten_san_pham, gia
+SELECT ten_sp, gia
 FROM san_pham
 WHERE gia = (SELECT MAX(gia) FROM san_pham);
 
@@ -197,7 +197,7 @@ WHERE id NOT IN (
 
 
 -- Ví dụ 8.2.3: Tìm sản phẩm CHƯA được mua lần nào
-SELECT ten_san_pham, danh_muc, gia
+SELECT ten_sp, danh_muc, gia
 FROM san_pham
 WHERE id NOT IN (
     SELECT DISTINCT san_pham_id
@@ -209,11 +209,11 @@ WHERE id NOT IN (
 
 -- Ví dụ 8.2.4: So sánh Subquery NOT IN vs LEFT JOIN IS NULL (cho cùng kết quả)
 -- Cách 1 (subquery NOT IN):
-SELECT ten_san_pham FROM san_pham
+SELECT ten_sp FROM san_pham
 WHERE id NOT IN (SELECT DISTINCT san_pham_id FROM chi_tiet_don_hang WHERE san_pham_id IS NOT NULL);
 
 -- Cách 2 (LEFT JOIN IS NULL - hiệu quả hơn cho dữ liệu lớn):
-SELECT sp.ten_san_pham
+SELECT sp.ten_sp
 FROM san_pham sp
 LEFT JOIN chi_tiet_don_hang ct ON sp.id = ct.san_pham_id
 WHERE ct.id IS NULL;
@@ -412,9 +412,9 @@ SELECT
 FROM nhan_vien;
 
 
--- Ví dụ 8.7.4: Cắt tên miền email để nhóm theo nhà cung cấp email
+-- Ví dụ 8.7.4: Cắt tên miền email để nhóm theo tên miền email
 SELECT
-    SUBSTRING(email, POSITION('@' IN email) + 1, LENGTH(email)) AS nha_cung_cap,
+    SUBSTRING(email, POSITION('@' IN email) + 1, LENGTH(email)) AS ten_mien_email,
     COUNT(*) AS so_nhan_vien
 FROM nhan_vien
 WHERE email IS NOT NULL
@@ -426,8 +426,8 @@ ORDER BY so_nhan_vien DESC;
 -- Ví dụ: Chuẩn hóa định dạng số điện thoại (bỏ dấu gạch ngang nếu có)
 SELECT
     ho_ten,
-    dien_thoai,
-    REPLACE(dien_thoai, '-', '') AS dien_thoai_chuan
+    so_dien_thoai,
+    REPLACE(so_dien_thoai, '-', '') AS so_dien_thoai_chuan
 FROM khach_hang;
 
 
