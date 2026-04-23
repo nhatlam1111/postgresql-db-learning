@@ -512,8 +512,8 @@
 <span class="keyword">WHERE</span> luong <span class="op">BETWEEN</span> <span class="number">15000000</span> <span class="keyword">AND</span> <span class="number">25000000</span>;
 
 <span class="comment">-- BETWEEN với ngày tháng:</span>
-<span class="keyword">SELECT</span> ho_ten, ngay_vao_lam <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">WHERE</span> ngay_vao_lam <span class="op">BETWEEN</span> <span class="string">'2020-01-01'</span> <span class="keyword">AND</span> <span class="string">'2022-12-31'</span>;</pre>
+<span class="keyword">SELECT</span> ho_ten, ngay_vao <span class="keyword">FROM</span> nhan_vien
+<span class="keyword">WHERE</span> ngay_vao <span class="op">BETWEEN</span> <span class="string">'2020-01-01'</span> <span class="keyword">AND</span> <span class="string">'2022-12-31'</span>;</pre>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════ -->
@@ -796,7 +796,7 @@
                 <p>📊 <strong>Excel tương đương:</strong><br>Filter phòng KD → Sort lương Z→A → nhìn 3 hàng đầu</p>
             </div>
             <div class="card tip">
-                <p>💡 <strong>Nhân viên vào sớm nhất:</strong><br><code>ORDER BY ngay_vao_lam ASC LIMIT 1</code></p>
+                <p>💡 <strong>Nhân viên vào sớm nhất:</strong><br><code>ORDER BY ngay_vao ASC LIMIT 1</code></p>
             </div>
         </div>
     </div>

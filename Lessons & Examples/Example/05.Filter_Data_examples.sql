@@ -7,37 +7,43 @@
 -- ============================================================
 -- SETUP: Tạo dữ liệu mẫu cho tuần này
 -- Chạy phần này TRƯỚC KHI chạy các ví dụ bên dưới
+--
+-- 💡 Schema này KHỚP với canonical schema (xem Reference/core_schema.md).
+--    Nếu đã chạy tuần 3, phần DROP/CREATE bên dưới sẽ tái tạo lại bảng
+--    nhan_vien với đúng cấu trúc chuẩn + dữ liệu phong phú hơn để luyện WHERE.
 -- ============================================================
 
 -- Xóa bảng nếu đã tồn tại (để chạy lại được)
 DROP TABLE IF EXISTS don_hang;
 DROP TABLE IF EXISTS nhan_vien;
 
--- Tạo bảng nhân viên
+-- Tạo bảng nhân viên theo canonical schema
 CREATE TABLE nhan_vien (
-    id          SERIAL PRIMARY KEY,
-    ho_ten      VARCHAR(100) NOT NULL,
-    phong_ban   VARCHAR(50),
-    luong       NUMERIC(12,0),
-    ngay_vao_lam DATE,
-    email       VARCHAR(100),
-    tinh_trang  VARCHAR(20) DEFAULT 'dang_lam'
+    id              SERIAL          PRIMARY KEY,
+    ho_ten          VARCHAR(100)    NOT NULL,
+    phong_ban       VARCHAR(50),
+    luong           NUMERIC(12,2),
+    ngay_sinh       DATE,
+    email           VARCHAR(150),
+    so_dien_thoai   VARCHAR(20),
+    ngay_vao        DATE            DEFAULT CURRENT_DATE,
+    dang_lam        BOOLEAN         DEFAULT TRUE
 );
 
 -- Nhập dữ liệu mẫu
-INSERT INTO nhan_vien (ho_ten, phong_ban, luong, ngay_vao_lam, email, tinh_trang) VALUES
-    ('Trần Thị Mai',     'Kế toán',    15000000, '2019-03-15', 'mai.tran@cty.com',    'dang_lam'),
-    ('Nguyễn Văn An',    'Kinh doanh', 20000000, '2020-07-01', 'an.nguyen@cty.com',   'dang_lam'),
-    ('Lê Thị Bình',      'Nhân sự',    18000000, '2018-11-20', 'binh.le@cty.com',     'dang_lam'),
-    ('Phạm Minh Châu',   'IT',         25000000, '2021-01-10', 'chau.pham@cty.com',   'dang_lam'),
-    ('Hoàng Thị Dung',   'Kế toán',    13000000, '2022-05-03', NULL,                  'dang_lam'),
-    ('Võ Văn Em',        'Kinh doanh', 22000000, '2017-09-25', 'em.vo@gmail.com',     'dang_lam'),
-    ('Đỗ Thị Phương',    'IT',         30000000, '2016-04-14', 'phuong.do@cty.com',   'dang_lam'),
-    ('Bùi Văn Giang',    'Nhân sự',    16000000, '2023-02-28', NULL,                  'dang_lam'),
-    ('Hồ Thị Hoa',       'Kinh doanh', 17500000, '2021-08-19', 'hoa.ho@gmail.com',    'nghi_viec'),
-    ('Ngô Minh Khánh',   'IT',         28000000, '2019-06-30', 'khanh.ngo@cty.com',   'dang_lam'),
-    ('Dương Thị Lan',    'Kế toán',    19000000, '2020-12-01', 'lan.duong@cty.com',   'dang_lam'),
-    ('Nguyễn Thị Ngọc',  'Kinh doanh', 21000000, '2018-03-22', 'ngoc.nguyen@cty.com', 'dang_lam');
+INSERT INTO nhan_vien (ho_ten, phong_ban, luong, ngay_vao, email, dang_lam) VALUES
+    ('Trần Thị Mai',     'Kế toán',    15000000, '2019-03-15', 'mai.tran@cty.com',    TRUE),
+    ('Nguyễn Văn An',    'Kinh doanh', 20000000, '2020-07-01', 'an.nguyen@cty.com',   TRUE),
+    ('Lê Thị Bình',      'Nhân sự',    18000000, '2018-11-20', 'binh.le@cty.com',     TRUE),
+    ('Phạm Minh Châu',   'IT',         25000000, '2021-01-10', 'chau.pham@cty.com',   TRUE),
+    ('Hoàng Thị Dung',   'Kế toán',    13000000, '2022-05-03', NULL,                  TRUE),
+    ('Võ Văn Em',        'Kinh doanh', 22000000, '2017-09-25', 'em.vo@gmail.com',     TRUE),
+    ('Đỗ Thị Phương',    'IT',         30000000, '2016-04-14', 'phuong.do@cty.com',   TRUE),
+    ('Bùi Văn Giang',    'Nhân sự',    16000000, '2023-02-28', NULL,                  TRUE),
+    ('Hồ Thị Hoa',       'Kinh doanh', 17500000, '2021-08-19', 'hoa.ho@gmail.com',    FALSE),
+    ('Ngô Minh Khánh',   'IT',         28000000, '2019-06-30', 'khanh.ngo@cty.com',   TRUE),
+    ('Dương Thị Lan',    'Kế toán',    19000000, '2020-12-01', 'lan.duong@cty.com',   TRUE),
+    ('Nguyễn Thị Ngọc',  'Kinh doanh', 21000000, '2018-03-22', 'ngoc.nguyen@cty.com', TRUE);
 
 -- Kiểm tra dữ liệu đã nhập
 SELECT * FROM nhan_vien;
@@ -59,9 +65,9 @@ FROM nhan_vien
 WHERE luong > 20000000;
 
 -- Ví dụ 3: Lọc nhân viên đang làm việc
-SELECT ho_ten, phong_ban, tinh_trang
+SELECT ho_ten, phong_ban, dang_lam
 FROM nhan_vien
-WHERE tinh_trang = 'dang_lam';
+WHERE dang_lam = TRUE;
 
 
 -- ============================================================
@@ -89,8 +95,8 @@ SELECT ho_ten, luong FROM nhan_vien
 WHERE luong < 18000000;
 
 -- So sánh ngày tháng
-SELECT ho_ten, ngay_vao_lam FROM nhan_vien
-WHERE ngay_vao_lam >= '2021-01-01';   -- Nhân viên vào từ năm 2021 trở đi
+SELECT ho_ten, ngay_vao FROM nhan_vien
+WHERE ngay_vao >= '2021-01-01';   -- Nhân viên vào từ năm 2021 trở đi
 
 
 -- ============================================================
@@ -124,11 +130,11 @@ WHERE (phong_ban = 'Kinh doanh' OR phong_ban = 'IT')
   AND luong > 20000000;
 
 -- Kết hợp 3 điều kiện
-SELECT ho_ten, luong, phong_ban, tinh_trang
+SELECT ho_ten, luong, phong_ban, dang_lam
 FROM nhan_vien
 WHERE phong_ban = 'IT'
   AND luong >= 25000000
-  AND tinh_trang = 'dang_lam';
+  AND dang_lam = TRUE;
 
 
 -- ============================================================
@@ -142,10 +148,10 @@ WHERE luong BETWEEN 15000000 AND 22000000;
 -- Tương đương: WHERE luong >= 15000000 AND luong <= 22000000
 
 -- BETWEEN với ngày tháng: Nhân viên vào làm từ 2019 đến 2021
-SELECT ho_ten, ngay_vao_lam
+SELECT ho_ten, ngay_vao
 FROM nhan_vien
-WHERE ngay_vao_lam BETWEEN '2019-01-01' AND '2021-12-31'
-ORDER BY ngay_vao_lam;
+WHERE ngay_vao BETWEEN '2019-01-01' AND '2021-12-31'
+ORDER BY ngay_vao;
 
 -- IN: Lọc nhiều phòng ban cùng lúc
 SELECT ho_ten, phong_ban
@@ -236,9 +242,9 @@ FROM nhan_vien
 ORDER BY phong_ban ASC, luong DESC;
 
 -- Sắp xếp theo ngày vào làm (mới nhất lên trước)
-SELECT ho_ten, ngay_vao_lam
+SELECT ho_ten, ngay_vao
 FROM nhan_vien
-ORDER BY ngay_vao_lam DESC;
+ORDER BY ngay_vao DESC;
 
 -- NULLS LAST: Đưa người chưa có email xuống cuối
 SELECT ho_ten, email
@@ -264,23 +270,23 @@ ORDER BY luong DESC
 LIMIT 3;
 
 -- Nhân viên lâu năm nhất (vào làm sớm nhất)
-SELECT ho_ten, ngay_vao_lam, phong_ban
+SELECT ho_ten, ngay_vao, phong_ban
 FROM nhan_vien
-ORDER BY ngay_vao_lam ASC
+ORDER BY ngay_vao ASC
 LIMIT 1;
 
 -- Nhân viên mới nhất công ty đang làm việc
-SELECT ho_ten, ngay_vao_lam, phong_ban
+SELECT ho_ten, ngay_vao, phong_ban
 FROM nhan_vien
-WHERE tinh_trang = 'dang_lam'
-ORDER BY ngay_vao_lam DESC
+WHERE dang_lam = TRUE
+ORDER BY ngay_vao DESC
 LIMIT 1;
 
 -- 5 nhân viên lương thấp nhất trong phòng Kinh doanh (xem xét điều chỉnh)
 SELECT ho_ten, luong
 FROM nhan_vien
 WHERE phong_ban = 'Kinh doanh'
-  AND tinh_trang = 'dang_lam'
+  AND dang_lam = TRUE
 ORDER BY luong ASC
 LIMIT 5;
 
@@ -314,12 +320,12 @@ ORDER BY luong_sau_thue DESC;
 SELECT
     ho_ten          AS "Họ và tên",
     luong           AS "Lương (VNĐ)",
-    ngay_vao_lam    AS "Ngày vào làm",
+    ngay_vao    AS "Ngày vào làm",
     email           AS "Email"
 FROM nhan_vien
 WHERE phong_ban = 'IT'
-  AND tinh_trang = 'dang_lam'
-ORDER BY ngay_vao_lam ASC;
+  AND dang_lam = TRUE
+ORDER BY ngay_vao ASC;
 
 -- Báo cáo: Nhân viên lương trên 18 triệu, chưa có email (cần cập nhật)
 SELECT
