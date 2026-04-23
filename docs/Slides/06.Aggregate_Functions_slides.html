@@ -159,7 +159,7 @@
     <span class="func">MAX</span>(luong) <span class="keyword">AS</span> cao_nhat,
     <span class="func">MIN</span>(luong) <span class="keyword">AS</span> thap_nhat
 <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>;</pre>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span>;</pre>
             </div>
         </div>
     </div>
@@ -269,7 +269,7 @@
             <pre style="margin-top:8px;"><span class="comment">-- Đếm nhân viên đang làm việc</span>
 <span class="keyword">SELECT</span> <span class="func">COUNT</span>(*) <span class="keyword">AS</span> dang_lam
 <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>;</pre>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span>;</pre>
         </div>
         <div>
             <div class="card excel">
@@ -357,7 +357,7 @@
             <pre><span class="comment">-- Tổng quỹ lương toàn công ty</span>
 <span class="keyword">SELECT</span> <span class="func">SUM</span>(luong) <span class="keyword">AS</span> tong_quy_luong
 <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>;</pre>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span>;</pre>
             <div class="filter-visual" style="font-size:0.85rem;"><span class="row-header">  tong_quy_luong</span>
 <span class="row-dim">  ─────────────────</span>
 <span class="row-pass">       214,500,000</span>
@@ -374,7 +374,7 @@
 <span class="keyword">SELECT</span>
     <span class="func">SUM</span>(luong) <span class="keyword">AS</span> tong,
     <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_hang,
-    <span class="func">COUNT</span>(luong) <span class="keyword">AS</span> co_gia_tri
+    <span class="func">COUNT</span>(luong) <span class="keyword">AS</span> co_tong_tien
 <span class="keyword">FROM</span> nhan_vien;</pre>
             </div>
         </div>
@@ -390,7 +390,7 @@
 <span class="keyword">SELECT</span>
     <span class="func">ROUND</span>(<span class="func">AVG</span>(luong), <span class="number">0</span>) <span class="keyword">AS</span> luong_trung_binh
 <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>;</pre>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span>;</pre>
             <div class="filter-visual" style="font-size:0.85rem;"><span class="row-header">  luong_trung_binh</span>
 <span class="row-dim">  ──────────────────</span>
 <span class="row-pass">          19,500,000</span></div>
@@ -432,8 +432,8 @@ Không phải  = 30tr / 3
 
 <span class="comment">-- Dùng với ngày: ai vào sớm/muộn nhất?</span>
 <span class="keyword">SELECT</span>
-    <span class="func">MIN</span>(ngay_vao_lam) <span class="keyword">AS</span> vao_som_nhat,
-    <span class="func">MAX</span>(ngay_vao_lam) <span class="keyword">AS</span> vao_muon_nhat
+    <span class="func">MIN</span>(ngay_vao) <span class="keyword">AS</span> vao_som_nhat,
+    <span class="func">MAX</span>(ngay_vao) <span class="keyword">AS</span> vao_muon_nhat
 <span class="keyword">FROM</span> nhan_vien;</pre>
             <div class="card info" style="margin-top:8px;">
                 <p>💡 <strong>MIN/MAX không chỉ cho số:</strong><br>
@@ -451,7 +451,7 @@ Không phải  = 30tr / 3
     <span class="func">MIN</span>(luong)               <span class="keyword">AS</span> luong_min,
     <span class="func">MAX</span>(luong)               <span class="keyword">AS</span> luong_max
 <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>;</pre>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span>;</pre>
             <div class="filter-visual" style="font-size:0.75rem;margin-top:8px;"><span class="row-header"> tong_nv │co_email│  tong_luong│  luong_tb│ luong_min│ luong_max</span>
 <span class="row-dim"> ────────┼────────┼────────────┼──────────┼──────────┼──────────</span>
 <span class="row-pass">      11 │      9 │ 214,500,000│19,500,000│13,000,000│30,000,000</span></div>
@@ -595,7 +595,7 @@ Không phải  = 30tr / 3
     <span class="func">MIN</span>(luong) <span class="keyword">AS</span> luong_min,
     <span class="func">MAX</span>(luong) <span class="keyword">AS</span> luong_max
 <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span>
 <span class="keyword">GROUP BY</span> phong_ban
 <span class="keyword">ORDER BY</span> luong_tb <span class="op">DESC</span>;</pre>
             <div class="card tip" style="margin-top:8px;">
@@ -618,25 +618,25 @@ Không phải  = 30tr / 3
     <div class="compare">
         <div>
             <h3>📊 Pivot Table — 2 fields trong Rows</h3>
-            <div class="filter-visual" style="font-size:0.82rem;"><span class="row-header"> Phòng ban    │ Tình trạng  │ Count</span>
-<span class="row-dim"> ─────────────┼─────────────┼───────</span>
-<span class="row-pass"> IT           │ dang_lam    │   3</span>
-<span class="row-pass"> Kế toán      │ dang_lam    │   3</span>
-<span class="row-pass"> Kinh doanh   │ dang_lam    │   3</span>
-<span class="row-pass"> Kinh doanh   │ nghi_viec   │   1</span>
-<span class="row-pass"> Nhân sự      │ dang_lam    │   2</span></div>
+            <div class="filter-visual" style="font-size:0.82rem;"><span class="row-header"> Phòng ban    │ Đang làm │ Count</span>
+<span class="row-dim"> ─────────────┼──────────┼───────</span>
+<span class="row-pass"> IT           │ TRUE     │   3</span>
+<span class="row-pass"> Kế toán      │ TRUE     │   3</span>
+<span class="row-pass"> Kinh doanh   │ TRUE     │   3</span>
+<span class="row-pass"> Kinh doanh   │ FALSE    │   1</span>
+<span class="row-pass"> Nhân sự      │ TRUE     │   2</span></div>
         </div>
         <div>
             <h3>🐘 GROUP BY 2 cột</h3>
             <pre style="font-size:0.85rem;"><span class="keyword">SELECT</span>
     phong_ban,
-    tinh_trang,
+    dang_lam,
     <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nhan_vien
 <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">GROUP BY</span> phong_ban, tinh_trang
-<span class="keyword">ORDER BY</span> phong_ban, tinh_trang;</pre>
+<span class="keyword">GROUP BY</span> phong_ban, dang_lam
+<span class="keyword">ORDER BY</span> phong_ban, dang_lam;</pre>
             <div class="card tip" style="margin-top:10px;">
-                <p>💡 Quy tắc vàng vẫn áp dụng: tất cả cột nhóm (<code>phong_ban</code>, <code>tinh_trang</code>) đều phải có trong GROUP BY.</p>
+                <p>💡 Quy tắc vàng vẫn áp dụng: tất cả cột nhóm (<code>phong_ban</code>, <code>dang_lam</code>) đều phải có trong GROUP BY.</p>
             </div>
         </div>
     </div>
@@ -701,7 +701,7 @@ Không phải  = 30tr / 3
     phong_ban,
     <span class="func">ROUND</span>(<span class="func">AVG</span>(luong), <span class="number">0</span>) <span class="keyword">AS</span> luong_tb
 <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span>
 <span class="keyword">GROUP BY</span> phong_ban
 <span class="keyword">HAVING</span> <span class="func">AVG</span>(luong) > <span class="number">18000000</span>
 <span class="keyword">ORDER BY</span> luong_tb <span class="op">DESC</span>;</pre>
@@ -712,7 +712,7 @@ Không phải  = 30tr / 3
     phong_ban,
     <span class="func">SUM</span>(luong) <span class="keyword">AS</span> tong_luong
 <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span>
 <span class="keyword">GROUP BY</span> phong_ban
 <span class="keyword">HAVING</span> <span class="func">SUM</span>(luong) > <span class="number">60000000</span>
 <span class="keyword">ORDER BY</span> tong_luong <span class="op">DESC</span>;</pre>
@@ -744,7 +744,7 @@ Không phải  = 30tr / 3
             </ul>
             <pre style="margin-top:12px;font-size:0.85rem;"><span class="keyword">WHERE</span> phong_ban = <span class="string">'IT'</span>
 <span class="keyword">WHERE</span> luong > <span class="number">20000000</span>
-<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span></pre>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span></pre>
         </div>
         <div>
             <h3 style="color:var(--success);">🟢 HAVING — Lọc Nhóm</h3>
@@ -776,7 +776,7 @@ Không phải  = 30tr / 3
         <div class="step where-step">
             <div class="num" style="background:var(--info);">2</div>
             <div class="kw">WHERE</div>
-            <div class="note">Lọc hàng: <code>tinh_trang = 'dang_lam'</code> → còn 11 hàng</div>
+            <div class="note">Lọc hàng: <code>dang_lam = TRUE</code> → còn 11 hàng</div>
             <div class="tag where-tag">Lọc HÀNG</div>
         </div>
         <div class="step">
@@ -832,7 +832,7 @@ Không phải  = 30tr / 3
                 <tr><th>Điều kiện lọc</th><th>Dùng gì?</th></tr>
                 <tr><td><code>phong_ban = 'IT'</code></td><td><span class="text-info">WHERE</span></td></tr>
                 <tr><td><code>luong &gt; 20000000</code></td><td><span class="text-info">WHERE</span></td></tr>
-                <tr><td><code>tinh_trang = 'dang_lam'</code></td><td><span class="text-info">WHERE</span></td></tr>
+                <tr><td><code>dang_lam = TRUE</code></td><td><span class="text-info">WHERE</span></td></tr>
                 <tr><td><code>COUNT(*) &gt;= 3</code></td><td><span class="text-success">HAVING</span></td></tr>
                 <tr><td><code>AVG(luong) &gt; 18tr</code></td><td><span class="text-success">HAVING</span></td></tr>
                 <tr><td><code>SUM(luong) &gt; 60tr</code></td><td><span class="text-success">HAVING</span></td></tr>
@@ -864,7 +864,7 @@ Không phải  = 30tr / 3
     <span class="func">MIN</span>(luong) <span class="keyword">AS</span> luong_min,
     <span class="func">MAX</span>(luong) <span class="keyword">AS</span> luong_max
 <span class="keyword">FROM</span> nhan_vien
-<span class="keyword">WHERE</span> tinh_trang = <span class="string">'dang_lam'</span>  <span class="comment">← ① Lọc hàng</span>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span>  <span class="comment">← ① Lọc hàng</span>
 <span class="keyword">GROUP BY</span> phong_ban               <span class="comment">← ② Tạo nhóm</span>
 <span class="keyword">HAVING</span> <span class="func">COUNT</span>(*) >= <span class="number">2</span>            <span class="comment">← ③ Lọc nhóm (1)</span>
    <span class="keyword">AND</span> <span class="func">AVG</span>(luong) > <span class="number">17000000</span>   <span class="comment">← ③ Lọc nhóm (2)</span>
@@ -900,7 +900,7 @@ Không phải  = 30tr / 3
             <h3>📝 Thứ tự VIẾT (bạn gõ)</h3>
             <pre style="font-size:0.9rem;"><span class="keyword">SELECT</span>   phong_ban, <span class="func">COUNT</span>(*) <span class="keyword">AS</span> so_nv
 <span class="keyword">FROM</span>     nhan_vien
-<span class="keyword">WHERE</span>    tinh_trang = <span class="string">'dang_lam'</span>
+<span class="keyword">WHERE</span>    dang_lam = <span class="keyword">TRUE</span>
 <span class="keyword">GROUP BY</span> phong_ban
 <span class="keyword">HAVING</span>   <span class="func">COUNT</span>(*) >= <span class="number">2</span>
 <span class="keyword">ORDER BY</span> so_nv <span class="op">DESC</span>
