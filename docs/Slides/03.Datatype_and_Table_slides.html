@@ -379,7 +379,7 @@ ngay_het_han <span class="type">DATE</span></pre>
         </div>
         <div>
             <h3>TIMESTAMP — Ngày + Giờ</h3>
-            <pre>ngay_tao <span class="type">TIMESTAMP</span> <span class="keyword">DEFAULT</span> <span class="func">NOW</span>()</pre>
+            <pre>ngay_vao <span class="type">TIMESTAMP</span> <span class="keyword">DEFAULT</span> <span class="func">NOW</span>()</pre>
             <p style="margin:12px 0;">Format: <code>'YYYY-MM-DD HH:MM:SS'</code></p>
             <pre style="font-size:0.85rem;"><span class="string">'2024-01-15 14:30:00'</span>     <span class="comment">✅</span>
 <span class="string">'2024-01-15 14:30:59.123'</span> <span class="comment">✅</span></pre>
@@ -401,7 +401,7 @@ ngay_het_han <span class="type">DATE</span></pre>
     <h2>✅ BOOLEAN — Đúng / Sai / Chưa Biết</h2>
     <div class="columns-2">
         <div>
-            <pre>dang_lam_viec  <span class="type">BOOLEAN</span> <span class="keyword">DEFAULT</span> <span class="keyword">TRUE</span>,
+            <pre>dang_lam       <span class="type">BOOLEAN</span> <span class="keyword">DEFAULT</span> <span class="keyword">TRUE</span>,
 da_thanh_toan  <span class="type">BOOLEAN</span> <span class="keyword">DEFAULT</span> <span class="keyword">FALSE</span>,
 la_vip         <span class="type">BOOLEAN</span></pre>
 
@@ -413,12 +413,12 @@ la_vip         <span class="type">BOOLEAN</span></pre>
             </table>
 
             <pre style="margin-top:16px;"><span class="comment">-- Lọc nhân viên đang làm</span>
-<span class="keyword">WHERE</span> dang_lam_viec = <span class="keyword">TRUE</span>
+<span class="keyword">WHERE</span> dang_lam = <span class="keyword">TRUE</span>
 <span class="comment">-- hoặc ngắn gọn:</span>
-<span class="keyword">WHERE</span> dang_lam_viec
+<span class="keyword">WHERE</span> dang_lam
 
 <span class="comment">-- Lọc nhân viên đã nghỉ</span>
-<span class="keyword">WHERE NOT</span> dang_lam_viec</pre>
+<span class="keyword">WHERE NOT</span> dang_lam</pre>
         </div>
         <div>
             <div class="card warning">
@@ -565,7 +565,7 @@ la_vip         <span class="type">BOOLEAN</span></pre>
                 <p style="font-size:0.9rem;margin-bottom:8px;">Giá trị mặc định</p>
                 <pre style="font-size:0.8rem;">dang_lam <span class="type">BOOLEAN</span>
   <span class="keyword">DEFAULT</span> <span class="keyword">TRUE</span>,
-ngay_tao <span class="type">TIMESTAMP</span>
+ngay_vao <span class="type">TIMESTAMP</span>
   <span class="keyword">DEFAULT</span> <span class="func">NOW</span>()</pre>
                 <ul style="margin-top:8px;font-size:0.85rem;">
                     <li>Không truyền giá trị → <strong>tự dùng DEFAULT</strong></li>
@@ -640,7 +640,7 @@ diem  <span class="type">INTEGER</span>
             </div>
         </div>
         <div class="card tip" style="margin-top:12px;">
-            <p>💡 <strong>Mẫu chung:</strong> <code>id SERIAL PRIMARY KEY</code> + các cột nghiệp vụ + <code>ngay_tao DEFAULT</code> + <code>trang_thai BOOLEAN DEFAULT TRUE</code></p>
+            <p>💡 <strong>Mẫu chung:</strong> <code>id SERIAL PRIMARY KEY</code> + các cột nghiệp vụ + <code>ngay_vao DEFAULT</code> + <code>dang_lam BOOLEAN DEFAULT TRUE</code></p>
         </div>
     </div>
 </div>

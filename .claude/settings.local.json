@@ -6,7 +6,9 @@
       "Bash(mkdir -p \"D:/Learn/postgresql-db-learning/Week-2\")",
       "Bash(mkdir -p \"Lesson & Example/Beginner/Week-1\" \"Lesson & Example/Beginner/Week-2\" \"Lesson & Example/Beginner/Week-3\" \"Lesson & Example/Beginner/Week-4\" \"Lesson & Example/Advance\")",
       "Bash(mkdir -p \"Exercise/Week-1\" \"Exercise/Week-2\" \"Exercise/Week-3\" \"Exercise/Week-4\")",
-      "Bash(mkdir -p \"Reference\")"
+      "Bash(mkdir -p \"Reference\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
