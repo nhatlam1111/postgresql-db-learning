@@ -190,9 +190,9 @@ FROM nhan_vien;
 
 -- 4.4.6 Tổng hợp thống kê sản phẩm
 SELECT
-    COUNT(*)                    AS "Tổng sản phẩm",
-    COUNT(DISTINCT danh_muc)    AS "Số danh mục",
-    COUNT(DISTINCT nha_cung_cap) AS "Số nhà cung cấp"
+    COUNT(*)                     AS "Tổng sản phẩm",
+    COUNT(DISTINCT danh_muc)     AS "Số danh mục khác nhau",
+    COUNT(DISTINCT ngay_nhap)    AS "Số ngày đã nhập hàng"
 FROM san_pham;
 
 
