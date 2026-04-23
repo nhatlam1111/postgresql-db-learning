@@ -177,7 +177,7 @@
                     <div class="tbl-name">khach_hang</div>
                     <div class="col-list">
                         <span class="col-pk">id ← PK</span><br>
-                        ho_ten<br>dien_thoai
+                        ho_ten<br>so_dien_thoai
                     </div>
                 </div>
                 <div class="rel-arrow">1 ──────&lt; N</div>
@@ -246,7 +246,7 @@
 <span class="keyword">SELECT</span>
     dh.ma_don_hang,
     kh.ho_ten           <span class="keyword">AS</span> ten_khach,
-    kh.dien_thoai,
+    kh.so_dien_thoai,
     dh.ngay_dat,
     dh.tong_tien
 <span class="keyword">FROM</span> don_hang dh
@@ -254,7 +254,7 @@
 <span class="keyword">ORDER BY</span> dh.ngay_dat <span class="keyword">DESC</span>;</pre>
             <div class="ui-diagram" style="font-size:0.78rem;">Kết quả:
 ┌─────────────┬──────────────────┬────────────┬────────────┬───────────┐
-│ ma_don_hang │ ten_khach        │ dien_thoai │ ngay_dat   │ tong_tien │
+│ ma_don_hang │ ten_khach        │ so_dien_thoai │ ngay_dat │ tong_tien │
 ├─────────────┼──────────────────┼────────────┼────────────┼───────────┤
 │ DH012       │ Nguyễn Văn An    │ 0912234567 │ 2024-04-18 │  11000000 │
 │ DH011       │ Trần Thị Mai     │ 0901123456 │ 2024-04-10 │  28000000 │
@@ -340,7 +340,7 @@
             <p>Thủ thuật hay: tìm những hàng ở bảng trái <strong>không có</strong> ở bảng phải:</p>
             <pre>
 <span class="comment">-- Tìm khách hàng CHƯA CÓ đơn hàng nào</span>
-<span class="keyword">SELECT</span> kh.ho_ten, kh.dien_thoai
+<span class="keyword">SELECT</span> kh.ho_ten, kh.so_dien_thoai
 <span class="keyword">FROM</span> khach_hang kh
 <span class="keyword">LEFT JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
 <span class="keyword">WHERE</span> dh.id <span class="keyword">IS NULL</span>;
@@ -473,7 +473,7 @@
             </div>
             <pre style="font-size:0.82rem;">
 <span class="keyword">SELECT</span>
-    kh.ho_ten, dh.ma_don_hang, sp.ten_san_pham,
+    kh.ho_ten, dh.ma_don_hang, sp.ten_sp,
     ct.so_luong, ct.don_gia,
     ct.so_luong <span class="op">*</span> ct.don_gia <span class="keyword">AS</span> thanh_tien
 <span class="keyword">FROM</span> chi_tiet_don_hang ct
@@ -502,13 +502,13 @@
 <span class="comment">-- Tổng chi tiêu của mỗi khách hàng</span>
 <span class="keyword">SELECT</span>
     kh.ho_ten,
-    kh.dien_thoai,
+    kh.so_dien_thoai,
     <span class="func">COUNT</span>(dh.id)            <span class="keyword">AS</span> so_don_hang,
     <span class="func">SUM</span>(dh.tong_tien)       <span class="keyword">AS</span> tong_chi_tieu
 <span class="keyword">FROM</span> khach_hang kh
 <span class="keyword">LEFT JOIN</span> don_hang dh <span class="keyword">ON</span> kh.id <span class="op">=</span> dh.khach_hang_id
     <span class="keyword">AND</span> dh.trang_thai <span class="op">=</span> <span class="string">'hoan_thanh'</span>
-<span class="keyword">GROUP BY</span> kh.id, kh.ho_ten, kh.dien_thoai
+<span class="keyword">GROUP BY</span> kh.id, kh.ho_ten, kh.so_dien_thoai
 <span class="keyword">ORDER BY</span> tong_chi_tieu <span class="keyword">DESC NULLS LAST</span>;</pre>
             <div class="card excel">
                 <p>📊 <strong>Excel:</strong> Giống tạo Pivot Table từ nhiều sheet — GROUP BY gom nhóm, SUM tính tổng, JOIN kết nối dữ liệu.</p>
@@ -523,14 +523,14 @@
             <pre>
 <span class="comment">-- Top 5 sản phẩm bán chạy nhất (theo số lượng)</span>
 <span class="keyword">SELECT</span>
-    sp.ten_san_pham,
+    sp.ten_sp,
     <span class="func">SUM</span>(ct.so_luong)                <span class="keyword">AS</span> tong_ban,
     <span class="func">SUM</span>(ct.so_luong <span class="op">*</span> ct.don_gia)   <span class="keyword">AS</span> doanh_thu
 <span class="keyword">FROM</span> san_pham sp
 <span class="keyword">JOIN</span> chi_tiet_don_hang ct <span class="keyword">ON</span> sp.id <span class="op">=</span> ct.san_pham_id
 <span class="keyword">JOIN</span> don_hang dh          <span class="keyword">ON</span> ct.don_hang_id <span class="op">=</span> dh.id
 <span class="keyword">WHERE</span> dh.trang_thai <span class="op">=</span> <span class="string">'hoan_thanh'</span>
-<span class="keyword">GROUP BY</span> sp.id, sp.ten_san_pham
+<span class="keyword">GROUP BY</span> sp.id, sp.ten_sp
 <span class="keyword">ORDER BY</span> tong_ban <span class="keyword">DESC</span>
 <span class="keyword">LIMIT</span> <span class="number">5</span>;</pre>
             <div class="card tip">

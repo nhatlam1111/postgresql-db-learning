@@ -22,25 +22,25 @@ CREATE TABLE nhan_vien (
     ho_ten        VARCHAR(100) NOT NULL,
     phong_ban     VARCHAR(50),
     luong         NUMERIC(12,0),
-    tinh_trang    VARCHAR(20) DEFAULT 'dang_lam'
+    dang_lam      BOOLEAN DEFAULT TRUE
 );
 
-INSERT INTO nhan_vien (ho_ten, phong_ban, luong, tinh_trang) VALUES
-    ('Võ Văn Em',       'Kinh doanh', 22000000, 'dang_lam'),
-    ('Nguyễn Thị Ngọc', 'Kinh doanh', 21000000, 'dang_lam'),
-    ('Hồ Thị Hoa',      'Kinh doanh', 17500000, 'nghi_viec'),
-    ('Lê Văn Dũng',     'Kinh doanh', 19000000, 'dang_lam');
+INSERT INTO nhan_vien (ho_ten, phong_ban, luong, dang_lam) VALUES
+    ('Võ Văn Em',       'Kinh doanh', 22000000, TRUE),
+    ('Nguyễn Thị Ngọc', 'Kinh doanh', 21000000, TRUE),
+    ('Hồ Thị Hoa',      'Kinh doanh', 17500000, FALSE),
+    ('Lê Văn Dũng',     'Kinh doanh', 19000000, TRUE);
 
 -- Bảng 2: Khách hàng
 CREATE TABLE khach_hang (
     id            SERIAL PRIMARY KEY,
     ho_ten        VARCHAR(100) NOT NULL,
-    dien_thoai    VARCHAR(15),
+    so_dien_thoai VARCHAR(20),
     email         VARCHAR(100),
     thanh_pho     VARCHAR(50)
 );
 
-INSERT INTO khach_hang (ho_ten, dien_thoai, email, thanh_pho) VALUES
+INSERT INTO khach_hang (ho_ten, so_dien_thoai, email, thanh_pho) VALUES
     ('Trần Thị Mai',     '0901123456', 'mai.tran@gmail.com',   'Hà Nội'),
     ('Nguyễn Văn An',    '0912234567', 'an.nguyen@gmail.com',  'TP.HCM'),
     ('Lê Thị Bình',      '0923345678', 'binh.le@outlook.com',  'Đà Nẵng'),
@@ -52,12 +52,12 @@ INSERT INTO khach_hang (ho_ten, dien_thoai, email, thanh_pho) VALUES
 -- Bảng 3: Sản phẩm
 CREATE TABLE san_pham (
     id            SERIAL PRIMARY KEY,
-    ten_san_pham  VARCHAR(200) NOT NULL,
+    ten_sp        VARCHAR(200) NOT NULL,
     danh_muc      VARCHAR(50),
     gia           NUMERIC(12,0) NOT NULL
 );
 
-INSERT INTO san_pham (ten_san_pham, danh_muc, gia) VALUES
+INSERT INTO san_pham (ten_sp, danh_muc, gia) VALUES
     ('Laptop Dell XPS 13',     'Điện tử',  28000000),
     ('Chuột không dây Logitech','Điện tử',   350000),
     ('Bàn phím cơ Keychron',   'Điện tử',  1800000),
@@ -75,22 +75,23 @@ CREATE TABLE don_hang (
     khach_hang_id   INTEGER REFERENCES khach_hang(id),
     nhan_vien_id    INTEGER REFERENCES nhan_vien(id),
     ngay_dat        DATE NOT NULL,
+    tong_tien       NUMERIC(15,2),
     trang_thai      VARCHAR(20) DEFAULT 'hoan_thanh'
 );
 
-INSERT INTO don_hang (ma_don_hang, khach_hang_id, nhan_vien_id, ngay_dat, trang_thai) VALUES
-    ('DH001', 1, 1, '2024-01-05', 'hoan_thanh'),
-    ('DH002', 2, 2, '2024-01-12', 'hoan_thanh'),
-    ('DH003', 1, 1, '2024-01-20', 'hoan_thanh'),
-    ('DH004', 3, 4, '2024-02-03', 'hoan_thanh'),
-    ('DH005', 4, 2, '2024-02-14', 'hoan_thanh'),
-    ('DH006', 2, 1, '2024-02-28', 'huy'),
-    ('DH007', 3, 4, '2024-03-07', 'hoan_thanh'),
-    ('DH008', 1, 1, '2024-03-15', 'hoan_thanh'),
-    ('DH009', 5, 2, '2024-03-22', 'hoan_thanh'),
-    ('DH010', 4, 4, '2024-04-01', 'hoan_thanh'),
-    ('DH011', 2, 2, '2024-04-10', 'hoan_thanh'),
-    ('DH012', 1, 1, '2024-04-18', 'hoan_thanh');
+INSERT INTO don_hang (ma_don_hang, khach_hang_id, nhan_vien_id, ngay_dat, tong_tien, trang_thai) VALUES
+    ('DH001', 1, 1, '2024-01-05', 28350000, 'hoan_thanh'),
+    ('DH002', 2, 2, '2024-01-12',  2740000, 'hoan_thanh'),
+    ('DH003', 1, 1, '2024-01-20',  2220000, 'hoan_thanh'),
+    ('DH004', 3, 4, '2024-02-03',  9200000, 'hoan_thanh'),
+    ('DH005', 4, 2, '2024-02-14', 28000000, 'hoan_thanh'),
+    ('DH006', 2, 1, '2024-02-28',   560000, 'huy'),
+    ('DH007', 3, 4, '2024-03-07', 10300000, 'hoan_thanh'),
+    ('DH008', 1, 1, '2024-03-15',  1050000, 'hoan_thanh'),
+    ('DH009', 5, 2, '2024-03-22',  1790000, 'hoan_thanh'),
+    ('DH010', 4, 4, '2024-04-01', 28000000, 'hoan_thanh'),
+    ('DH011', 2, 2, '2024-04-10',  3300000, 'hoan_thanh'),
+    ('DH012', 1, 1, '2024-04-18',  2220000, 'hoan_thanh');
 -- Lưu ý: Khách id=6 (Ngô Thị Phương) không có đơn nào — để minh hoạ LEFT JOIN
 
 -- Bảng 5: Chi tiết đơn hàng
@@ -140,7 +141,7 @@ SELECT * FROM chi_tiet_don_hang;
 SELECT
     dh.ma_don_hang,
     kh.ho_ten           AS ten_khach,
-    kh.dien_thoai,
+    kh.so_dien_thoai,
     dh.ngay_dat,
     dh.trang_thai
 FROM don_hang dh
@@ -162,7 +163,7 @@ ORDER BY dh.ngay_dat;
 -- Xem chi tiết đơn hàng kèm tên sản phẩm
 SELECT
     dh.ma_don_hang,
-    sp.ten_san_pham,
+    sp.ten_sp,
     sp.danh_muc,
     ct.so_luong,
     ct.don_gia,
@@ -171,7 +172,7 @@ FROM chi_tiet_don_hang ct
 JOIN don_hang dh    ON ct.don_hang_id = dh.id
 JOIN san_pham sp    ON ct.san_pham_id = sp.id
 WHERE dh.trang_thai = 'hoan_thanh'
-ORDER BY dh.ma_don_hang, sp.ten_san_pham;
+ORDER BY dh.ma_don_hang, sp.ten_sp;
 
 
 -- ============================================================
@@ -190,7 +191,7 @@ ORDER BY kh.ho_ten, dh.ngay_dat;
 -- Khách Ngô Thị Phương sẽ xuất hiện với NULL ở các cột đơn hàng
 
 -- Tìm khách hàng CHƯA CÓ đơn hàng nào (LEFT JOIN + IS NULL)
-SELECT kh.ho_ten, kh.dien_thoai, kh.thanh_pho
+SELECT kh.ho_ten, kh.so_dien_thoai, kh.thanh_pho
 FROM khach_hang kh
 LEFT JOIN don_hang dh ON kh.id = dh.khach_hang_id
 WHERE dh.id IS NULL;
@@ -198,18 +199,18 @@ WHERE dh.id IS NULL;
 
 -- Tất cả sản phẩm, kể cả sản phẩm chưa bao giờ được mua
 SELECT
-    sp.ten_san_pham,
+    sp.ten_sp,
     sp.danh_muc,
     sp.gia,
     COUNT(ct.id)    AS so_lan_ban
 FROM san_pham sp
 LEFT JOIN chi_tiet_don_hang ct ON sp.id = ct.san_pham_id
-GROUP BY sp.id, sp.ten_san_pham, sp.danh_muc, sp.gia
+GROUP BY sp.id, sp.ten_sp, sp.danh_muc, sp.gia
 ORDER BY so_lan_ban DESC;
 -- Sách PostgreSQL sẽ có so_lan_ban = 0
 
 -- Sản phẩm chưa từng có trong đơn hàng nào
-SELECT sp.ten_san_pham, sp.danh_muc, sp.gia
+SELECT sp.ten_sp, sp.danh_muc, sp.gia
 FROM san_pham sp
 LEFT JOIN chi_tiet_don_hang ct ON sp.id = ct.san_pham_id
 WHERE ct.id IS NULL;
@@ -225,7 +226,7 @@ SELECT
     kh.thanh_pho,
     dh.ma_don_hang,
     dh.ngay_dat,
-    sp.ten_san_pham,
+    sp.ten_sp,
     sp.danh_muc,
     ct.so_luong,
     ct.don_gia,
@@ -274,7 +275,7 @@ ORDER BY tong_chi_tieu DESC NULLS LAST;
 
 -- Top 5 sản phẩm bán chạy nhất (chỉ đơn hoàn thành)
 SELECT
-    sp.ten_san_pham,
+    sp.ten_sp,
     sp.danh_muc,
     SUM(ct.so_luong)                    AS tong_so_luong_ban,
     SUM(ct.so_luong * ct.don_gia)       AS tong_doanh_thu
@@ -282,7 +283,7 @@ FROM san_pham sp
 JOIN chi_tiet_don_hang ct ON sp.id = ct.san_pham_id
 JOIN don_hang dh          ON ct.don_hang_id = dh.id
 WHERE dh.trang_thai = 'hoan_thanh'
-GROUP BY sp.id, sp.ten_san_pham, sp.danh_muc
+GROUP BY sp.id, sp.ten_sp, sp.danh_muc
 ORDER BY tong_so_luong_ban DESC
 LIMIT 5;
 
@@ -295,7 +296,7 @@ FROM nhan_vien nv
 LEFT JOIN don_hang dh         ON nv.id = dh.nhan_vien_id
                               AND dh.trang_thai = 'hoan_thanh'
 LEFT JOIN chi_tiet_don_hang ct ON dh.id = ct.don_hang_id
-WHERE nv.tinh_trang = 'dang_lam'
+WHERE nv.dang_lam = TRUE
 GROUP BY nv.id, nv.ho_ten
 ORDER BY tong_doanh_thu DESC NULLS LAST;
 
@@ -367,26 +368,26 @@ LEFT JOIN don_hang dh ON kh.id = dh.khach_hang_id
 SELECT
     kh.ho_ten                       AS "Khách hàng",
     kh.thanh_pho                    AS "Thành phố",
-    kh.dien_thoai                   AS "SĐT",
+    kh.so_dien_thoai                AS "SĐT",
     COUNT(DISTINCT dh.id)           AS "Số đơn",
     COALESCE(SUM(ct.so_luong * ct.don_gia), 0) AS "Tổng chi tiêu (VNĐ)"
 FROM khach_hang kh
 LEFT JOIN don_hang dh         ON kh.id = dh.khach_hang_id
                               AND dh.trang_thai = 'hoan_thanh'
 LEFT JOIN chi_tiet_don_hang ct ON dh.id = ct.don_hang_id
-GROUP BY kh.id, kh.ho_ten, kh.thanh_pho, kh.dien_thoai
+GROUP BY kh.id, kh.ho_ten, kh.thanh_pho, kh.so_dien_thoai
 ORDER BY "Tổng chi tiêu (VNĐ)" DESC;
 
 -- Tìm khách hàng tiềm năng: đã mua nhưng tổng chưa đến 10 triệu
 SELECT
     kh.ho_ten,
-    kh.dien_thoai,
+    kh.so_dien_thoai,
     COUNT(DISTINCT dh.id)                       AS so_don,
     SUM(ct.so_luong * ct.don_gia)               AS tong_chi_tieu
 FROM khach_hang kh
 JOIN don_hang dh            ON kh.id = dh.khach_hang_id
 JOIN chi_tiet_don_hang ct   ON dh.id = ct.don_hang_id
 WHERE dh.trang_thai = 'hoan_thanh'
-GROUP BY kh.id, kh.ho_ten, kh.dien_thoai
+GROUP BY kh.id, kh.ho_ten, kh.so_dien_thoai
 HAVING SUM(ct.so_luong * ct.don_gia) < 10000000
 ORDER BY tong_chi_tieu DESC;
